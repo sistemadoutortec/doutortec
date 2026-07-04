@@ -1,0 +1,25 @@
+Inicie o servidor de desenvolvimento para mim
+
+
+Abre a pasta do sistema:
+C:\Users\Ailton\Downloads\LICITAPLUS
+
+E digita CMD na barra de endereço.
+
+
+Digita:
+npm run dev
+
+Digita:
+git push
+
+ou é 
+
+git push origin main
+
+
+----------------------------------------
+
+1. git add .          ← marca os arquivos modificados para commit
+2. git commit -m "..."  ← cria o snapshot local
+3. git push origin main  ← envia para o GitHub/repositório
