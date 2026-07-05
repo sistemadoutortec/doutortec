@@ -57,32 +57,11 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
     >
       <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="flex items-center justify-center rounded-2xl bg-[#e8f3fc] p-3.5"
-            style={{ width: 72, height: 72 }}
-            title="Doutortec Teleconsultoria"
-          >
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Central Medical Cross */}
-              <rect x="10.5" y="4" width="3" height="16" rx="1.5" fill="#002157" />
-              <rect x="4" y="10.5" width="16" height="3" rx="1.5" fill="#002157" />
-              {/* Telehealth Connection Orbits/Waves */}
-              <path d="M19 8C20.5 9.5 21 11.5 21 13.5" stroke="#002157" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" />
-              <path d="M5 16C3.5 14.5 3 12.5 3 10.5" stroke="#002157" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" />
-              {/* Tech Node Points */}
-              <circle cx="12" cy="3" r="1.5" fill="#002157" />
-              <circle cx="21" cy="12" r="1.5" fill="#002157" />
-              <circle cx="12" cy="21" r="1.5" fill="#002157" />
-              <circle cx="3" cy="12" r="1.5" fill="#002157" />
-            </svg>
-          </div>
+          <img src="/LogoAzul.png" alt="Doutortec" className="h-16 w-auto object-contain" />
           <div className="text-center">
             <h2 className="text-2xl font-black tracking-tight" style={{ color: '#002157' }}>
               Doutortec
             </h2>
-            <p className="mt-1 text-sm text-[#56657c] font-semibold">
-              Rede de Teleconsultoria Médica
-            </p>
           </div>
         </div>
 

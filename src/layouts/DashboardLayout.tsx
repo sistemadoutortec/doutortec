@@ -102,31 +102,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Logo Placeholder Area */}
       <div>
         <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-          <div className="flex items-center gap-3">
-            {/* Telehealth minimal logo SVG */}
-            <div
-              className="flex items-center justify-center rounded-xl bg-white/10 p-2"
-              style={{ width: 40, height: 40 }}
-              title="Doutortec Teleconsultoria"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Central Medical Cross */}
-                <rect x="10.5" y="4" width="3" height="16" rx="1.5" fill="#ffffff" />
-                <rect x="4" y="10.5" width="16" height="3" rx="1.5" fill="#ffffff" />
-                {/* Telehealth Connection Orbits/Waves */}
-                <path d="M19 8C20.5 9.5 21 11.5 21 13.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" strokeOpacity="0.8" />
-                <path d="M5 16C3.5 14.5 3 12.5 3 10.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" strokeOpacity="0.8" />
-                {/* Tech Node Points */}
-                <circle cx="12" cy="3" r="1.5" fill="#ffffff" />
-                <circle cx="21" cy="12" r="1.5" fill="#ffffff" />
-                <circle cx="12" cy="21" r="1.5" fill="#ffffff" />
-                <circle cx="3" cy="12" r="1.5" fill="#ffffff" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-white font-bold text-base tracking-tight">Doutortec</span>
-              <p className="text-white/40 text-[9px] uppercase tracking-widest leading-none mt-0.5">Teleconsultoria</p>
-            </div>
+          <div className="flex items-center gap-3 py-1">
+            <img src="/LogoBranca.png" alt="Doutortec" className="h-10 w-auto object-contain" />
           </div>
           <button
             className="md:hidden text-white/60 hover:text-white"
