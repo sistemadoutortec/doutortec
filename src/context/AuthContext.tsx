@@ -101,8 +101,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setLoading(true);
+      async (event, session) => {
+        // Only show loading screen for actual login or logout events to prevent app unmounting on background token refresh
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          setLoading(true);
+        }
         if (session?.user) {
           setUser(session.user);
           await fetchPerfil(session.user.id);
