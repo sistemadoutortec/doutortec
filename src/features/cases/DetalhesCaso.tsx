@@ -69,12 +69,11 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       setLoadingChat(true);
       const { data, error } = await supabase
         .from('mensagens_chat')
-        .select('id, caso_id, remetente_id, mensagem, created_at')
+        .select('id, caso_id, remetente_id, nome_remetente, mensagem, created_at')
         .eq('caso_id', currentCaso.id)
         .order('created_at', { ascending: true });
 
       if (error) {
-        // Table might not exist or be named differently, handle gracefully
         console.warn('Erro ao carregar mensagens, simulando tabela vazia:', error.message);
         setMessages([]);
       } else {
@@ -102,13 +101,11 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         async (payload) => {
           const newMsg = payload.new as MensagemChat;
           setMessages(prev => {
-            // Prevent duplicate message renders from multiple channel updates
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
           
-          // Get sender name if not loaded already
-          if (!sendersMap[newMsg.remetente_id]) {
+          if (!newMsg.nome_remetente && !sendersMap[newMsg.remetente_id]) {
             try {
               const { data } = await supabase
                 .from('perfis')
@@ -144,13 +141,13 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           {
             caso_id: currentCaso.id,
             remetente_id: user.id,
+            nome_remetente: perfil?.nome || 'Usuário',
             mensagem: newMessage.trim()
           }
         ]);
 
       if (error) throw error;
       setNewMessage('');
-      // If PostgreSQL subscription didn't trigger, pull manually
       fetchMessages();
     } catch (err: any) {
       console.error('Erro ao enviar mensagem:', err.message || err);
@@ -407,7 +404,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               ) : (
                 messages.map((msg) => {
                   const isOwnMessage = msg.remetente_id === user?.id;
-                  const senderName = sendersMap[msg.remetente_id] || 'Carregando...';
+                  const senderName = msg.nome_remetente || sendersMap[msg.remetente_id] || 'Carregando...';
                   return (
                     <div 
                       key={msg.id} 

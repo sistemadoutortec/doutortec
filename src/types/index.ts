@@ -62,6 +62,7 @@ export interface MensagemChat {
   id: string; // UUID
   caso_id: string; // UUID referenciando casos
   remetente_id: string; // UUID referenciando perfis
+  nome_remetente?: string; // Nome do remetente salvo
   mensagem: string;
   anexos?: CasoAnexo[];
   created_at: string; // ISO Timestamp
