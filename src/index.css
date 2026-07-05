@@ -10,3 +10,16 @@
 *, *::before, *::after {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Suavização das bordas dos cards e divisores para o cinza claro institucional do STT */
+.border,
+.border-t,
+.border-b,
+.border-r,
+.border-l,
+.border-gray-100, 
+.border-gray-150, 
+.border-gray-200, 
+.border-gray-300 {
+  border-color: #e2e8f0 !important;
+}
