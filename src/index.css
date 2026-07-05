@@ -23,3 +23,64 @@
 .border-gray-300 {
   border-color: #b2c4d6 !important;
 }
+
+/* Substituição global de todas as classes violeta/indigo pelas cores da universidade (#002157 e #0b316d) */
+.text-indigo-500,
+.text-indigo-600,
+.text-indigo-700,
+.text-indigo-800,
+.text-violet-600,
+.text-violet-700 {
+  color: #002157 !important;
+}
+
+.hover\:text-indigo-500:hover,
+.hover\:text-indigo-600:hover,
+.hover\:text-indigo-700:hover,
+.hover\:text-indigo-800:hover,
+.hover\:text-indigo-900:hover {
+  color: #0b316d !important;
+}
+
+.bg-indigo-500,
+.bg-indigo-600,
+.bg-indigo-700,
+.bg-indigo-800,
+.bg-indigo-650,
+.bg-violet-500,
+.bg-violet-600 {
+  background-color: #002157 !important;
+}
+
+.hover\:bg-indigo-500:hover,
+.hover\:bg-indigo-600:hover,
+.hover\:bg-indigo-700:hover,
+.hover\:bg-indigo-800:hover,
+.hover\:bg-violet-600:hover,
+.hover\:bg-violet-700:hover {
+  background-color: #0b316d !important;
+}
+
+.bg-indigo-50,
+.bg-violet-50 {
+  background-color: #e8f3fc !important;
+}
+
+.border-indigo-100,
+.border-indigo-200,
+.border-indigo-300,
+.border-violet-100,
+.border-violet-200 {
+  border-color: #b2c4d6 !important;
+}
+
+.focus\:border-indigo-500:focus,
+.focus\:border-violet-500:focus {
+  border-color: #0b316d !important;
+}
+
+.focus\:ring-indigo-500:focus,
+.focus\:ring-violet-500:focus {
+  --tw-ring-color: #0b316d !important;
+}
+
