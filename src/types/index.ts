@@ -61,11 +61,11 @@ export interface Especialidade {
 export interface MensagemChat {
   id: string; // UUID
   caso_id: string; // UUID referenciando casos
-  remetente_id: string; // UUID referenciando perfis
+  perfil_id: string; // UUID referenciando perfis (nome da coluna do banco)
   nome_remetente?: string; // Nome do remetente salvo
-  mensagem: string;
+  texto: string; // Conteúdo da mensagem (nome da coluna do banco)
   anexos?: CasoAnexo[];
-  created_at: string; // ISO Timestamp
+  criado_em: string; // ISO Timestamp (nome da coluna do banco)
 }
 
 export interface HistoricoReatribuicao {

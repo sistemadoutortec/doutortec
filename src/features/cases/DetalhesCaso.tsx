@@ -42,7 +42,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
   // Fetch names of profiles in messages
   const fetchSenders = async (msgList: MensagemChat[]) => {
-    const senderIds = Array.from(new Set(msgList.map(m => m.remetente_id)));
+    const senderIds = Array.from(new Set(msgList.map(m => m.perfil_id)));
     if (senderIds.length === 0) return;
 
     try {
@@ -69,9 +69,9 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       setLoadingChat(true);
       const { data, error } = await supabase
         .from('mensagens_chat')
-        .select('id, caso_id, remetente_id, nome_remetente, mensagem, created_at')
+        .select('id, caso_id, perfil_id, nome_remetente, texto, criado_em')
         .eq('caso_id', currentCaso.id)
-        .order('created_at', { ascending: true });
+        .order('criado_em', { ascending: true });
 
       if (error) {
         console.warn('Erro ao carregar mensagens, simulando tabela vazia:', error.message);
@@ -105,15 +105,15 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             return [...prev, newMsg];
           });
           
-          if (!newMsg.nome_remetente && !sendersMap[newMsg.remetente_id]) {
+          if (!newMsg.nome_remetente && !sendersMap[newMsg.perfil_id]) {
             try {
               const { data } = await supabase
                 .from('perfis')
                 .select('nome')
-                .eq('id', newMsg.remetente_id)
+                .eq('id', newMsg.perfil_id)
                 .single();
               if (data) {
-                setSendersMap(prev => ({ ...prev, [newMsg.remetente_id]: data.nome }));
+                setSendersMap(prev => ({ ...prev, [newMsg.perfil_id]: data.nome }));
               }
             } catch (e) {
               console.error(e);
@@ -140,9 +140,9 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         .insert([
           {
             caso_id: currentCaso.id,
-            remetente_id: user.id,
+            perfil_id: user.id,
             nome_remetente: perfil?.nome || 'Usuário',
-            mensagem: newMessage.trim()
+            texto: newMessage.trim()
           }
         ]);
 
@@ -403,8 +403,8 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                 </div>
               ) : (
                 messages.map((msg) => {
-                  const isOwnMessage = msg.remetente_id === user?.id;
-                  const senderName = msg.nome_remetente || sendersMap[msg.remetente_id] || 'Carregando...';
+                  const isOwnMessage = msg.perfil_id === user?.id;
+                  const senderName = msg.nome_remetente || sendersMap[msg.perfil_id] || 'Carregando...';
                   return (
                     <div 
                       key={msg.id} 
@@ -416,10 +416,10 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                           ? 'bg-indigo-600 text-white rounded-tr-none' 
                           : 'bg-gray-100 text-gray-800 rounded-tl-none'
                       }`}>
-                        {msg.mensagem}
+                        {msg.texto}
                       </div>
                       <span className="text-[9px] text-gray-400 mt-0.5 px-1">
-                        {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   );
