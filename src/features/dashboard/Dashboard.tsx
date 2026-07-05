@@ -425,9 +425,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
             disabled={refreshing}
             title="Atualizar métricas"
             className="flex items-center gap-1.5 self-start rounded-lg border px-3 py-2 text-xs font-bold transition disabled:opacity-50 shrink-0"
-            style={{ borderColor: '#002157', color: '#002157', backgroundColor: 'transparent' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#002157'; e.currentTarget.style.color = '#white'; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#002157'; }}
+            style={{ borderColor: '#002157', color: '#002157', backgroundColor: '#ffffff' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#e8f3fc'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#ffffff'; }}
           >
             <RefreshCw
               className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
