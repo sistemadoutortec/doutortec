@@ -56,21 +56,24 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       style={{ background: 'linear-gradient(135deg, #0b1626 0%, #0b316d 70%, #002157 100%)' }}
     >
       <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
-        {/* LOGO PLACEHOLDER — substitua pelo <img src="..."> da sua logomarca */}
         <div className="flex flex-col items-center gap-3">
           <div
-            className="flex items-center justify-center rounded-xl"
-            style={{
-              width: 72,
-              height: 72,
-              backgroundColor: '#e8f3fc',
-              border: '2px dashed #002157',
-            }}
-            title="Substituir pela logomarca"
+            className="flex items-center justify-center rounded-2xl bg-[#e8f3fc] p-3.5"
+            style={{ width: 72, height: 72 }}
+            title="Doutortec Teleconsultoria"
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#002157" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M3 9h18M9 21V9" />
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Central Medical Cross */}
+              <rect x="10.5" y="4" width="3" height="16" rx="1.5" fill="#002157" />
+              <rect x="4" y="10.5" width="16" height="3" rx="1.5" fill="#002157" />
+              {/* Telehealth Connection Orbits/Waves */}
+              <path d="M19 8C20.5 9.5 21 11.5 21 13.5" stroke="#002157" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" />
+              <path d="M5 16C3.5 14.5 3 12.5 3 10.5" stroke="#002157" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" />
+              {/* Tech Node Points */}
+              <circle cx="12" cy="3" r="1.5" fill="#002157" />
+              <circle cx="21" cy="12" r="1.5" fill="#002157" />
+              <circle cx="12" cy="21" r="1.5" fill="#002157" />
+              <circle cx="3" cy="12" r="1.5" fill="#002157" />
             </svg>
           </div>
           <div className="text-center">
