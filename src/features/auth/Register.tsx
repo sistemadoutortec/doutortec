@@ -117,17 +117,20 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-lg space-y-8 rounded-2xl bg-white p-8 shadow-lg border border-gray-100">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-gray-900">
-            Cadastro Doutortec
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Solicite acesso à plataforma de teleinterconsulta
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-[#002157] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-lg space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
+        <div className="flex flex-col items-center gap-3">
+          <img src="/LogoAzul.png" alt="Doutortec" className="h-14 w-auto object-contain" />
+          <div className="text-center">
+            <h2 className="text-2xl font-black tracking-tight" style={{ color: '#002157' }}>
+              Cadastro Doutortec
+            </h2>
+            <p className="mt-1.5 text-sm font-medium text-gray-500" style={{ color: '#002157' }}>
+              Solicite acesso à plataforma de teleinterconsulta
+            </p>
+          </div>
         </div>
-        <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4 border border-red-200">
               <div className="flex">
@@ -194,7 +197,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2 text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
               >
                 <option value="solicitante">Solicitante (Clínico/Enfermeiro/Generalista)</option>
                 <option value="especialista">Especialista (Médico Especialista)</option>
@@ -217,7 +220,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
             </div>
 
             <div>
-              <label htmlFor="instituicao" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="instituicao" className="block text-sm font-medium text-gray-700 mb-1 whitespace-nowrap">
                 Instituição / Unidade de Saúde *
               </label>
               <input
@@ -300,7 +303,10 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              className="group relative flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#002157' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0b316d'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#002157'; }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -318,12 +324,15 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
         </form>
 
         {onSwitchToLogin && (
-          <div className="text-center mt-4">
+          <div className="text-center mt-4 border-t border-gray-100 pt-4">
             <button
               type="button"
               onClick={onSwitchToLogin}
               disabled={loading}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500 disabled:text-indigo-400"
+              className="text-sm font-semibold transition disabled:opacity-50"
+              style={{ color: '#002157' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#0b316d'}
+              onMouseLeave={e => e.currentTarget.style.color = '#002157'}
             >
               Já possui uma conta? Faça login
             </button>
