@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 :root {
-  --color-institucional: #0f2a54;
-  --color-institucional-hover: #1a3d6d;
-  --color-institucional-light: #e8eef7;
+  --color-institucional: #002157;
+  --color-institucional-hover: #0b316d;
+  --color-institucional-light: #e8f3fc;
 }
 
 *, *::before, *::after {

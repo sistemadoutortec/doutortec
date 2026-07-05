@@ -53,10 +53,10 @@ const MetricCardView: React.FC<{ card: MetricCard }> = ({ card }) => {
   if (isLoading) return <SkeletonCard />;
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-gray-150 shadow-xs flex flex-col justify-between group hover:shadow-sm transition-shadow duration-200">
+    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between group hover:shadow-sm transition-shadow duration-200">
       {/* Top row: label + icon */}
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider leading-snug">
+        <span className="text-xs font-semibold text-[#56657c] uppercase tracking-wider leading-snug">
           {card.label}
         </span>
         <span className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${card.bgClass}`}>
@@ -68,20 +68,20 @@ const MetricCardView: React.FC<{ card: MetricCard }> = ({ card }) => {
       <div className="mt-3">
         {isError ? (
           <div className="flex items-center gap-1.5">
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-semibold text-amber-600">Erro</span>
           </div>
         ) : (
-          <span className={`text-3xl font-extrabold tracking-tight ${card.colorClass}`}>
+          <span className="text-3xl font-extrabold tracking-tight text-[#002157]">
             {card.value}
           </span>
         )}
       </div>
 
-      {/* Sub-label */}
-      <span className="text-[10px] text-gray-400 mt-1 leading-relaxed">
+      {/* Sub-label as a mini-banner */}
+      <div className="mt-3 bg-[#e8f3fc] text-[#002157] px-2.5 py-1.5 rounded-lg font-bold text-[10px] leading-relaxed text-center">
         {card.sublabel}
-      </span>
+      </div>
     </div>
   );
 };
@@ -400,28 +400,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
     <div className="space-y-5">
       {/* ── Welcome Banner ─────────────────────────────────── */}
       <div
-        className="rounded-xl p-6 md:p-8 relative overflow-hidden"
-        style={{ backgroundColor: '#0f2a54' }}
+        className="rounded-xl p-6 md:p-8 relative overflow-hidden border border-[#b2c4d6]/50"
+        style={{ backgroundColor: '#e8f3fc' }}
       >
-        {/* Subtle background texture */}
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
-          }}
-        />
         <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">
+            <p className="text-[#56657c] text-xs font-bold uppercase tracking-widest mb-1.5">
               Sistema de Teleconsultoria Médica
             </p>
-            <h3 className="text-xl font-bold text-white tracking-tight">
+            <h3 className="text-xl font-bold tracking-tight" style={{ color: '#002157' }}>
               {panelTitle}
             </h3>
-            <p className="mt-2 text-sm max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            <p className="mt-2 text-sm max-w-2xl text-gray-700">
               Olá,{' '}
-              <strong className="text-white">{perfil?.nome}</strong>. Sua
+              <strong style={{ color: '#002157' }}>{perfil?.nome}</strong>. Sua
               conexão está ativa e você está pronto para gerenciar e responder
               interconsultas médicas com segurança.
             </p>
@@ -432,10 +424,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
             onClick={fetchMetrics}
             disabled={refreshing}
             title="Atualizar métricas"
-            className="flex items-center gap-1.5 self-start rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 shrink-0"
-            style={{ borderColor: 'rgba(255,255,255,0.25)', color: 'white', backgroundColor: 'rgba(255,255,255,0.1)' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+            className="flex items-center gap-1.5 self-start rounded-lg border px-3 py-2 text-xs font-bold transition disabled:opacity-50 shrink-0"
+            style={{ borderColor: '#002157', color: '#002157', backgroundColor: 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#002157'; e.currentTarget.style.color = '#white'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#002157'; }}
           >
             <RefreshCw
               className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
@@ -446,7 +438,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
 
         {/* Last updated timestamp */}
         {lastUpdated && (
-          <p className="relative mt-3 text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="relative mt-3 text-[10px] text-[#56657c]">
             Última atualização:{' '}
             {lastUpdated.toLocaleTimeString('pt-BR', {
               hour: '2-digit',
@@ -468,17 +460,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xs">
         <div className="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
           <div>
-            <h4 className="text-sm font-bold" style={{ color: '#0f2a54' }}>
+            <h4 className="text-sm font-extrabold" style={{ color: '#002157' }}>
               Casos Recentes
             </h4>
-            <p className="text-[10px] text-gray-400 mt-0.5">
+            <p className="text-[10px] text-[#56657c] mt-0.5">
               Últimas interconsultas registradas na plataforma
             </p>
           </div>
           <button
             onClick={() => onNavigate(casosTab)}
-            className="text-xs font-semibold transition"
-            style={{ color: '#0f2a54' }}
+            className="text-xs font-bold transition"
+            style={{ color: '#002157' }}
             onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >

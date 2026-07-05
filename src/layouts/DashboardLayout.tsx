@@ -98,25 +98,25 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const userInitials = perfil?.nome ? perfil.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col justify-between" style={{ backgroundColor: '#0f2a54' }}>
+    <div className="flex h-full flex-col justify-between" style={{ backgroundColor: '#0b1626' }}>
       {/* Logo Placeholder Area */}
       <div>
-        <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+        <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           <div className="flex items-center gap-3">
             {/* LOGO PLACEHOLDER — substitua esta div pela tag <img> com sua logomarca */}
             <div
               className="flex items-center justify-center rounded-lg"
-              style={{ width: 40, height: 40, backgroundColor: 'rgba(255,255,255,0.15)', border: '1.5px dashed rgba(255,255,255,0.4)' }}
+              style={{ width: 40, height: 40, backgroundColor: 'rgba(255,255,255,0.1)', border: '1.5px dashed rgba(255,255,255,0.3)' }}
               title="Substituir pela logomarca"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M3 9h18M9 21V9" />
               </svg>
             </div>
             <div>
               <span className="text-white font-bold text-base tracking-tight">Doutortec</span>
-              <p className="text-white/50 text-[9px] uppercase tracking-widest leading-none mt-0.5">Teleconsultoria</p>
+              <p className="text-white/40 text-[9px] uppercase tracking-widest leading-none mt-0.5">Teleconsultoria</p>
             </div>
           </div>
           <button
@@ -128,12 +128,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
 
         <div className="px-4 pt-5 pb-2">
-          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
             Navegação
           </p>
         </div>
 
-        <nav className="px-3 space-y-0.5">
+        <nav className="px-3 space-y-1">
           {menuLinks.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -144,14 +144,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     setActiveTab(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
                     isActive
                       ? 'text-white border-l-4 border-white pl-2'
-                      : 'text-white/65 hover:text-white hover:bg-white/8 border-l-4 border-transparent pl-2'
+                      : 'text-white/60 hover:text-white hover:bg-white/5 border-l-4 border-transparent pl-2'
                   }`}
-                  style={isActive ? { backgroundColor: 'rgba(255,255,255,0.15)' } : undefined}
+                  style={isActive ? { backgroundColor: '#0b316d' } : undefined}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-white/50'}`} />
+                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-white/40'}`} />
                   {item.label}
                   {item.id === 'notificacoes' && unreadCount > 0 && (
                     <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
@@ -229,7 +229,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h2 className="text-base font-bold tracking-tight" style={{ color: '#0f2a54' }}>
+            <h2 className="text-base font-extrabold tracking-tight" style={{ color: '#002157' }}>
               {menuLinks.find(link => link.id === activeTab)?.label || 'Doutortec'}
             </h2>
           </div>
@@ -239,7 +239,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <button 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
               className="relative rounded-lg p-1.5 transition hover:bg-gray-100"
-              style={{ color: '#0f2a54' }}
+              style={{ color: '#002157' }}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
@@ -271,7 +271,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </header>
 
         {/* Central Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8" style={{ backgroundColor: '#f0f4f8' }}>
+        <main className="flex-1 overflow-y-auto p-4 md:p-8" style={{ backgroundColor: '#f4f6f8' }}>
           {children}
         </main>
       </div>

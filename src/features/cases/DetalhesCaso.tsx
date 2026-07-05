@@ -244,14 +244,14 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   return (
     <div className="space-y-5 max-w-7xl mx-auto">
       {/* STT-style info disclaimer banner */}
-      <div className="flex items-start gap-3 rounded-lg p-3 text-sm" style={{ backgroundColor: '#e8f0fb', border: '1px solid #c8d8f0' }}>
+      <div className="flex items-start gap-3 rounded-lg p-3.5 text-sm" style={{ backgroundColor: '#e8f3fc', border: '1px solid #b2c4d6' }}>
         <div
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-bold mt-0.5"
-          style={{ backgroundColor: '#0f2a54' }}
+          style={{ backgroundColor: '#002157' }}
         >
           i
         </div>
-        <p style={{ color: '#0f2a54' }} className="text-xs leading-relaxed">
+        <p style={{ color: '#002157' }} className="text-xs leading-relaxed font-semibold">
           O apoio oferecido por meio da teleconsultoria contempla sugestões de manejo dadas pelo teleconsultor, com base em evidências científicas, a partir do detalhamento do caso/situação pelo profissional solicitante. A tomada de decisão junto ao paciente ou equipe caberá ao profissional.
         </p>
       </div>
@@ -260,8 +260,8 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-semibold transition"
-          style={{ color: '#0f2a54' }}
+          className="inline-flex items-center gap-2 text-sm font-extrabold transition"
+          style={{ color: '#002157' }}
           onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
@@ -270,11 +270,11 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         </button>
 
         <div className="flex items-center gap-2.5">
-          <span className="text-[10px] text-gray-400 font-mono">ID: #{currentCaso.id.substring(0, 8)}</span>
+          <span className="text-[10px] text-[#56657c] font-mono">ID: #{currentCaso.id.substring(0, 8)}</span>
           <span className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${getPriorityColor(currentCaso.prioridade)}`}>
             {currentCaso.prioridade.toUpperCase()}
           </span>
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-gray-100 border border-gray-200 text-gray-700">
+          <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-gray-100 border border-gray-200 text-[#56657c]">
             {getStatusLabel(currentCaso.status)}
           </span>
         </div>
@@ -297,35 +297,35 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl border border-gray-200 space-y-0 shadow-xs overflow-hidden">
             {/* Prontuário-style title header */}
-            <div className="px-6 py-4 border-b border-gray-100" style={{ backgroundColor: '#f7f9fc' }}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Solicitação de Teleconsultoria</p>
-              <h3 className="text-lg font-bold" style={{ color: '#0f2a54' }}>{currentCaso.paciente_nome}</h3>
+            <div className="px-6 py-4 border-b border-gray-150" style={{ backgroundColor: '#e8f3fc' }}>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-[#56657c] mb-0.5">Solicitação de Teleconsultoria</p>
+              <h3 className="text-xl font-black" style={{ color: '#002157' }}>{currentCaso.paciente_nome}</h3>
               <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-xs">
                 <span>
-                  <span className="font-bold" style={{ color: '#0f2a54' }}>Data da solicitação: </span>
-                  <span className="text-gray-600">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
+                  <span className="font-bold" style={{ color: '#002157' }}>Data da solicitação: </span>
+                  <span className="text-[#56657c] font-medium">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
                 </span>
               </div>
             </div>
 
             <div className="p-6 space-y-5">
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0f2a54' }}>Histórico Clínico</h4>
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #0f2a54', backgroundColor: '#f7f9fc', borderRadius: '0 6px 6px 0' }}>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#002157' }}>Histórico Clínico</h4>
+                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
                   {currentCaso.historico_clinico}
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0f2a54' }}>Conduta Atual</h4>
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #0f2a54', backgroundColor: '#f7f9fc', borderRadius: '0 6px 6px 0' }}>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#002157' }}>Conduta Atual</h4>
+                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
                   {currentCaso.conduta_atual}
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0f2a54' }}>Dúvida Clínica</h4>
-                <div className="text-sm leading-relaxed font-medium whitespace-pre-wrap p-4 rounded-lg" style={{ backgroundColor: '#e0f0fb', border: '1px solid #b3d4f0', color: '#0c3050' }}>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#002157' }}>Dúvida Clínica</h4>
+                <div className="text-sm leading-relaxed font-bold whitespace-pre-wrap p-4 rounded-lg border" style={{ backgroundColor: '#e8f3fc', borderColor: '#b2c4d6', color: '#002157' }}>
                   {currentCaso.duvida_clinica}
                 </div>
               </div>
@@ -389,7 +389,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
           {/* Chat Box */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-xs flex flex-col h-[500px] overflow-hidden flex-1">
-            <div className="p-3.5 border-b border-gray-100 flex items-center gap-2" style={{ backgroundColor: '#0f2a54' }}>
+            <div className="p-3.5 border-b border-gray-100 flex items-center gap-2" style={{ backgroundColor: '#002157' }}>
               <Clock className="h-4 w-4 text-white/70" />
               <span className="text-xs font-bold text-white">Chat de Interconsulta</span>
             </div>

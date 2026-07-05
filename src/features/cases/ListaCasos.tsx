@@ -283,26 +283,28 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filteredCasos.map((caso) => {
+          {filteredCasos.map((caso, idx) => {
             const sla = formatSLA(caso.sla_limite || new Date(new Date(caso.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString(), caso.status);
+            const isEven = idx % 2 === 0;
             return (
               <div 
                 key={caso.id} 
                 onClick={() => onSelectCaso?.(caso)}
-                className={`bg-white rounded-xl border border-gray-150 p-5 transition duration-150 flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${
-                  onSelectCaso ? 'cursor-pointer hover:border-indigo-300 hover:shadow-xs' : ''
+                className={`rounded-xl border p-5 transition duration-150 flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${
+                  onSelectCaso ? 'cursor-pointer hover:border-blue-400 hover:shadow-xs' : ''
                 }`}
+                style={{ backgroundColor: isEven ? '#white' : 'rgba(232, 243, 252, 0.4)' }}
               >
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-mono text-gray-400">ID: #{caso.id.substring(0, 8)}</span>
+                    <span className="text-[10px] font-mono text-[#56657c]">ID: #{caso.id.substring(0, 8)}</span>
                     {getStatusBadge(caso.status)}
                     {getPriorityBadge(caso.prioridade)}
                   </div>
                   
-                  <h4 className="text-base font-bold text-gray-900">{caso.paciente_nome}</h4>
+                  <h4 className="text-base font-extrabold" style={{ color: '#002157' }}>{caso.paciente_nome}</h4>
                   
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#56657c]">
                     <span className="flex items-center gap-1">
                       <Activity className="h-3.5 w-3.5" />
                       Especialidade: {specialtiesMap[caso.especialidade_id] || 'Carregando...'}
@@ -315,7 +317,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
                 </div>
 
                 <div className="flex flex-col items-start md:items-end gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-[#56657c]">
                     Criado em: {new Date(caso.created_at).toLocaleDateString('pt-BR')}
                   </div>
                   

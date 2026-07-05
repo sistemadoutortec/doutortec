@@ -163,17 +163,17 @@ function App() {
         <div className="space-y-5">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Sistema de Teleconsultoria</p>
-              <h3 className="text-lg font-bold" style={{ color: '#0f2a54' }}>Casos Clínicos</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Histórico completo e andamento das interconsultas solicitadas</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#56657c] mb-0.5">Sistema de Teleconsultoria</p>
+              <h3 className="text-lg font-bold" style={{ color: '#002157' }}>Casos Clínicos</h3>
+              <p className="text-xs text-[#56657c] mt-0.5">Histórico completo e andamento das interconsultas solicitadas</p>
             </div>
             {perfil?.role === 'solicitante' && (
               <button
                 onClick={() => handleTabChange('criar-caso')}
                 className="rounded-lg px-4.5 py-2.5 text-xs font-bold text-white transition shadow-sm flex items-center gap-1"
-                style={{ backgroundColor: '#0f2a54' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a3d6d'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0f2a54'}
+                style={{ backgroundColor: '#0b316d' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#002157'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0b316d'}
               >
                 + Novo Caso Clínico
               </button>

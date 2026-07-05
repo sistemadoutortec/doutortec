@@ -53,7 +53,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
   return (
     <div
       className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
-      style={{ background: 'linear-gradient(135deg, #0f2a54 0%, #1a3d6d 60%, #0c2040 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #0b1626 0%, #0b316d 70%, #002157 100%)' }}
     >
       <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
         {/* LOGO PLACEHOLDER — substitua pelo <img src="..."> da sua logomarca */}
@@ -63,21 +63,21 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
             style={{
               width: 72,
               height: 72,
-              backgroundColor: '#e8eef7',
-              border: '2px dashed #0f2a54',
+              backgroundColor: '#e8f3fc',
+              border: '2px dashed #002157',
             }}
             title="Substituir pela logomarca"
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0f2a54" strokeWidth="1.5">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#002157" strokeWidth="1.5">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <path d="M3 9h18M9 21V9" />
             </svg>
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: '#0f2a54' }}>
+            <h2 className="text-2xl font-black tracking-tight" style={{ color: '#002157' }}>
               Doutortec
             </h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-[#56657c] font-semibold">
               Rede de Teleconsultoria Médica
             </p>
           </div>
@@ -91,7 +91,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
           )}
           <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label htmlFor="email-address" className="block text-sm font-bold text-gray-700 mb-1.5">
                 Endereço de e-mail
               </label>
               <input
@@ -104,14 +104,14 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                style={{ '--tw-ring-color': '#0f2a54' } as React.CSSProperties}
-                onFocus={e => { e.target.style.borderColor = '#0f2a54'; e.target.style.boxShadow = '0 0 0 2px rgba(15,42,84,0.15)'; }}
+                style={{ '--tw-ring-color': '#0b316d' } as React.CSSProperties}
+                onFocus={e => { e.target.style.borderColor = '#0b316d'; e.target.style.boxShadow = '0 0 0 2px rgba(11,49,109,0.15)'; }}
                 onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                 placeholder="exemplo@doutortec.com.br"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">
                 Senha
               </label>
               <input
@@ -124,7 +124,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                onFocus={e => { e.target.style.borderColor = '#0f2a54'; e.target.style.boxShadow = '0 0 0 2px rgba(15,42,84,0.15)'; }}
+                onFocus={e => { e.target.style.borderColor = '#0b316d'; e.target.style.boxShadow = '0 0 0 2px rgba(11,49,109,0.15)'; }}
                 onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                 placeholder="Digite sua senha"
               />
@@ -136,9 +136,9 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
               type="submit"
               disabled={loading}
               className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#0f2a54' }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#1a3d6d'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0f2a54'; }}
+              style={{ backgroundColor: '#002157' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0b316d'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#002157'; }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -161,10 +161,10 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
               type="button"
               onClick={onSwitchToRegister}
               disabled={loading}
-              className="text-sm font-medium transition disabled:opacity-50"
-              style={{ color: '#0f2a54' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#1a3d6d'}
-              onMouseLeave={e => e.currentTarget.style.color = '#0f2a54'}
+              className="text-sm font-semibold transition disabled:opacity-50"
+              style={{ color: '#002157' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#0b316d'}
+              onMouseLeave={e => e.currentTarget.style.color = '#002157'}
             >
               Ainda não tem conta? Cadastre-se
             </button>
