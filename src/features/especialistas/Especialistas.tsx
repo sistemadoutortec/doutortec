@@ -222,11 +222,28 @@ export const Especialistas: React.FC = () => {
       });
 
       setFluxos(composed);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-      console.error('Erro ao carregar fluxos:', msg);
+    } catch (err: any) {
+      console.error('Erro ao carregar fluxos:', err);
+      let colunasExistentes = '';
+      try {
+        // Tenta obter as colunas da tabela via RPC de schema do Supabase/PostgREST
+        const { data: schemaInfo } = await supabase
+          .from('fluxos_especialidades')
+          .select()
+          .limit(1);
+        if (schemaInfo && schemaInfo.length > 0) {
+          colunasExistentes = ` Colunas encontradas: [${Object.keys(schemaInfo[0]).join(', ')}]`;
+        } else {
+          // Se a tabela estiver vazia, tenta obter via select vazio
+          colunasExistentes = ' (Tabela vazia ou sem registros)';
+        }
+      } catch (schemaErr) {
+        colunasExistentes = ' (Não foi possível ler as colunas)';
+      }
+
+      const errMsg = err?.message || err?.details || 'Erro de rede ou permissão.';
       setListError(
-        'Não foi possível carregar os fluxos. Verifique se as tabelas "fluxos_especialidades" e "fluxos_especialidades_municipios" existem no Supabase.',
+        `Não foi possível carregar os fluxos. Detalhe técnico: ${errMsg}.${colunasExistentes}`
       );
     } finally {
       setListLoading(false);

@@ -147,34 +147,42 @@ function App() {
     }
 
     // 1. Create clinical case (exclusive to Solicitante)
-    if (perfil?.role === 'solicitante' && activeTab === 'casos') {
+    if (activeTab === 'criar-caso' && perfil?.role === 'solicitante') {
       return (
         <CriarCaso
-          onSuccess={() => handleTabChange('meus-casos')}
-          onCancel={() => handleTabChange('dashboard')}
+          onSuccess={() => handleTabChange('casos')}
+          onCancel={() => handleTabChange('casos')}
+          onNavigateToPacientes={() => handleTabChange('pacientes')}
         />
       );
     }
 
-    // 2. Cases list tab (applicable to both Solicitante and Especialista)
-    if (activeTab === 'meus-casos' || (perfil?.role === 'especialista' && activeTab === 'casos')) {
+    // 2. Cases list tab (applicable to all approved roles)
+    if (activeTab === 'casos' || activeTab === 'meus-casos') {
       return (
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl border border-gray-150 shadow-xs">
+        <div className="space-y-5">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Casos Clínicos</h3>
-              <p className="text-xs text-gray-500">Histórico completo e andamento das interconsultas solicitadas</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Sistema de Teleconsultoria</p>
+              <h3 className="text-lg font-bold" style={{ color: '#0f2a54' }}>Casos Clínicos</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Histórico completo e andamento das interconsultas solicitadas</p>
             </div>
             {perfil?.role === 'solicitante' && (
               <button
-                onClick={() => handleTabChange('casos')}
-                className="rounded-lg bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-xs font-semibold text-white transition"
+                onClick={() => handleTabChange('criar-caso')}
+                className="rounded-lg px-4.5 py-2.5 text-xs font-bold text-white transition shadow-sm flex items-center gap-1"
+                style={{ backgroundColor: '#0f2a54' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a3d6d'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0f2a54'}
               >
-                Solicitar Nova Interconsulta
+                + Novo Caso Clínico
               </button>
             )}
           </div>
-          <ListaCasos onSelectCaso={(caso) => setSelectedCaso(caso)} />
+          <ListaCasos
+            onSelectCaso={(caso) => setSelectedCaso(caso)}
+            onCreateCaso={perfil?.role === 'solicitante' ? () => handleTabChange('criar-caso') : undefined}
+          />
         </div>
       );
     }
@@ -240,10 +248,11 @@ function App() {
 
     // Default simulation content for other tabs (Financeiro, Ranking, etc.)
     return (
-      <div className="rounded-2xl bg-white p-8 shadow-xs border border-gray-150">
-        <h3 className="text-xl font-bold text-gray-900">Módulo de {activeTab}</h3>
+      <div className="rounded-xl bg-white p-8 shadow-xs border border-gray-200">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Sistema de Teleconsultoria</p>
+        <h3 className="text-lg font-bold" style={{ color: '#0f2a54' }}>Módulo de {activeTab}</h3>
         <p className="mt-2 text-sm text-gray-500">
-          A interface para o módulo de <strong className="text-indigo-600 uppercase">{activeTab}</strong> será construída nas próximas etapas funcionais da nossa plataforma SaaS.
+          A interface para o módulo de <strong style={{ color: '#0f2a54' }} className="uppercase">{activeTab}</strong> será construída nas próximas etapas funcionais da plataforma.
         </p>
       </div>
     );

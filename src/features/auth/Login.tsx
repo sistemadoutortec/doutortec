@@ -51,28 +51,48 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-lg border border-gray-100">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-gray-900">
-            Doutortec
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Plataforma SaaS de Teleinterconsulta Médica
-          </p>
+    <div
+      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+      style={{ background: 'linear-gradient(135deg, #0f2a54 0%, #1a3d6d 60%, #0c2040 100%)' }}
+    >
+      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
+        {/* LOGO PLACEHOLDER — substitua pelo <img src="..."> da sua logomarca */}
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="flex items-center justify-center rounded-xl"
+            style={{
+              width: 72,
+              height: 72,
+              backgroundColor: '#e8eef7',
+              border: '2px dashed #0f2a54',
+            }}
+            title="Substituir pela logomarca"
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0f2a54" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: '#0f2a54' }}>
+              Doutortec
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Rede de Teleconsultoria Médica
+            </p>
+          </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+        <form className="space-y-5" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4 border border-red-200">
-              <div className="flex">
-                <div className="text-sm text-red-700">{error}</div>
-              </div>
+            <div className="rounded-lg bg-red-50 p-3 border border-red-200">
+              <div className="text-sm text-red-700">{error}</div>
             </div>
           )}
-          <div className="space-y-4 rounded-md shadow-xs">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">
-                Endereço de e-mail *
+              <label htmlFor="email-address" className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Endereço de e-mail
               </label>
               <input
                 id="email-address"
@@ -83,13 +103,16 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 disabled={loading}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="relative block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                style={{ '--tw-ring-color': '#0f2a54' } as React.CSSProperties}
+                onFocus={e => { e.target.style.borderColor = '#0f2a54'; e.target.style.boxShadow = '0 0 0 2px rgba(15,42,84,0.15)'; }}
+                onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                 placeholder="exemplo@doutortec.com.br"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Senha *
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Senha
               </label>
               <input
                 id="password"
@@ -100,7 +123,9 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 disabled={loading}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="relative block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                onFocus={e => { e.target.style.borderColor = '#0f2a54'; e.target.style.boxShadow = '0 0 0 2px rgba(15,42,84,0.15)'; }}
+                onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                 placeholder="Digite sua senha"
               />
             </div>
@@ -110,7 +135,10 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#0f2a54' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#1a3d6d'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0f2a54'; }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -121,19 +149,22 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                   Autenticando...
                 </span>
               ) : (
-                'Entrar'
+                'Entrar no Sistema'
               )}
             </button>
           </div>
         </form>
 
         {onSwitchToRegister && (
-          <div className="text-center mt-4">
+          <div className="text-center border-t border-gray-100 pt-4">
             <button
               type="button"
               onClick={onSwitchToRegister}
               disabled={loading}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500 disabled:text-indigo-400"
+              className="text-sm font-medium transition disabled:opacity-50"
+              style={{ color: '#0f2a54' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#1a3d6d'}
+              onMouseLeave={e => e.currentTarget.style.color = '#0f2a54'}
             >
               Ainda não tem conta? Cadastre-se
             </button>
@@ -143,3 +174,4 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
     </div>
   );
 };
+

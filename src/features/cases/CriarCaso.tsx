@@ -1,22 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import type { CasoPrioridade } from '../../types';
 import { UploadArquivos } from '../documents/UploadArquivos';
 import type { UploadedFileMetadata } from '../documents/UploadArquivos';
+import { AlertCircle, ChevronDown, UserPlus } from 'lucide-react';
 
 interface EspecialidadeOption {
   id: string;
   nome: string;
 }
 
+interface PacienteOption {
+  id: string;
+  nome: string;
+  cpf: string;
+}
+
 interface CriarCasoProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  onNavigateToPacientes?: () => void;
 }
 
-export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => {
+export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNavigateToPacientes }) => {
   const { user } = useAuth();
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Form fields
   const [pacienteNome, setPacienteNome] = useState('');
@@ -31,9 +40,29 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => 
   // Status states
   const [especialidades, setEspecialidades] = useState<EspecialidadeOption[]>([]);
   const [loadingEspecialidades, setLoadingEspecialidades] = useState(true);
+  
+  // Patients states
+  const [pacientes, setPacientes] = useState<PacienteOption[]>([]);
+  const [loadingPacientes, setLoadingPacientes] = useState(true);
+  const [searchPatient, setSearchPatient] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch specialties
   useEffect(() => {
@@ -60,6 +89,28 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => 
     fetchEspecialidades();
   }, []);
 
+  // Fetch patients
+  useEffect(() => {
+    const fetchPacientes = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('pacientes')
+          .select('id, nome, cpf')
+          .order('nome', { ascending: true });
+
+        if (fetchError) throw fetchError;
+        setPacientes(data || []);
+      } catch (err: any) {
+        console.error('Erro ao buscar pacientes:', err.message || err);
+        setError('Não foi possível carregar os pacientes.');
+      } finally {
+        setLoadingPacientes(false);
+      }
+    };
+
+    fetchPacientes();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -75,17 +126,21 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => 
       return;
     }
 
+    const patientExists = pacientes.some(p => p.nome.toLowerCase() === pacienteNome.toLowerCase());
+    if (!patientExists) {
+      setError('Por favor, selecione um paciente válido cadastrado no sistema.');
+      return;
+    }
+
     if (!aceitouTermos) {
       setError('Você deve aceitar a responsabilidade e conformidade legal para enviar o caso.');
       return;
     }
 
-    // Determine SLA hours based on priority
-    let slaHoras = 24;
-    if (prioridade === 'baixa') slaHoras = 48;
-    if (prioridade === 'alta') slaHoras = 4;
-
-    const slaLimite = new Date(Date.now() + slaHoras * 60 * 60 * 1000).toISOString();
+    // Check attachments (ready for future database column integration)
+    if (anexos.length > 0) {
+      console.log('Anexos selecionados para envio futuro:', anexos);
+    }
 
     setSubmitting(true);
     try {
@@ -100,35 +155,11 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => 
             conduta_atual: condutaAtual.trim(),
             duvida_clinica: duvidaClinica.trim(),
             solicitante_id: user.id,
-            status: 'novo',
-            sla_horas: slaHoras,
-            sla_limite: slaLimite,
-            // Try inserting the attachments metadata
-            anexos: anexos
+            status: 'novo'
           }
         ]);
 
-      if (insertError) {
-        // Fallback in case column is not named 'anexos' in their pre-created schema
-        console.warn('Erro ao inserir com coluna "anexos", tentando fallback sem coluna de anexos:', insertError.message);
-        const { error: fallbackError } = await supabase
-          .from('casos')
-          .insert([
-            {
-              paciente_nome: pacienteNome.trim(),
-              especialidade_id: especialidadeId,
-              prioridade,
-              historico_clinico: historicoClinico.trim(),
-              conduta_atual: condutaAtual.trim(),
-              duvida_clinica: duvidaClinica.trim(),
-              solicitante_id: user.id,
-              status: 'novo',
-              sla_horas: slaHoras,
-              sla_limite: slaLimite
-            }
-          ]);
-        if (fallbackError) throw fallbackError;
-      }
+      if (insertError) throw insertError;
 
       setSuccess(true);
       // Reset form
@@ -151,6 +182,11 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => 
       setSubmitting(false);
     }
   };
+
+  const filteredPacientes = pacientes.filter(p =>
+    p.nome.toLowerCase().includes(searchPatient.toLowerCase()) ||
+    (p.cpf && p.cpf.replace(/\D/g, '').includes(searchPatient.replace(/\D/g, '')))
+  );
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-gray-150 p-6 md:p-8 shadow-xs">
@@ -187,20 +223,101 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel }) => 
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          <div className="relative" ref={dropdownRef}>
             <label htmlFor="paciente" className="block text-sm font-semibold text-gray-700 mb-1">
-              Nome do Paciente *
+              Paciente *
             </label>
-            <input
-              id="paciente"
-              type="text"
-              required
-              disabled={submitting}
-              value={pacienteNome}
-              onChange={(e) => setPacienteNome(e.target.value)}
-              placeholder="Nome completo do paciente"
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
-            />
+            {loadingPacientes ? (
+              <div className="block w-full py-2.5 px-3 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-300">
+                Carregando pacientes...
+              </div>
+            ) : pacientes.length === 0 ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-700 flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                  Nenhum paciente cadastrado
+                </div>
+                <div>Você precisa cadastrar um paciente antes de solicitar uma interconsulta.</div>
+                {onNavigateToPacientes && (
+                  <button
+                    type="button"
+                    onClick={onNavigateToPacientes}
+                    className="self-start mt-1 flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 transition"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Cadastrar Paciente Agora
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="relative">
+                  <input
+                    id="paciente"
+                    type="text"
+                    required
+                    disabled={submitting}
+                    value={searchPatient}
+                    onChange={(e) => {
+                      setSearchPatient(e.target.value);
+                      setIsDropdownOpen(true);
+                      const match = pacientes.find(p => p.nome.toLowerCase() === e.target.value.toLowerCase());
+                      if (match) {
+                        setPacienteNome(match.nome);
+                      } else {
+                        setPacienteNome('');
+                      }
+                    }}
+                    onFocus={() => setIsDropdownOpen(true)}
+                    placeholder="Buscar ou selecionar paciente..."
+                    className="block w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {isDropdownOpen && (
+                  <div className="absolute z-30 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg text-sm">
+                    {filteredPacientes.length === 0 ? (
+                      <div className="px-4 py-2 text-gray-500 text-xs flex flex-col gap-2">
+                        <span>Nenhum paciente encontrado.</span>
+                        {onNavigateToPacientes && (
+                          <button
+                            type="button"
+                            onClick={onNavigateToPacientes}
+                            className="self-start flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 transition"
+                          >
+                            <UserPlus className="h-3.5 w-3.5" />
+                            Cadastrar Novo Paciente
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      filteredPacientes.map((pac) => (
+                        <button
+                          key={pac.id}
+                          type="button"
+                          onClick={() => {
+                            setPacienteNome(pac.nome);
+                            setSearchPatient(pac.nome);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="flex w-full flex-col px-4 py-2 text-left hover:bg-indigo-50 transition-colors"
+                        >
+                          <span className="font-semibold text-gray-900">{pac.nome}</span>
+                          {pac.cpf && <span className="text-[10px] text-gray-500">CPF: {pac.cpf}</span>}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

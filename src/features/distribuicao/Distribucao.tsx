@@ -205,14 +205,15 @@ export const Distribucao: React.FC = () => {
 
     try {
       // Fetch unassigned new cases
+      // Buscamos apenas os campos estruturais obrigatórios para garantir compatibilidade
       const { data: casosData, error: casosError } = await supabase
         .from('casos')
         .select(
-          'id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, updated_at, respondido_em, fechado_em, sla_horas, sla_limite',
+          'id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at'
         )
         .eq('status', 'novo')
         .is('especialista_id', null)
-        .order('sla_limite', { ascending: true }); // oldest SLA first
+        .order('created_at', { ascending: true }); // oldest first como fallback robusto
 
       if (casosError) throw casosError;
 
@@ -238,23 +239,27 @@ export const Distribucao: React.FC = () => {
         };
       });
 
-      const enriched: CasoNaFila[] = (casosData as CasoClinico[]).map((c) => {
-        const slaStatus = computeSla(c.sla_limite);
+      const enriched: CasoNaFila[] = (casosData as any[]).map((c) => {
+        // Fallback seguro caso o banco de dados não possua a coluna sla_limite
+        const limite = c.sla_limite || new Date(new Date(c.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString();
+        const slaStatus = computeSla(limite);
         return {
           ...c,
           especialidadeNome: specialtiesMap[c.especialidade_id] ?? '—',
           solicitanteInfo: solMap[c.solicitante_id],
           slaStatus,
-          slaLabel: formatSlaLabel(c.sla_limite, slaStatus),
+          slaLabel: formatSlaLabel(limite, slaStatus),
+          sla_horas: c.sla_horas ?? 24,
+          sla_limite: limite,
         };
       });
 
       setQueue(enriched);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-      console.error('Erro ao carregar fila de distribuição:', msg);
+    } catch (err: any) {
+      const errMsg = err?.message || err?.details || 'Erro de rede ou permissão.';
+      console.error('Erro ao carregar fila de distribuição:', err);
       setQueueError(
-        'Não foi possível carregar a fila. Verifique a conexão com o Supabase.',
+        `Não foi possível carregar a fila. Detalhe técnico: ${errMsg}`
       );
     } finally {
       setQueueLoading(false);
@@ -368,7 +373,6 @@ export const Distribucao: React.FC = () => {
         .update({
           especialista_id: selectedEspId,
           status: 'em_progresso',
-          updated_at: new Date().toISOString(),
         })
         .eq('id', selectedCaso.id);
 

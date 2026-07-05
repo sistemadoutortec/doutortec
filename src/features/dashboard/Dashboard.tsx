@@ -397,17 +397,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
   // Render
   // ─────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* ── Welcome Banner ─────────────────────────────────── */}
-      <div className="rounded-2xl bg-white p-6 md:p-8 shadow-xs border border-gray-150">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div
+        className="rounded-xl p-6 md:p-8 relative overflow-hidden"
+        style={{ backgroundColor: '#0f2a54' }}
+      >
+        {/* Subtle background texture */}
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
+            backgroundSize: '40px 40px'
+          }}
+        />
+        <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">
+              Sistema de Teleconsultoria Médica
+            </p>
+            <h3 className="text-xl font-bold text-white tracking-tight">
               {panelTitle}
             </h3>
-            <p className="mt-2 text-sm text-gray-600 max-w-2xl">
+            <p className="mt-2 text-sm max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
               Olá,{' '}
-              <strong className="text-gray-900">{perfil?.nome}</strong>. Sua
+              <strong className="text-white">{perfil?.nome}</strong>. Sua
               conexão está ativa e você está pronto para gerenciar e responder
               interconsultas médicas com segurança.
             </p>
@@ -418,7 +432,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
             onClick={fetchMetrics}
             disabled={refreshing}
             title="Atualizar métricas"
-            className="flex items-center gap-1.5 self-start rounded-lg border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 transition disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 self-start rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 shrink-0"
+            style={{ borderColor: 'rgba(255,255,255,0.25)', color: 'white', backgroundColor: 'rgba(255,255,255,0.1)' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
           >
             <RefreshCw
               className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
@@ -429,7 +446,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
 
         {/* Last updated timestamp */}
         {lastUpdated && (
-          <p className="mt-3 text-[10px] text-gray-400">
+          <p className="relative mt-3 text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Última atualização:{' '}
             {lastUpdated.toLocaleTimeString('pt-BR', {
               hour: '2-digit',
@@ -443,16 +460,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
       {/* ── Metrics Grid ───────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.length === 0
-          ? // Initial skeleton render before templates are set
-            Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+          ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
           : metrics.map((card, i) => <MetricCardView key={i} card={card} />)}
       </div>
 
       {/* ── Recent Cases ───────────────────────────────────── */}
-      <div className="bg-white p-6 rounded-xl border border-gray-150 shadow-xs">
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xs">
         <div className="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
           <div>
-            <h4 className="text-sm font-semibold text-gray-900">
+            <h4 className="text-sm font-bold" style={{ color: '#0f2a54' }}>
               Casos Recentes
             </h4>
             <p className="text-[10px] text-gray-400 mt-0.5">
@@ -461,7 +477,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
           </div>
           <button
             onClick={() => onNavigate(casosTab)}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 transition"
+            className="text-xs font-semibold transition"
+            style={{ color: '#0f2a54' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
             Ver todos →
           </button>

@@ -8,9 +8,10 @@ interface ListaCasosProps {
   limit?: number;
   showFilters?: boolean;
   onSelectCaso?: (caso: CasoClinico) => void;
+  onCreateCaso?: () => void;
 }
 
-export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters = true, onSelectCaso }) => {
+export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters = true, onSelectCaso, onCreateCaso }) => {
   const { user, perfil } = useAuth();
   
   // State
@@ -64,7 +65,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       
       let query = supabase
         .from('casos')
-        .select('id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, updated_at, respondido_em, fechado_em, sla_horas, sla_limite')
+        .select('id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -271,11 +272,19 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
           <HelpCircle className="h-10 w-10 text-gray-400 mb-2" />
           <p className="text-sm font-semibold text-gray-900">Nenhum caso clínico encontrado</p>
           <p className="text-xs text-gray-500 mt-1">Experimente alterar os filtros ou cadastrar um novo caso.</p>
+          {onCreateCaso && (
+            <button
+              onClick={onCreateCaso}
+              className="mt-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-xs font-semibold text-white transition shadow-xs"
+            >
+              + Novo Caso Clínico
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredCasos.map((caso) => {
-            const sla = formatSLA(caso.sla_limite, caso.status);
+            const sla = formatSLA(caso.sla_limite || new Date(new Date(caso.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString(), caso.status);
             return (
               <div 
                 key={caso.id} 

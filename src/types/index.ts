@@ -47,8 +47,8 @@ export interface CasoClinico {
   updated_at?: string; // ISO Timestamp
   respondido_em?: string; // ISO Timestamp (data de resposta do especialista)
   fechado_em?: string; // ISO Timestamp
-  sla_horas: number; // SLA acordado em horas para a prioridade/caso
-  sla_limite: string; // ISO Timestamp calculada de limite para resposta
+  sla_horas?: number; // SLA acordado em horas para a prioridade/caso
+  sla_limite?: string; // ISO Timestamp calculada de limite para resposta
 }
 
 export interface Especialidade {

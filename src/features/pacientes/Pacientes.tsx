@@ -356,11 +356,11 @@ export const Pacientes: React.FC = () => {
         setFormSuccess(null);
         closeForm();
       }, 1800);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      console.error('Erro ao cadastrar paciente:', msg);
+    } catch (err: any) {
+      const errMsg = err?.message || err?.details || 'Erro de rede ou permissão.';
+      console.error('Erro ao cadastrar paciente:', err);
       setGlobalFormError(
-        'Não foi possível cadastrar o paciente. Verifique sua conexão e tente novamente.',
+        `Não foi possível cadastrar o paciente. Detalhe: ${errMsg}`
       );
     } finally {
       setSubmitting(false);

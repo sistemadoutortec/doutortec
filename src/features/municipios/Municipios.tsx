@@ -127,10 +127,10 @@ export const Municipios: React.FC = () => {
       setFormUf('SC');
       setSuccessMsg(`${nome} / ${formUf} adicionado com sucesso!`);
       setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao cadastrar município.';
-      console.error('Erro ao inserir município:', message);
-      setFormError('Não foi possível cadastrar o município. Tente novamente.');
+    } catch (err: any) {
+      const errMsg = err?.message || err?.details || 'Erro de rede ou permissão.';
+      console.error('Erro ao inserir município:', err);
+      setFormError(`Não foi possível cadastrar o município. Detalhe: ${errMsg}`);
     } finally {
       setSubmitting(false);
     }

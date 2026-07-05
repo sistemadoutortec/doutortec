@@ -171,8 +171,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         .from('casos')
         .update({
           especialista_id: user.id,
-          status: 'em_progresso',
-          updated_at: new Date().toISOString()
+          status: 'em_progresso'
         })
         .eq('id', currentCaso.id)
         .select()
@@ -201,9 +200,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       const { data, error } = await supabase
         .from('casos')
         .update({
-          status: 'respondido',
-          respondido_em: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          status: 'respondido'
         })
         .eq('id', currentCaso.id)
         .select()
@@ -245,30 +242,51 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   const caseAnexos = (currentCaso as any).anexos || [];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-5 max-w-7xl mx-auto">
+      {/* STT-style info disclaimer banner */}
+      <div className="flex items-start gap-3 rounded-lg p-3 text-sm" style={{ backgroundColor: '#e8f0fb', border: '1px solid #c8d8f0' }}>
+        <div
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-bold mt-0.5"
+          style={{ backgroundColor: '#0f2a54' }}
+        >
+          i
+        </div>
+        <p style={{ color: '#0f2a54' }} className="text-xs leading-relaxed">
+          O apoio oferecido por meio da teleconsultoria contempla sugestões de manejo dadas pelo teleconsultor, com base em evidências científicas, a partir do detalhamento do caso/situação pelo profissional solicitante. A tomada de decisão junto ao paciente ou equipe caberá ao profissional.
+        </p>
+      </div>
+
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-150 shadow-xs">
-        <button 
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
+        <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition"
+          className="inline-flex items-center gap-2 text-sm font-semibold transition"
+          style={{ color: '#0f2a54' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para a Lista
         </button>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 font-mono">ID: #{currentCaso.id.substring(0, 8)}</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[10px] text-gray-400 font-mono">ID: #{currentCaso.id.substring(0, 8)}</span>
           <span className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${getPriorityColor(currentCaso.prioridade)}`}>
-            Prioridade: {currentCaso.prioridade.toUpperCase()}
+            {currentCaso.prioridade.toUpperCase()}
           </span>
           <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-gray-100 border border-gray-200 text-gray-700">
-            Status: {getStatusLabel(currentCaso.status)}
+            {getStatusLabel(currentCaso.status)}
           </span>
         </div>
       </div>
 
       {actionError && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+        <div className="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+          <svg className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
           {actionError}
         </div>
       )}
@@ -277,32 +295,39 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Side: Case Info */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl border border-gray-150 p-6 md:p-8 space-y-6 shadow-xs">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">{currentCaso.paciente_nome}</h3>
-              <p className="text-xs text-gray-400">Criado em: {new Date(currentCaso.created_at).toLocaleString('pt-BR')}</p>
+          <div className="bg-white rounded-xl border border-gray-200 space-y-0 shadow-xs overflow-hidden">
+            {/* Prontuário-style title header */}
+            <div className="px-6 py-4 border-b border-gray-100" style={{ backgroundColor: '#f7f9fc' }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Solicitação de Teleconsultoria</p>
+              <h3 className="text-lg font-bold" style={{ color: '#0f2a54' }}>{currentCaso.paciente_nome}</h3>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-xs">
+                <span>
+                  <span className="font-bold" style={{ color: '#0f2a54' }}>Data da solicitação: </span>
+                  <span className="text-gray-600">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
+                </span>
+              </div>
             </div>
 
-            <div className="border-t border-gray-100 pt-5 space-y-4">
+            <div className="p-6 space-y-5">
               <div>
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Histórico Clínico</h4>
-                <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-4 rounded-lg leading-relaxed whitespace-pre-wrap">
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0f2a54' }}>Histórico Clínico</h4>
+                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #0f2a54', backgroundColor: '#f7f9fc', borderRadius: '0 6px 6px 0' }}>
                   {currentCaso.historico_clinico}
-                </p>
+                </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Conduta Atual</h4>
-                <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-4 rounded-lg leading-relaxed whitespace-pre-wrap">
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0f2a54' }}>Conduta Atual</h4>
+                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #0f2a54', backgroundColor: '#f7f9fc', borderRadius: '0 6px 6px 0' }}>
                   {currentCaso.conduta_atual}
-                </p>
+                </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Dúvida Clínica</h4>
-                <p className="text-sm text-gray-850 mt-2 bg-indigo-50/50 p-4 rounded-lg border border-indigo-100/50 leading-relaxed font-medium whitespace-pre-wrap">
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0f2a54' }}>Dúvida Clínica</h4>
+                <div className="text-sm leading-relaxed font-medium whitespace-pre-wrap p-4 rounded-lg" style={{ backgroundColor: '#e0f0fb', border: '1px solid #b3d4f0', color: '#0c3050' }}>
                   {currentCaso.duvida_clinica}
-                </p>
+                </div>
               </div>
 
               {/* Attachments Section */}
@@ -363,10 +388,10 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           )}
 
           {/* Chat Box */}
-          <div className="bg-white rounded-xl border border-gray-150 shadow-xs flex flex-col h-[500px] overflow-hidden flex-1">
-            <div className="p-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50">
-              <Clock className="h-4 w-4 text-indigo-500" />
-              <span className="text-xs font-bold text-gray-700">Chat de Interconsulta</span>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-xs flex flex-col h-[500px] overflow-hidden flex-1">
+            <div className="p-3.5 border-b border-gray-100 flex items-center gap-2" style={{ backgroundColor: '#0f2a54' }}>
+              <Clock className="h-4 w-4 text-white/70" />
+              <span className="text-xs font-bold text-white">Chat de Interconsulta</span>
             </div>
 
             {/* Message Area */}
