@@ -58,11 +58,6 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
         <div className="flex flex-col items-center gap-3">
           <img src="/LogoAzul.png" alt="Doutortec" className="h-16 w-auto object-contain" />
-          <div className="text-center">
-            <h2 className="text-2xl font-black tracking-tight" style={{ color: '#002157' }}>
-              Doutortec
-            </h2>
-          </div>
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
