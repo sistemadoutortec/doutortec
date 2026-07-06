@@ -204,7 +204,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       )}
 
       {/* Right Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col h-screen overflow-y-auto">
         {/* Header */}
         <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-8 relative" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <div className="flex items-center gap-4">
