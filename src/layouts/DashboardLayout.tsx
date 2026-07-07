@@ -113,7 +113,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hidden">
           <div className="px-4 pt-5 pb-2">
             <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
               Navegação
@@ -131,7 +131,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                       setActiveTab(item.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${
                       isActive
                         ? 'text-white border-l-4 border-white pl-2'
                         : 'text-white/60 hover:text-white hover:bg-white/5 border-l-4 border-transparent pl-2'
