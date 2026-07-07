@@ -98,63 +98,60 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const userInitials = perfil?.nome ? perfil.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col" style={{ backgroundColor: '#0b1626' }}>
-      {/* Logo + Nav area — scrollable when items overflow */}
-      <div className="flex flex-1 flex-col min-h-0">
-        <div className="flex items-center justify-between px-4 py-4 border-b shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-          <div className="flex items-center gap-3 py-1">
-            <img src="/LogoBranca.png" alt="Doutortec" className="h-10 w-auto object-contain" />
-          </div>
-          <button
-            className="md:hidden text-white/60 hover:text-white"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <div className="flex flex-col" style={{ backgroundColor: '#0b1626', minHeight: '100%' }}>
+      {/* Logo */}
+      <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-3 py-1">
+          <img src="/LogoBranca.png" alt="Doutortec" className="h-10 w-auto object-contain" />
         </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hidden">
-          <div className="px-4 pt-5 pb-2">
-            <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Navegação
-            </p>
-          </div>
-
-          <nav className="px-3 space-y-1 pb-2">
-            {menuLinks.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <div key={item.id}>
-                  <button
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${
-                      isActive
-                        ? 'text-white border-l-4 border-white pl-2'
-                        : 'text-white/60 hover:text-white hover:bg-white/5 border-l-4 border-transparent pl-2'
-                    }`}
-                    style={isActive ? { backgroundColor: '#0b316d' } : undefined}
-                  >
-                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-white/40'}`} />
-                    {item.label}
-                    {item.id === 'notificacoes' && unreadCount > 0 && (
-                      <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </nav>
-        </div>
+        <button
+          className="md:hidden text-white/60 hover:text-white"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
-      {/* User profile footer — always visible, never hidden */}
-      <div className="shrink-0 p-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.15)' }}>
+      {/* Nav items — fluem naturalmente com a página */}
+      <div className="px-4 pt-5 pb-2">
+        <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          Navegação
+        </p>
+      </div>
+
+      <nav className="px-3 space-y-1 pb-4">
+        {menuLinks.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <div key={item.id}>
+              <button
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                  isActive
+                    ? 'text-white border-l-4 border-white pl-2'
+                    : 'text-white/60 hover:text-white hover:bg-white/5 border-l-4 border-transparent pl-2'
+                }`}
+                style={isActive ? { backgroundColor: '#0b316d' } : undefined}
+              >
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-white/40'}`} />
+                {item.label}
+                {item.id === 'notificacoes' && unreadCount > 0 && (
+                  <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* User profile footer — flui após os itens */}
+      <div className="p-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.15)' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
@@ -189,26 +186,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
 
   return (
-    <div className="flex h-screen w-screen bg-gray-50">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-col w-64 shrink-0 h-screen overflow-hidden">
+    // Layout de página inteira: sem altura fixa, sem overflow — uma única scrollbar do navegador
+    <div className="flex min-h-screen w-full bg-gray-50">
+      {/* Desktop Sidebar — flui com a página */}
+      <aside className="hidden md:block w-64 shrink-0" style={{ backgroundColor: '#0b1626' }}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile Drawer (Sidebar overlay) */}
+      {/* Mobile Drawer (overlay fixo) */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="relative flex flex-col w-64 max-w-xs h-full z-50 overflow-hidden">
+          <aside className="relative flex flex-col w-64 max-w-xs h-full z-50 overflow-y-auto" style={{ backgroundColor: '#0b1626' }}>
             <SidebarContent />
           </aside>
         </div>
       )}
 
-      {/* Right Content Area */}
-      <div className="flex flex-1 flex-col min-w-0 h-screen overflow-y-auto">
-        {/* Header */}
-        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-8 relative" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      {/* Área direita — flui com a página */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Header sticky — fica no topo ao rolar */}
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-8 relative" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -258,8 +256,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         </header>
 
-        {/* Central Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8" style={{ backgroundColor: '#f4f6f8' }}>
+        {/* Conteúdo principal — flui com a página */}
+        <main className="flex-1 p-4 md:p-8" style={{ backgroundColor: '#f4f6f8' }}>
           {children}
         </main>
       </div>
