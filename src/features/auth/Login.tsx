@@ -52,7 +52,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200"
+      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-[#1a2547] to-[#050810]"
     >
       <div 
         className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
