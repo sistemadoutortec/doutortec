@@ -125,7 +125,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
     >
       <div 
-        className="w-full max-w-lg space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
+        className="w-full max-w-lg space-y-6 rounded-2xl p-8 shadow-2xl"
         style={{ backgroundColor: '#091151' }}
       >
         <div className="flex flex-col items-center gap-3">
@@ -160,7 +160,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Insira seu nome completo"
               />
             </div>
@@ -176,7 +176,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="nome@email.com"
               />
             </div>
@@ -192,7 +192,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="000.000.000-00"
               />
             </div>
@@ -206,10 +206,10 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2 text-white focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2 text-slate-900 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
               >
-                <option value="solicitante" className="bg-[#091151] text-white">Solicitante (Clínico/Enfermeiro/Generalista)</option>
-                <option value="especialista" className="bg-[#091151] text-white">Especialista (Médico Especialista)</option>
+                <option value="solicitante" className="bg-white text-slate-900">Solicitante (Clínico/Enfermeiro/Generalista)</option>
+                <option value="especialista" className="bg-white text-slate-900">Especialista (Médico Especialista)</option>
               </select>
             </div>
 
@@ -223,7 +223,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={crmCoren}
                 onChange={(e) => setCrmCoren(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Ex: CRM-SP 123456"
               />
             </div>
@@ -239,7 +239,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={instituicao}
                 onChange={(e) => setInstituicao(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Hospital, UBS ou Clínica"
               />
             </div>
@@ -255,7 +255,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={municipio}
                 onChange={(e) => setMunicipio(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Sua cidade"
               />
             </div>
@@ -270,7 +270,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="(00) 00000-0000"
               />
             </div>
@@ -287,12 +287,12 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                   disabled={loading}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                  className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                   placeholder="Mínimo 6 caracteres"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-800"
                   onClick={() => setShowSenha(!showSenha)}
                 >
                   {showSenha ? (
@@ -316,12 +316,12 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                   disabled={loading}
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                  className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                   placeholder="Repita sua senha"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-800"
                   onClick={() => setConfirmarShowSenha(!confirmarShowSenha)}
                 >
                   {confirmarShowSenha ? (

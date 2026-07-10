@@ -58,7 +58,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
     >
       <div 
-        className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
+        className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl"
         style={{ backgroundColor: '#091151' }}
       >
         <div className="flex flex-col items-center gap-3">
@@ -85,10 +85,10 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 disabled={loading}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2.5 text-white placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
                 style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
                 onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
-                onBlur={e => { e.target.style.borderColor = '#475569'; e.target.style.boxShadow = 'none'; }}
+                onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                 placeholder="exemplo@doutortec.com.br"
               />
             </div>
@@ -106,15 +106,15 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                   disabled={loading}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2.5 text-white placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                  className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
                   style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
                   onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
-                  onBlur={e => { e.target.style.borderColor = '#475569'; e.target.style.boxShadow = 'none'; }}
+                  onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                   placeholder="Digite sua senha"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-800"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
