@@ -120,7 +120,10 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle,_var(--tw-gradient-stops))] from-[#28ffb2] to-[#0448af] px-4 py-12 sm:px-6 lg:px-8">
+    <div 
+      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+      style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
+    >
       <div 
         className="w-full max-w-lg space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
         style={{ backgroundColor: '#091151' }}

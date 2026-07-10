@@ -54,7 +54,8 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-[radial-gradient(circle,_var(--tw-gradient-stops))] from-[#28ffb2] to-[#0448af]"
+      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+      style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
     >
       <div 
         className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
