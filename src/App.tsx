@@ -171,9 +171,9 @@ function App() {
               <button
                 onClick={() => handleTabChange('criar-caso')}
                 className="rounded-lg px-4.5 py-2.5 text-xs font-bold text-white transition shadow-sm flex items-center gap-1"
-                style={{ backgroundColor: '#0b316d' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#002157'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0b316d'}
+                style={{ backgroundColor: '#0ea5e9' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#0284c7'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0ea5e9'}
               >
                 + Novo Caso Clínico
               </button>

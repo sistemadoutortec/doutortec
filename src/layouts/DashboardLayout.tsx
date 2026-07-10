@@ -98,11 +98,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const userInitials = perfil?.nome ? perfil.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
   const SidebarContent = () => (
-    <div className="flex flex-col" style={{ backgroundColor: '#0b1626', minHeight: '100%' }}>
+    <div className="flex flex-col" style={{ backgroundColor: '#091151', minHeight: '100%' }}>
       {/* Logo */}
       <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-3 py-1">
-          <img src="/LogoBranca.png" alt="Doutortec" className="h-10 w-auto object-contain" />
+          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-10 w-auto object-contain" />
         </div>
         <button
           className="md:hidden text-white/60 hover:text-white"
@@ -135,7 +135,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     ? 'text-white border-l-4 border-white pl-2'
                     : 'text-white/60 hover:text-white hover:bg-white/5 border-l-4 border-transparent pl-2'
                 }`}
-                style={isActive ? { backgroundColor: '#0b316d' } : undefined}
+                style={isActive ? { backgroundColor: '#0ea5e9' } : undefined}
               >
                 <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-white/40'}`} />
                 {item.label}
@@ -189,7 +189,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     // Layout de página inteira: sem altura fixa, sem overflow — uma única scrollbar do navegador
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Desktop Sidebar — flui com a página */}
-      <aside className="hidden md:block w-64 shrink-0" style={{ backgroundColor: '#0b1626' }}>
+      <aside className="hidden md:block w-64 shrink-0" style={{ backgroundColor: '#091151' }}>
         <SidebarContent />
       </aside>
 
@@ -197,7 +197,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="relative flex flex-col w-64 max-w-xs h-full z-50 overflow-y-auto" style={{ backgroundColor: '#0b1626' }}>
+          <aside className="relative flex flex-col w-64 max-w-xs h-full z-50 overflow-y-auto" style={{ backgroundColor: '#091151' }}>
             <SidebarContent />
           </aside>
         </div>
@@ -206,16 +206,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Área direita — flui com a página */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header sticky — fica no topo ao rolar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-8 relative" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-700 bg-[#091151] px-4 md:px-8 relative" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden rounded-lg p-1.5 hover:bg-gray-100"
-              style={{ color: '#0f2a54' }}
+              className="md:hidden rounded-lg p-1.5 hover:bg-white/10"
+              style={{ color: '#ffffff' }}
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h2 className="text-base font-extrabold tracking-tight" style={{ color: '#002157' }}>
+            <h2 className="text-base font-extrabold tracking-tight text-white">
               {menuLinks.find(link => link.id === activeTab)?.label || 'Doutortec'}
             </h2>
           </div>
@@ -224,8 +224,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             {/* Bell Icon Trigger */}
             <button 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative rounded-lg p-1.5 transition hover:bg-gray-100"
-              style={{ color: '#002157' }}
+              className="relative rounded-lg p-1.5 transition hover:bg-white/10"
+              style={{ color: '#ffffff' }}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (

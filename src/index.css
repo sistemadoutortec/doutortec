@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 :root {
-  --color-institucional: #002157;
-  --color-institucional-hover: #0b316d;
-  --color-institucional-light: #e8f3fc;
+  --color-institucional: #0ea5e9;
+  --color-institucional-hover: #0284c7;
+  --color-institucional-light: #e0f2fe;
 }
 
 *, *::before, *::after {
@@ -24,14 +24,14 @@
   border-color: #b2c4d6 !important;
 }
 
-/* Substituição global de todas as classes violeta/indigo pelas cores da universidade (#002157 e #0b316d) */
+/* Substituição global de todas as classes violeta/indigo pelas cores da universidade (#0ea5e9 e #0284c7) */
 .text-indigo-500,
 .text-indigo-600,
 .text-indigo-700,
 .text-indigo-800,
 .text-violet-600,
 .text-violet-700 {
-  color: #002157 !important;
+  color: #0ea5e9 !important;
 }
 
 .hover\:text-indigo-500:hover,
@@ -39,7 +39,7 @@
 .hover\:text-indigo-700:hover,
 .hover\:text-indigo-800:hover,
 .hover\:text-indigo-900:hover {
-  color: #0b316d !important;
+  color: #0284c7 !important;
 }
 
 .bg-indigo-500,
@@ -49,7 +49,7 @@
 .bg-indigo-650,
 .bg-violet-500,
 .bg-violet-600 {
-  background-color: #002157 !important;
+  background-color: #0ea5e9 !important;
 }
 
 .hover\:bg-indigo-500:hover,
@@ -58,12 +58,12 @@
 .hover\:bg-indigo-800:hover,
 .hover\:bg-violet-600:hover,
 .hover\:bg-violet-700:hover {
-  background-color: #0b316d !important;
+  background-color: #0284c7 !important;
 }
 
 .bg-indigo-50,
 .bg-violet-50 {
-  background-color: #e8f3fc !important;
+  background-color: #e0f2fe !important;
 }
 
 .border-indigo-100,
@@ -76,12 +76,12 @@
 
 .focus\:border-indigo-500:focus,
 .focus\:border-violet-500:focus {
-  border-color: #0b316d !important;
+  border-color: #0284c7 !important;
 }
 
 .focus\:ring-indigo-500:focus,
 .focus\:ring-violet-500:focus {
-  --tw-ring-color: #0b316d !important;
+  --tw-ring-color: #0284c7 !important;
 }
 
 /* Sidebar: esconder scrollbar visual mas manter scroll funcional */

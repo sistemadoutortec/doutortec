@@ -52,12 +52,14 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
-      style={{ background: 'linear-gradient(135deg, #0b1626 0%, #0b316d 70%, #002157 100%)' }}
+      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-slate-50"
     >
-      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
+      <div 
+        className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
+        style={{ backgroundColor: '#091151' }}
+      >
         <div className="flex flex-col items-center gap-3">
-          <img src="/LogoAzul.png" alt="Doutortec" className="h-16 w-auto object-contain" />
+          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-16 w-auto object-contain" />
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
@@ -68,7 +70,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
           )}
           <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-bold text-gray-700 mb-1.5">
+              <label htmlFor="email-address" className="block text-sm font-bold text-slate-200 mb-1.5">
                 Endereço de e-mail
               </label>
               <input
@@ -80,15 +82,15 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 disabled={loading}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                style={{ '--tw-ring-color': '#0b316d' } as React.CSSProperties}
-                onFocus={e => { e.target.style.borderColor = '#0b316d'; e.target.style.boxShadow = '0 0 0 2px rgba(11,49,109,0.15)'; }}
-                onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2.5 text-white placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
+                onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
+                onBlur={e => { e.target.style.borderColor = '#475569'; e.target.style.boxShadow = 'none'; }}
                 placeholder="exemplo@doutortec.com.br"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">
+              <label htmlFor="password" className="block text-sm font-bold text-slate-200 mb-1.5">
                 Senha
               </label>
               <input
@@ -100,9 +102,10 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 disabled={loading}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                onFocus={e => { e.target.style.borderColor = '#0b316d'; e.target.style.boxShadow = '0 0 0 2px rgba(11,49,109,0.15)'; }}
-                onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2.5 text-white placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
+                onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
+                onBlur={e => { e.target.style.borderColor = '#475569'; e.target.style.boxShadow = 'none'; }}
                 placeholder="Digite sua senha"
               />
             </div>
@@ -113,9 +116,9 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
               type="submit"
               disabled={loading}
               className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#002157' }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0b316d'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#002157'; }}
+              style={{ backgroundColor: '#0ea5e9' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0284c7'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9'; }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -133,15 +136,15 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
         </form>
 
         {onSwitchToRegister && (
-          <div className="text-center border-t border-gray-100 pt-4">
+          <div className="text-center border-t border-slate-700/50 pt-4">
             <button
               type="button"
               onClick={onSwitchToRegister}
               disabled={loading}
               className="text-sm font-semibold transition disabled:opacity-50"
-              style={{ color: '#002157' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#0b316d'}
-              onMouseLeave={e => e.currentTarget.style.color = '#002157'}
+              style={{ color: '#94a3b8' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#38bdf8'}
+              onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
             >
               Ainda não tem conta? Cadastre-se
             </button>
