@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import type { UserRole } from '../../types';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface RegisterProps {
   onSwitchToLogin?: () => void;
@@ -13,6 +14,8 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
+  const [confirmarShowSenha, setConfirmarShowSenha] = useState(false);
   const [cpf, setCpf] = useState('');
   const [crmCoren, setCrmCoren] = useState('');
   const [role, setRole] = useState<UserRole>('solicitante');
@@ -117,15 +120,18 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#002157] px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-lg space-y-6 rounded-2xl bg-white p-8 shadow-2xl border border-white/10">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle,_var(--tw-gradient-stops))] from-[#28ffb2] to-[#0448af] px-4 py-12 sm:px-6 lg:px-8">
+      <div 
+        className="w-full max-w-lg space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
+        style={{ backgroundColor: '#091151' }}
+      >
         <div className="flex flex-col items-center gap-3">
-          <img src="/LogoAzul.png" alt="Doutortec" className="h-14 w-auto object-contain" />
+          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
           <div className="text-center">
-            <h2 className="text-2xl font-black tracking-tight" style={{ color: '#002157' }}>
+            <h2 className="text-2xl font-black tracking-tight text-white">
               Cadastro Doutortec
             </h2>
-            <p className="mt-1.5 text-sm font-medium text-gray-500" style={{ color: '#002157' }}>
+            <p className="mt-1.5 text-sm font-medium text-slate-300">
               Solicite acesso à plataforma de teleinterconsulta
             </p>
           </div>
@@ -141,7 +147,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-slate-200 mb-1">
                 Nome Completo *
               </label>
               <input
@@ -151,13 +157,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Insira seu nome completo"
               />
             </div>
 
             <div>
-              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="reg-email" className="block text-sm font-medium text-slate-200 mb-1">
                 E-mail Profissional *
               </label>
               <input
@@ -167,13 +173,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="nome@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cpf" className="block text-sm font-medium text-slate-200 mb-1">
                 CPF *
               </label>
               <input
@@ -183,13 +189,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="000.000.000-00"
               />
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="role" className="block text-sm font-medium text-slate-200 mb-1">
                 Perfil de Acesso *
               </label>
               <select
@@ -197,15 +203,15 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="block w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2 text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2 text-white focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
               >
-                <option value="solicitante">Solicitante (Clínico/Enfermeiro/Generalista)</option>
-                <option value="especialista">Especialista (Médico Especialista)</option>
+                <option value="solicitante" className="bg-[#091151] text-white">Solicitante (Clínico/Enfermeiro/Generalista)</option>
+                <option value="especialista" className="bg-[#091151] text-white">Especialista (Médico Especialista)</option>
               </select>
             </div>
 
             <div>
-              <label htmlFor="crm_coren" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="crm_coren" className="block text-sm font-medium text-slate-200 mb-1">
                 Registro Profissional (CRM/COREN)
               </label>
               <input
@@ -214,13 +220,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={crmCoren}
                 onChange={(e) => setCrmCoren(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Ex: CRM-SP 123456"
               />
             </div>
 
             <div>
-              <label htmlFor="instituicao" className="block text-sm font-medium text-gray-700 mb-1 whitespace-nowrap">
+              <label htmlFor="instituicao" className="block text-sm font-medium text-slate-200 mb-1 whitespace-nowrap">
                 Instituição / Unidade de Saúde *
               </label>
               <input
@@ -230,13 +236,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={instituicao}
                 onChange={(e) => setInstituicao(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Hospital, UBS ou Clínica"
               />
             </div>
 
             <div>
-              <label htmlFor="municipio" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="municipio" className="block text-sm font-medium text-slate-200 mb-1">
                 Município *
               </label>
               <input
@@ -246,13 +252,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={municipio}
                 onChange={(e) => setMunicipio(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="Sua cidade"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="telefone" className="block text-sm font-medium text-slate-200 mb-1">
                 Telefone de Contato
               </label>
               <input
@@ -261,41 +267,67 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
                 placeholder="(00) 00000-0000"
               />
             </div>
 
             <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="reg-password" className="block text-sm font-medium text-slate-200 mb-1">
                 Senha *
               </label>
-              <input
-                id="reg-password"
-                type="password"
-                required
-                disabled={loading}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
-                placeholder="Mínimo 6 caracteres"
-              />
+              <div className="relative">
+                <input
+                  id="reg-password"
+                  type={showSenha ? "text" : "password"}
+                  required
+                  disabled={loading}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white"
+                  onClick={() => setShowSenha(!showSenha)}
+                >
+                  {showSenha ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-200 mb-1">
                 Confirmar Senha *
               </label>
-              <input
-                id="confirm-password"
-                type="password"
-                required
-                disabled={loading}
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 sm:text-sm"
-                placeholder="Repita sua senha"
-              />
+              <div className="relative">
+                <input
+                  id="confirm-password"
+                  type={confirmarShowSenha ? "text" : "password"}
+                  required
+                  disabled={loading}
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  className="block w-full rounded-lg border border-slate-600 bg-slate-800/50 pl-3 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                  placeholder="Repita sua senha"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white"
+                  onClick={() => setConfirmarShowSenha(!confirmarShowSenha)}
+                >
+                  {confirmarShowSenha ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -304,9 +336,9 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
               type="submit"
               disabled={loading}
               className="group relative flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#002157' }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0b316d'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#002157'; }}
+              style={{ backgroundColor: '#0ea5e9' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0284c7'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9'; }}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -324,15 +356,15 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
         </form>
 
         {onSwitchToLogin && (
-          <div className="text-center mt-4 border-t border-gray-100 pt-4">
+          <div className="text-center mt-4 border-t border-slate-700/50 pt-4">
             <button
               type="button"
               onClick={onSwitchToLogin}
               disabled={loading}
               className="text-sm font-semibold transition disabled:opacity-50"
-              style={{ color: '#002157' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#0b316d'}
-              onMouseLeave={e => e.currentTarget.style.color = '#002157'}
+              style={{ color: '#94a3b8' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#38bdf8'}
+              onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
             >
               Já possui uma conta? Faça login
             </button>
