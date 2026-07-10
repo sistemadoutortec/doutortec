@@ -52,14 +52,14 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-slate-50"
+      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200"
     >
       <div 
         className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl border border-white/10"
         style={{ backgroundColor: '#091151' }}
       >
         <div className="flex flex-col items-center gap-3">
-          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-16 w-auto object-contain" />
+          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>

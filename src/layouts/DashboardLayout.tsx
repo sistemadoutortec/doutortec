@@ -100,9 +100,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const SidebarContent = () => (
     <div className="flex flex-col" style={{ backgroundColor: '#091151', minHeight: '100%' }}>
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-3 py-1">
-          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-10 w-auto object-contain" />
+      <div className="flex items-center justify-between px-5 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-3">
+          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-14 w-auto object-contain" />
         </div>
         <button
           className="md:hidden text-white/60 hover:text-white"
