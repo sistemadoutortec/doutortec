@@ -86,42 +86,52 @@ function App() {
     const isRejeitado = perfil?.status_cadastro === 'rejeitado';
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-        <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-lg border border-gray-100 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+      <div 
+        className="flex min-h-screen items-center justify-center px-4 py-12"
+        style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
+      >
+        <div 
+          className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl text-center"
+          style={{ backgroundColor: '#091151' }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
+          </div>
+
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 border border-slate-750">
             {isRejeitado ? (
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             )}
           </div>
           <div>
-            <h2 className="mt-6 text-2xl font-bold text-gray-900">
+            <h2 className="mt-4 text-2xl font-bold text-white">
               {isRejeitado ? 'Acesso Rejeitado' : 'Cadastro em Análise'}
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Olá, <strong className="text-gray-900">{perfil?.nome || user.email}</strong>.
+            <p className="mt-2 text-sm text-slate-350">
+              Olá, <strong className="text-white">{perfil?.nome || user.email}</strong>.
             </p>
-            <p className="mt-4 text-sm text-gray-500 leading-relaxed">
+            <p className="mt-4 text-sm text-slate-400 leading-relaxed">
               {isRejeitado
                 ? 'Sua solicitação de acesso à plataforma foi rejeitada pela administração. Caso ache que isso seja um erro, entre em contato.'
                 : 'Seus dados de registro e credenciais médicas estão sendo avaliados pelo administrador do sistema. Você receberá acesso assim que sua conta for aprovada.'}
             </p>
-            <div className="mt-6 p-4 rounded-lg bg-gray-50 text-left border border-gray-150 space-y-2 text-xs text-gray-600">
-              <div><strong>Perfil Solicitado:</strong> {perfil?.role === 'especialista' ? 'Especialista' : 'Solicitante'}</div>
-              <div><strong>Unidade:</strong> {perfil?.instituicao} - {perfil?.municipio}</div>
-              {perfil?.crm_coren && <div><strong>Documento:</strong> {perfil.crm_coren}</div>}
-              <div><strong>Status:</strong> <span className={`font-semibold ${isRejeitado ? 'text-red-600' : 'text-amber-600'}`}>{perfil?.status_cadastro || 'Aguardando sincronização'}</span></div>
+            <div className="mt-6 p-4 rounded-lg bg-[#000530] text-left border border-slate-700/50 space-y-2 text-xs text-slate-300">
+              <div><strong className="text-slate-400">Perfil Solicitado:</strong> {perfil?.role === 'especialista' ? 'Especialista' : 'Solicitante'}</div>
+              <div><strong className="text-slate-400">Unidade:</strong> {perfil?.instituicao} - {perfil?.municipio}</div>
+              {perfil?.crm_coren && <div><strong className="text-slate-400">Documento:</strong> {perfil.crm_coren}</div>}
+              <div><strong className="text-slate-400">Status:</strong> <span className={`font-semibold ${isRejeitado ? 'text-red-400' : 'text-amber-400'}`}>{perfil?.status_cadastro || 'Aguardando sincronização'}</span></div>
             </div>
           </div>
           <div className="mt-6">
             <button
               onClick={() => signOut()}
-              className="w-full rounded-lg bg-gray-100 hover:bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition"
+              className="w-full rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition border border-slate-700/50"
             >
               Sair da Conta
             </button>
