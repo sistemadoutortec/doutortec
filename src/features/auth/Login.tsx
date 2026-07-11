@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
@@ -14,6 +15,13 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // States for password recovery
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [recoverySuccess, setRecoverySuccess] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     if (!email.trim() || !password) {
@@ -38,7 +46,11 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
     try {
       const { error: signInError } = await signIn(email, password);
       if (signInError) {
-        setError(signInError.message || 'Falha ao realizar login. Verifique suas credenciais.');
+        if (signInError.message === 'Invalid login credentials') {
+          setError('E-mail ou senha incorretos. Por favor, tente novamente.');
+        } else {
+          setError(signInError.message || 'Falha ao realizar login. Verifique suas credenciais.');
+        }
       } else {
         if (password === 'Mudar@123') {
           localStorage.setItem('password_is_default', 'true');
@@ -49,11 +61,41 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
           onLoginSuccess();
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
+      if (err.message === 'Invalid login credentials') {
+        setError('E-mail ou senha incorretos. Por favor, tente novamente.');
+      } else {
+        setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRecoverySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoveryLoading(true);
+    setRecoveryError(null);
+    setRecoverySuccess(null);
+
+    try {
+      if (!recoveryEmail.trim()) {
+        throw new Error('Por favor, informe seu e-mail.');
+      }
+      const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(recoveryEmail.trim(), {
+        redirectTo: `${window.location.origin}/atualizar-senha`,
+      });
+
+      if (recoveryError) throw recoveryError;
+
+      setRecoverySuccess('E-mail de recuperação enviado com sucesso! Verifique sua caixa de entrada.');
+      setRecoveryEmail('');
+    } catch (err: any) {
+      console.error(err);
+      setRecoveryError(err.message || 'Erro ao enviar e-mail de recuperação. Verifique o endereço digitado.');
+    } finally {
+      setRecoveryLoading(false);
     }
   };
 
@@ -70,91 +112,164 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
           <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
         </div>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 border border-red-200">
-              <div className="text-sm text-red-700">{error}</div>
+        {showRecovery ? (
+          <form className="space-y-5" onSubmit={handleRecoverySubmit}>
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-white mb-1">Recuperar Senha</h2>
+              <p className="text-xs text-slate-350 leading-relaxed">
+                Digite seu e-mail cadastrado e enviaremos um link de recuperação.
+              </p>
             </div>
-          )}
-          <div className="space-y-4">
+
+            {recoveryError && (
+              <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+                {recoveryError}
+              </div>
+            )}
+            {recoverySuccess && (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-250 p-3 text-xs text-emerald-700">
+                {recoverySuccess}
+              </div>
+            )}
+
             <div>
-              <label htmlFor="email-address" className="block text-sm font-bold text-slate-200 mb-1.5">
+              <label htmlFor="recovery-email" className="block text-sm font-bold text-slate-200 mb-1.5">
                 Endereço de e-mail
               </label>
               <input
-                id="email-address"
-                name="email"
+                id="recovery-email"
                 type="email"
-                autoComplete="email"
                 required
-                disabled={loading}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                disabled={recoveryLoading}
+                value={recoveryEmail}
+                onChange={(e) => setRecoveryEmail(e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
-                onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
-                onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                 placeholder="exemplo@doutortec.com.br"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-bold text-slate-200 mb-1.5">
-                Senha
-              </label>
-              <div className="relative">
+
+            <div className="space-y-3">
+              <button
+                type="submit"
+                disabled={recoveryLoading || !!recoverySuccess}
+                className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-[#091151] transition disabled:opacity-60 cursor-pointer shadow-xs"
+                style={{ backgroundColor: '#28ffb2' }}
+              >
+                {recoveryLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRecovery(false);
+                  setRecoveryError(null);
+                  setRecoverySuccess(null);
+                }}
+                className="flex w-full justify-center rounded-lg border border-slate-700 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 cursor-pointer"
+              >
+                Voltar ao Login
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-lg bg-red-50 p-3 border border-red-200">
+                <div className="text-sm text-red-700">{error}</div>
+              </div>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email-address" className="block text-sm font-bold text-slate-200 mb-1.5">
+                  Endereço de e-mail
+                </label>
                 <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
+                  id="email-address"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
                   required
                   disabled={loading}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
                   style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
                   onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
                   onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
-                  placeholder="Digite sua senha"
+                  placeholder="exemplo@doutortec.com.br"
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-800"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label htmlFor="password" className="block text-sm font-bold text-slate-200">
+                    Senha
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRecovery(true);
+                      setError(null);
+                    }}
+                    className="text-xs font-semibold text-slate-400 hover:text-[#28ffb2] transition cursor-pointer"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    disabled={loading}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                    style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
+                    onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
+                    onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                    placeholder="Digite sua senha"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-800"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#0ea5e9' }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0284c7'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9'; }}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Autenticando...
-                </span>
-              ) : (
-                'Entrar no Sistema'
-              )}
-            </button>
-          </div>
-        </form>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#0ea5e9' }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0284c7'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9'; }}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Autenticando...
+                  </span>
+                ) : (
+                  'Entrar no Sistema'
+                )}
+              </button>
+            </div>
+          </form>
+        )}
 
         {onSwitchToRegister && (
           <div className="text-center border-t border-slate-700/50 pt-4">
