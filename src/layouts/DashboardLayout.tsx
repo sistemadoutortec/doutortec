@@ -81,7 +81,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         { label: 'Ranking', icon: Trophy, id: 'ranking' },
         { label: 'Relatórios', icon: BarChart3, id: 'relatorios' },
         { label: 'Aprovação de Clínicos', icon: ShieldCheck, id: 'aprovacao' },
-        { label: 'Gerenciamento de Perfis', icon: UserCheck, id: 'gerenciamento-perfis' },
+        { label: 'Gerenciar Perfis', icon: UserCheck, id: 'gerenciamento-perfis' },
         { label: 'Financeiro', icon: DollarSign, id: 'financeiro' },
         { label: 'Distribuição', icon: Shuffle, id: 'distribuicao' },
         { label: 'Notificações', icon: Bell, id: 'notificacoes' }
@@ -100,7 +100,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const SidebarContent = () => (
     <div className="flex flex-col h-full" style={{ backgroundColor: '#091151' }}>
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      <div className="flex items-center justify-between px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-3">
           <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-14 w-auto object-contain" />
         </div>
@@ -153,7 +153,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
 
       {/* User profile footer — fixo na parte inferior */}
-      <div className="p-4 border-t shrink-0" style={{ borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.15)' }}>
+      <div className="p-4 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(0,0,0,0.15)' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
@@ -217,9 +217,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h2 className="text-base font-extrabold tracking-tight text-white">
-              {menuLinks.find(link => link.id === activeTab)?.label || 'Doutortec'}
-            </h2>
           </div>
 
           <div className="flex items-center gap-4 relative">
