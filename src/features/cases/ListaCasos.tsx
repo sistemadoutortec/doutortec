@@ -21,7 +21,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
   
   // Dictionary maps for mapping IDs to Names in memory (avoiding raw join crashes)
   const [specialtiesMap, setSpecialtiesMap] = useState<Record<string, string>>({});
-  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
+  const [profilesMap, setProfilesMap] = useState<Record<string, { nome: string; municipio?: string }>>({});
 
   // Filter States
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -31,6 +31,51 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
   // Pagination State
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Specialist served municipalities
+  const [specialistMuns, setSpecialistMuns] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchSpecialistMuns = async () => {
+      if (!user || perfil?.role !== 'especialista') return;
+      try {
+        const { data: flows } = await supabase
+          .from('fluxos_especialidades')
+          .select('id')
+          .eq('especialista_id', user.id);
+
+        if (!flows || flows.length === 0) {
+          setSpecialistMuns([]);
+          return;
+        }
+        const flowIds = flows.map(f => f.id);
+
+        const { data: links } = await supabase
+          .from('fluxos_especialidades_municipios')
+          .select('municipio_id')
+          .in('fluxo_id', flowIds);
+
+        if (!links || links.length === 0) {
+          setSpecialistMuns([]);
+          return;
+        }
+        const munIds = links.map(l => l.municipio_id);
+
+        const { data: muns } = await supabase
+          .from('fluxos_municipios')
+          .select('municipio')
+          .in('id', munIds);
+
+        if (muns) {
+          setSpecialistMuns(muns.map(m => m.municipio));
+        }
+      } catch (err) {
+        console.error('Erro ao buscar municípios do especialista:', err);
+      }
+    };
+
+    fetchSpecialistMuns();
+  }, [user, perfil]);
 
   // Fetch reference data (specialties)
   const fetchReferenceData = async () => {
@@ -65,7 +110,11 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       
       let query = supabase
         .from('casos')
-        .select('id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at')
+        .select(`
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at,
+          solicitante:perfis!solicitante_id(id, nome, municipio),
+          especialista:perfis!especialista_id(id, nome)
+        `)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -73,10 +122,13 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       if (perfil.role === 'solicitante') {
         query = query.eq('solicitante_id', user.id);
       } else if (perfil.role === 'especialista') {
-        // Query cases where the specialist is assigned, or cases that are new/in-progress and unassigned
-        // Or if the specialist has a specific specialty, filter those
-        // Since we want to be safe, we fetch cases assigned to him OR new/in_progress cases
-        query = query.or(`especialista_id.eq.${user.id},status.in.("novo","em_progresso")`);
+        if (specialistMuns.length > 0) {
+          query = query.in('solicitante.municipio', specialistMuns);
+        } else {
+          setCasos([]);
+          setLoading(false);
+          return;
+        }
       }
 
       // Apply API filters if not doing client-side search (to protect performance)
@@ -103,36 +155,30 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
 
       setHasMore(newCasos.length === limit);
 
-      // Fetch user profile names for those in the case list
-      const uniqueUserIds = Array.from(new Set([
-        ...newCasos.map(c => c.solicitante_id),
-        ...newCasos.map(c => c.especialista_id).filter(Boolean)
-      ])) as string[];
-
-      if (uniqueUserIds.length > 0) {
-        const { data: profData } = await supabase
-          .from('perfis')
-          .select('id, nome')
-          .in('id', uniqueUserIds);
-
-        if (profData) {
-          setProfilesMap(prev => {
-            const updated = { ...prev };
-            profData.forEach(p => {
-              updated[p.id] = p.nome;
-            });
-            return updated;
-          });
+      // Map profiles directly from query results
+      const mappedProfiles: Record<string, { nome: string; municipio?: string }> = {};
+      newCasos.forEach((c: any) => {
+        if (c.solicitante) {
+          mappedProfiles[c.solicitante_id] = {
+            nome: c.solicitante.nome,
+            municipio: c.solicitante.municipio
+          };
         }
-      }
+        if (c.especialista) {
+          mappedProfiles[c.especialista_id] = {
+            nome: c.especialista.nome
+          };
+        }
+      });
 
+      setProfilesMap(prev => ({ ...prev, ...mappedProfiles }));
     } catch (err: any) {
       console.error('Erro ao buscar casos:', err.message || err);
       setError('Não foi possível carregar a lista de casos clínicos.');
     } finally {
       setLoading(false);
     }
-  }, [user, perfil, statusFilter, prioridadeFilter, page, limit]);
+  }, [user, perfil, statusFilter, prioridadeFilter, page, limit, specialistMuns]);
 
   // Load reference data on mount
   useEffect(() => {
@@ -317,7 +363,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
                     </span>
                     <span className="flex items-center gap-1">
                       <User className="h-3.5 w-3.5" />
-                      Solicitante: {profilesMap[caso.solicitante_id] || 'Carregando...'}
+                      Solicitante: {profilesMap[caso.solicitante_id]?.nome || 'Carregando...'}
                     </span>
                   </div>
                 </div>
