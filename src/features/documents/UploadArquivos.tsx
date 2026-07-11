@@ -74,7 +74,7 @@ export const UploadArquivos: React.FC<UploadArquivosProps> = ({ onUploadSuccess,
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('DOUTORTEC-DOCUMENTOS')
+        .from('doutortec-documentos')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -139,7 +139,7 @@ export const UploadArquivos: React.FC<UploadArquivosProps> = ({ onUploadSuccess,
 
     try {
       const { error: deleteError } = await supabase.storage
-        .from('DOUTORTEC-DOCUMENTOS')
+        .from('doutortec-documentos')
         .remove([fileToRemove.path]);
 
       if (deleteError) throw deleteError;

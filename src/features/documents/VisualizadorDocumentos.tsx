@@ -31,7 +31,7 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
         
         // Since bucket is private, we must create a signed URL
         const { data, error: signedError } = await supabase.storage
-          .from('DOUTORTEC-DOCUMENTOS')
+          .from('doutortec-documentos')
           .createSignedUrl(path, 120); // 2 minutes expiry
 
         if (signedError) throw signedError;
