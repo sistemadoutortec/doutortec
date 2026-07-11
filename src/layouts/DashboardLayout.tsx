@@ -80,7 +80,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         { label: 'Municípios', icon: MapPin, id: 'municipios' },
         { label: 'Ranking', icon: Trophy, id: 'ranking' },
         { label: 'Relatórios', icon: BarChart3, id: 'relatorios' },
-        { label: 'Aprovação de Clínicos', icon: ShieldCheck, id: 'aprovacao' },
+        { label: 'Aprovar Clínicos', icon: ShieldCheck, id: 'aprovacao' },
         { label: 'Gerenciar Perfis', icon: UserCheck, id: 'gerenciamento-perfis' },
         { label: 'Financeiro', icon: DollarSign, id: 'financeiro' },
         { label: 'Distribuição', icon: Shuffle, id: 'distribuicao' },
