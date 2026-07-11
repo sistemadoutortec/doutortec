@@ -166,7 +166,7 @@ function App() {
             <h2 className="mt-4 text-2xl font-bold text-white">
               {isRejeitado ? 'Acesso Rejeitado' : 'Cadastro em Análise'}
             </h2>
-            <p className="mt-2 text-sm text-slate-350">
+            <p className="mt-2 text-sm text-slate-300">
               Olá, <strong className="text-white">{perfil?.nome || user.email}</strong>.
             </p>
             <p className="mt-4 text-sm text-slate-400 leading-relaxed">
@@ -357,7 +357,7 @@ function App() {
               </h3>
               <button 
                 onClick={() => setChangePasswordModalOpen(false)}
-                className="text-slate-350 hover:text-white transition cursor-pointer"
+                className="text-slate-300 hover:text-white transition cursor-pointer"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

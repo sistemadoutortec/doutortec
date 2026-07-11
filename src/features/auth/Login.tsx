@@ -116,7 +116,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
           <form className="space-y-5" onSubmit={handleRecoverySubmit}>
             <div className="text-center">
               <h2 className="text-lg font-bold text-white mb-1">Recuperar Senha</h2>
-              <p className="text-xs text-slate-350 leading-relaxed">
+              <p className="text-xs text-slate-300 leading-relaxed">
                 Digite seu e-mail cadastrado e enviaremos um link de recuperação.
               </p>
             </div>
