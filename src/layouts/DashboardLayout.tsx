@@ -112,15 +112,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </button>
       </div>
 
-      {/* Nav items — rolável de forma independente */}
-      <div className="flex-1 overflow-y-auto scrollbar-hidden py-4">
-        <div className="px-4 pb-2">
-          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+      {/* Nav items — rolável de forma independente com scrollbar fina */}
+      <div className="flex flex-1 flex-col overflow-hidden py-4 px-4">
+        <div className="pb-2">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">
             Navegação
           </p>
         </div>
 
-        <nav className="px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
           {menuLinks.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -131,14 +131,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                      setActiveTab(item.id);
                      setMobileMenuOpen(false);
                    }}
-                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                   className={`flex w-full items-center gap-3 rounded-xl py-3 px-4 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
                      isActive
-                       ? 'text-white border-l-4 border-white pl-2'
-                       : 'text-white/60 hover:text-white hover:bg-white/5 border-l-4 border-transparent pl-2'
+                       ? 'text-white'
+                       : 'text-white/60 hover:text-white hover:bg-white/5'
                    }`}
                    style={isActive ? { backgroundColor: '#0ea5e9' } : undefined}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-white/40'}`} />
+                  <Icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-white' : 'text-white/40'}`} />
                   {item.label}
                   {item.id === 'notificacoes' && unreadCount > 0 && (
                     <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
