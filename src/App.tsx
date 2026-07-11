@@ -26,6 +26,59 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCaso, setSelectedCaso] = useState<CasoClinico | null>(null);
 
+  // States for password update flow (first access)
+  const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [pwdSuccess, setPwdSuccess] = useState<string | null>(null);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdLoading(true);
+    setPwdError(null);
+    setPwdSuccess(null);
+
+    try {
+      if (currentPassword !== 'Mudar@123') {
+        throw new Error('A senha atual provisória inserida está incorreta.');
+      }
+      if (newPassword !== confirmPassword) {
+        throw new Error('A nova senha e a confirmação de senha não coincidem.');
+      }
+      if (newPassword.length < 6) {
+        throw new Error('A nova senha deve conter pelo menos 6 caracteres.');
+      }
+      if (newPassword === 'Mudar@123') {
+        throw new Error('A nova senha não pode ser igual à senha provisória padrão.');
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      setPwdSuccess('Senha atualizada com sucesso!');
+      localStorage.removeItem('password_is_default');
+      setTimeout(() => {
+        setChangePasswordModalOpen(false);
+        setNewPassword('');
+        setConfirmPassword('');
+        setCurrentPassword('');
+        setPwdSuccess(null);
+      }, 1500);
+
+    } catch (err: any) {
+      console.error(err);
+      setPwdError(err.message || 'Erro ao alterar a senha.');
+    } finally {
+      setPwdLoading(false);
+    }
+  };
+
   // Helper to handle tab switching and clean detailed views
   const handleTabChange = (tab: string) => {
     setSelectedCaso(null);
@@ -269,9 +322,123 @@ function App() {
   };
 
   // 4. Authenticated and Approved Dashboard Wrapper
+  const isDefaultPassword = localStorage.getItem('password_is_default') === 'true';
+
   return (
     <DashboardLayout activeTab={activeTab} setActiveTab={handleTabChange} onSelectCasoId={handleSelectCasoById}>
+      {isDefaultPassword && (
+        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 shadow-xs">
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>
+              Você está utilizando a senha provisória padrão <strong>Mudar@123</strong>. Por segurança, altere sua senha no primeiro acesso.
+            </span>
+          </div>
+          <button
+            onClick={() => setChangePasswordModalOpen(true)}
+            className="rounded-lg bg-amber-600 hover:bg-amber-700 px-3.5 py-1.5 text-xs font-bold text-white transition shrink-0 cursor-pointer shadow-xs"
+          >
+            Alterar Senha
+          </button>
+        </div>
+      )}
+
       {renderTabContent()}
+
+      {/* Password Change Modal */}
+      {changePasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-gray-250 shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-150" style={{ backgroundColor: '#091151' }}>
+              <h3 className="text-sm font-bold text-white">
+                Alterar Senha Provisória
+              </h3>
+              <button 
+                onClick={() => setChangePasswordModalOpen(false)}
+                className="text-slate-350 hover:text-white transition cursor-pointer"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className="p-6 space-y-4 text-left">
+              {pwdError && (
+                <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+                  {pwdError}
+                </div>
+              )}
+              {pwdSuccess && (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-700">
+                  {pwdSuccess}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Senha Atual (Provisória) *
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Mudar@123"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Nova Senha *
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Mínimo de 6 caracteres"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Confirmar Nova Senha *
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Confirme a nova senha"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-150 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setChangePasswordModalOpen(false)}
+                  className="rounded-lg border border-gray-300 hover:bg-gray-50 px-4.5 py-2 text-xs font-semibold text-gray-700 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={pwdLoading || !!pwdSuccess}
+                  className="rounded-lg bg-indigo-600 hover:bg-indigo-750 px-4.5 py-2 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50"
+                >
+                  {pwdLoading ? 'Atualizando...' : 'Atualizar Senha'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

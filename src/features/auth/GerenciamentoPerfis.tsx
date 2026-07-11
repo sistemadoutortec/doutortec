@@ -301,7 +301,7 @@ export const GerenciamentoPerfis: React.FC = () => {
             style={{ backgroundColor: '#28ffb2' }}
           >
             <Plus className="h-3.5 w-3.5" />
-            + Cadastrar Profissional
+            Cadastrar Profissional
           </button>
           <button
             onClick={fetchPerfis}

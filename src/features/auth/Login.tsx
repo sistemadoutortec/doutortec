@@ -40,6 +40,11 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       if (signInError) {
         setError(signInError.message || 'Falha ao realizar login. Verifique suas credenciais.');
       } else {
+        if (password === 'Mudar@123') {
+          localStorage.setItem('password_is_default', 'true');
+        } else {
+          localStorage.removeItem('password_is_default');
+        }
         if (onLoginSuccess) {
           onLoginSuccess();
         }
