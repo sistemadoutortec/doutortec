@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import type { CasoClinico, MensagemChat } from '../../types';
-import { Clock, Send, ArrowLeft, CheckCircle2, PlayCircle, Loader2, FileText } from 'lucide-react';
+import { Clock, Send, ArrowLeft, CheckCircle2, PlayCircle, Loader2, FileText, Ban } from 'lucide-react';
 import { VisualizadorDocumentos } from '../documents/VisualizadorDocumentos';
 
 interface DetalhesCasoProps {
@@ -249,6 +249,36 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     }
   };
 
+  // Action: Close/Archive Case (Specialist or Admin)
+  const handleCloseCase = async () => {
+    if (!user || updatingStatus) return;
+    setUpdatingStatus(true);
+    setActionError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('casos')
+        .update({
+          status: 'fechado',
+          fechado_em: new Date().toISOString()
+        })
+        .eq('id', currentCaso.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setCurrentCaso(data as CasoClinico);
+        if (onUpdateCaso) onUpdateCaso();
+      }
+    } catch (err: any) {
+      console.error('Erro ao fechar caso:', err.message || err);
+      setActionError('Não foi possível fechar/arquivar o caso.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const getPriorityColor = (prio: string) => {
     switch (prio) {
       case 'alta': return 'text-red-700 bg-red-50 border-red-200';
@@ -304,8 +334,12 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           <span className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${getPriorityColor(currentCaso.prioridade)}`}>
             {currentCaso.prioridade.toUpperCase()}
           </span>
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-gray-100 border border-gray-200 text-[#56657c]">
-            {getStatusLabel(currentCaso.status)}
+          <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${
+            currentCaso.status === 'fechado'
+              ? 'bg-rose-100 border-rose-300 text-rose-700 font-extrabold tracking-wide uppercase'
+              : 'bg-gray-100 border-gray-200 text-[#56657c]'
+          }`}>
+            {currentCaso.status === 'fechado' ? 'Arquivado / Finalizado' : getStatusLabel(currentCaso.status)}
           </span>
           {slaBadge.text && (
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border ${slaBadge.colorClass}`}>
@@ -423,6 +457,21 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             </div>
           )}
 
+          {/* Action to Close Case for Specialist or Admin */}
+          {currentCaso.status !== 'fechado' && (perfil?.role === 'admin' || (perfil?.role === 'especialista' && currentCaso.especialista_id === user?.id)) && (
+            <div className="bg-white rounded-xl border border-gray-150 p-5 shadow-xs">
+              <h4 className="text-sm font-bold text-gray-900 mb-3">Administração do Caso</h4>
+              <button
+                onClick={handleCloseCase}
+                disabled={updatingStatus}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white transition disabled:bg-rose-400 cursor-pointer"
+              >
+                {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                Finalizar e Arquivar Caso
+              </button>
+            </div>
+          )}
+
           {/* Chat Box */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-xs flex flex-col h-[500px] overflow-hidden flex-1">
             <div className="p-3.5 border-b border-gray-100 flex items-center gap-2" style={{ backgroundColor: '#002157' }}>
@@ -468,7 +517,11 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             </div>
 
             {/* Input Message Form */}
-            {currentCaso.status !== 'fechado' && (
+            {currentCaso.status === 'fechado' ? (
+              <div className="p-4 border-t border-gray-150 bg-gray-50 text-center text-xs font-bold text-gray-500">
+                Esta discussão foi encerrada e arquivada.
+              </div>
+            ) : (
               <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-100 flex gap-2">
                 <input
                   type="text"
@@ -476,7 +529,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Escreva sua conduta ou dúvida..."
-                  className="flex-1 rounded-lg border border-gray-350 px-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-50"
+                  className="flex-1 rounded-lg border border-gray-355 px-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-50"
                 />
                 <button
                   type="submit"
