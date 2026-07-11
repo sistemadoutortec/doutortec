@@ -104,10 +104,13 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       if (savedDraft) {
         const draft = JSON.parse(savedDraft);
         if (draft.pacienteNome) setPacienteNome(draft.pacienteNome);
+        if (draft.searchPatient) setSearchPatient(draft.searchPatient);
         if (draft.prioridade) setPrioridade(draft.prioridade);
         if (draft.historicoClinico) setHistoricoClinico(draft.historicoClinico);
         if (draft.condutaAtual) setCondutaAtual(draft.condutaAtual);
         if (draft.duvidaClinica) setDuvidaClinica(draft.duvidaClinica);
+        if (draft.aceitouTermos !== undefined) setAceitouTermos(draft.aceitouTermos);
+        if (draft.anexos) setAnexos(draft.anexos);
       }
     } catch (e) {
       console.error('Erro ao recuperar rascunho:', e);
@@ -118,16 +121,19 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
   useEffect(() => {
     const draft = {
       pacienteNome,
+      searchPatient,
       especialidadeId,
       prioridade,
       historicoClinico,
       condutaAtual,
       duvidaClinica,
+      aceitouTermos,
+      anexos,
     };
-    if (pacienteNome || historicoClinico || condutaAtual || duvidaClinica) {
+    if (pacienteNome || searchPatient || historicoClinico || condutaAtual || duvidaClinica || aceitouTermos || (anexos && anexos.length > 0)) {
       localStorage.setItem('criar_caso_draft', JSON.stringify(draft));
     }
-  }, [pacienteNome, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica]);
+  }, [pacienteNome, searchPatient, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica, aceitouTermos, anexos]);
 
   // Fetch patients
   useEffect(() => {
@@ -458,6 +464,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
         <UploadArquivos
           onUploadSuccess={(files) => setAnexos(files)}
           maxFiles={5}
+          initialFiles={anexos}
         />
 
         {/* Legal disclaimer */}

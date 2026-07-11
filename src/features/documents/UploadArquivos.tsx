@@ -14,14 +14,21 @@ export interface UploadedFileMetadata {
 interface UploadArquivosProps {
   onUploadSuccess: (files: UploadedFileMetadata[]) => void;
   maxFiles?: number;
+  initialFiles?: UploadedFileMetadata[];
 }
 
-export const UploadArquivos: React.FC<UploadArquivosProps> = ({ onUploadSuccess, maxFiles = 5 }) => {
+export const UploadArquivos: React.FC<UploadArquivosProps> = ({ onUploadSuccess, maxFiles = 5, initialFiles = [] }) => {
   const { user } = useAuth();
-  const [uploadedList, setUploadedList] = useState<UploadedFileMetadata[]>([]);
+  const [uploadedList, setUploadedList] = useState<UploadedFileMetadata[]>(initialFiles);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      setUploadedList(initialFiles);
+    }
+  }, [initialFiles]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
