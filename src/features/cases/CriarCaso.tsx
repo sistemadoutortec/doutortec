@@ -201,8 +201,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             conduta_atual: condutaAtual.trim(),
             duvida_clinica: duvidaClinica.trim(),
             solicitante_id: user.id,
-            status: 'novo',
-            anexos
+            status: 'novo'
           }
         ]);
 

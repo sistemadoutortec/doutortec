@@ -111,7 +111,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       let query = supabase
         .from('casos')
         .select(`
-          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, anexos,
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at,
           solicitante:perfis!solicitante_id(id, nome, municipio),
           especialista:perfis!especialista_id(id, nome)
         `)
