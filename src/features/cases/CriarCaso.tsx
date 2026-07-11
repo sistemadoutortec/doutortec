@@ -26,6 +26,7 @@ interface CriarCasoProps {
 export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNavigateToPacientes }) => {
   const { user } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const ignoreAutoSaveRef = useRef(false);
   
   // Form fields
   const [pacienteNome, setPacienteNome] = useState('');
@@ -119,6 +120,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
   // Auto-save draft on change
   useEffect(() => {
+    if (ignoreAutoSaveRef.current) return;
     const draft = {
       pacienteNome,
       searchPatient,
@@ -208,15 +210,23 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
       if (insertError) throw insertError;
 
+      ignoreAutoSaveRef.current = true;
       localStorage.removeItem('criar_caso_draft');
       setSuccess(true);
       // Reset form
       setPacienteNome('');
+      setSearchPatient('');
+      setEspecialidadeId('');
+      setPrioridade('media');
       setHistoricoClinico('');
       setCondutaAtual('');
       setDuvidaClinica('');
       setAceitouTermos(false);
       setAnexos([]);
+
+      setTimeout(() => {
+        ignoreAutoSaveRef.current = false;
+      }, 100);
 
       if (onSuccess) {
         setTimeout(() => {

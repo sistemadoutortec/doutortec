@@ -203,7 +203,7 @@ function App() {
           caso={selectedCaso}
           onBack={() => setSelectedCaso(null)}
           onUpdateCaso={() => {
-            // Can reload or do something if needed
+            setSelectedCaso(prev => prev ? { ...prev, status: 'fechado' } : null);
           }}
         />
       );

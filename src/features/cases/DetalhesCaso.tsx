@@ -227,20 +227,20 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     setActionError(null);
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('casos')
         .update({
           status: 'respondido'
         })
-        .eq('id', currentCaso.id)
-        .select()
-        .single();
+        .eq('id', currentCaso.id);
 
       if (error) throw error;
-      if (data) {
-        setCurrentCaso(data as CasoClinico);
-        if (onUpdateCaso) onUpdateCaso();
-      }
+      
+      setCurrentCaso(prev => ({
+        ...prev,
+        status: 'respondido'
+      }));
+      if (onUpdateCaso) onUpdateCaso();
     } catch (err: any) {
       console.error('Erro ao finalizar caso:', err.message || err);
       setActionError('Não foi possível finalizar o caso.');
@@ -256,20 +256,20 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     setActionError(null);
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('casos')
         .update({
           status: 'fechado'
         })
-        .eq('id', currentCaso.id)
-        .select()
-        .single();
+        .eq('id', currentCaso.id);
 
       if (error) throw error;
-      if (data) {
-        setCurrentCaso(data as CasoClinico);
-        if (onUpdateCaso) onUpdateCaso();
-      }
+      
+      setCurrentCaso(prev => ({
+        ...prev,
+        status: 'fechado'
+      }));
+      if (onUpdateCaso) onUpdateCaso();
     } catch (err: any) {
       console.error('Erro ao fechar caso:', err.message || err);
       setActionError('Não foi possível fechar/arquivar o caso.');
