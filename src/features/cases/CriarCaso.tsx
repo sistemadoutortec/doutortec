@@ -358,9 +358,9 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               onChange={(e) => setPrioridade(e.target.value as CasoPrioridade)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
             >
-              <option value="baixa">Baixa (Até 48h)</option>
-              <option value="media">Média (Até 24h)</option>
-              <option value="alta">Alta (Até 4h)</option>
+              <option value="alta">Alta (Até 12h)</option>
+              <option value="media">Média (Até 48h)</option>
+              <option value="baixa">Baixa (Até 72h)</option>
             </select>
           </div>
         </div>

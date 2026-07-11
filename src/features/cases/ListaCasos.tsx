@@ -284,7 +284,13 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredCasos.map((caso, idx) => {
-            const sla = formatSLA(caso.sla_limite || new Date(new Date(caso.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString(), caso.status);
+            const getSlaHours = (prio: string) => {
+              if (prio === 'alta') return 12;
+              if (prio === 'media') return 48;
+              return 72;
+            };
+            const limitTime = new Date(new Date(caso.created_at).getTime() + getSlaHours(caso.prioridade) * 60 * 60 * 1000).toISOString();
+            const sla = formatSLA(limitTime, caso.status);
             const isEven = idx % 2 === 0;
             return (
               <div 

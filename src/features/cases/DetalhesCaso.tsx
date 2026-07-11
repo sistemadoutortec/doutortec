@@ -32,6 +32,39 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
   // Dictionary for message sender names
   const [sendersMap, setSendersMap] = useState<Record<string, string>>({});
+
+  const [slaBadge, setSlaBadge] = useState<{ text: string; colorClass: string }>({ text: '', colorClass: '' });
+
+  useEffect(() => {
+    const updateSla = () => {
+      if (currentCaso.status === 'fechado' || currentCaso.status === 'respondido') {
+        setSlaBadge({ text: 'Concluído', colorClass: 'text-green-600 bg-green-50 border-green-200' });
+        return;
+      }
+
+      const hoursLimit = currentCaso.prioridade === 'alta' ? 12 : currentCaso.prioridade === 'media' ? 48 : 72;
+      const limitTime = new Date(new Date(currentCaso.created_at).getTime() + hoursLimit * 60 * 60 * 1000);
+      const remainingMs = limitTime.getTime() - Date.now();
+
+      if (remainingMs <= 0) {
+        setSlaBadge({ text: 'Atrasado (SLA Vencido)', colorClass: 'text-red-600 bg-red-50 border-red-200 animate-pulse' });
+        return;
+      }
+
+      const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+      const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (hours < 4) {
+        setSlaBadge({ text: `${hours}h ${minutes}m restantes`, colorClass: 'text-amber-600 bg-amber-50 border-amber-200 font-semibold' });
+      } else {
+        setSlaBadge({ text: `${hours}h ${minutes}m restantes`, colorClass: 'text-gray-600 bg-gray-50 border-gray-200' });
+      }
+    };
+
+    updateSla();
+    const interval = setInterval(updateSla, 60000);
+    return () => clearInterval(interval);
+  }, [currentCaso.created_at, currentCaso.prioridade, currentCaso.status]);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -274,6 +307,12 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           <span className="px-2.5 py-1 text-xs font-semibold rounded-md bg-gray-100 border border-gray-200 text-[#56657c]">
             {getStatusLabel(currentCaso.status)}
           </span>
+          {slaBadge.text && (
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border ${slaBadge.colorClass}`}>
+              <Clock className="h-3.5 w-3.5" />
+              <span>{slaBadge.text}</span>
+            </span>
+          )}
         </div>
       </div>
 

@@ -240,8 +240,14 @@ export const Distribucao: React.FC = () => {
       });
 
       const enriched: CasoNaFila[] = (casosData as any[]).map((c) => {
-        // Fallback seguro caso o banco de dados não possua a coluna sla_limite
-        const limite = c.sla_limite || new Date(new Date(c.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString();
+        // Fallback seguro caso o banco de dados não possua a coluna sla_limite ou precise recalcular
+        const getSlaHours = (prio: string) => {
+          if (prio === 'alta') return 12;
+          if (prio === 'media') return 48;
+          return 72;
+        };
+        const hoursToAdd = getSlaHours(c.prioridade);
+        const limite = new Date(new Date(c.created_at).getTime() + hoursToAdd * 60 * 60 * 1000).toISOString();
         const slaStatus = computeSla(limite);
         return {
           ...c,
@@ -249,7 +255,7 @@ export const Distribucao: React.FC = () => {
           solicitanteInfo: solMap[c.solicitante_id],
           slaStatus,
           slaLabel: formatSlaLabel(limite, slaStatus),
-          sla_horas: c.sla_horas ?? 24,
+          sla_horas: c.sla_horas ?? hoursToAdd,
           sla_limite: limite,
         };
       });
