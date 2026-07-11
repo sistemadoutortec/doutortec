@@ -101,8 +101,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     <div className="flex flex-col h-full" style={{ backgroundColor: '#091151' }}>
       {/* Logo */}
       <div className="flex items-center justify-between px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-3">
-          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-14 w-auto object-contain" />
+        <div className="flex items-center gap-3 w-full">
+          <img src="/Logo-Doutortec.png" alt="Doutortec" className="w-11/12 h-auto max-h-16 object-contain" />
         </div>
         <button
           className="md:hidden text-white/60 hover:text-white"
