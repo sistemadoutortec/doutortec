@@ -153,7 +153,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
 
       {/* User profile footer — fixo na parte inferior */}
-      <div className="p-4 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(0,0,0,0.15)' }}>
+      <div className="p-4 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#091151' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
