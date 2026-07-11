@@ -259,8 +259,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       const { data, error } = await supabase
         .from('casos')
         .update({
-          status: 'fechado',
-          fechado_em: new Date().toISOString()
+          status: 'fechado'
         })
         .eq('id', currentCaso.id)
         .select()
