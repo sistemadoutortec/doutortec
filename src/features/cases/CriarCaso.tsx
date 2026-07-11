@@ -76,7 +76,15 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
         if (fetchError) throw fetchError;
         setEspecialidades(data || []);
         if (data && data.length > 0) {
-          setEspecialidadeId(data[0].id);
+          const savedDraft = localStorage.getItem('criar_caso_draft');
+          let draftSpecId = '';
+          if (savedDraft) {
+            try {
+              const draft = JSON.parse(savedDraft);
+              draftSpecId = draft.especialidadeId || '';
+            } catch {}
+          }
+          setEspecialidadeId(draftSpecId || data[0].id);
         }
       } catch (err: any) {
         console.error('Erro ao buscar especialidades:', err.message || err);
@@ -88,6 +96,38 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
     fetchEspecialidades();
   }, []);
+
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem('criar_caso_draft');
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        if (draft.pacienteNome) setPacienteNome(draft.pacienteNome);
+        if (draft.prioridade) setPrioridade(draft.prioridade);
+        if (draft.historicoClinico) setHistoricoClinico(draft.historicoClinico);
+        if (draft.condutaAtual) setCondutaAtual(draft.condutaAtual);
+        if (draft.duvidaClinica) setDuvidaClinica(draft.duvidaClinica);
+      }
+    } catch (e) {
+      console.error('Erro ao recuperar rascunho:', e);
+    }
+  }, []);
+
+  // Auto-save draft on change
+  useEffect(() => {
+    const draft = {
+      pacienteNome,
+      especialidadeId,
+      prioridade,
+      historicoClinico,
+      condutaAtual,
+      duvidaClinica,
+    };
+    if (pacienteNome || historicoClinico || condutaAtual || duvidaClinica) {
+      localStorage.setItem('criar_caso_draft', JSON.stringify(draft));
+    }
+  }, [pacienteNome, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica]);
 
   // Fetch patients
   useEffect(() => {
@@ -161,6 +201,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
       if (insertError) throw insertError;
 
+      localStorage.removeItem('criar_caso_draft');
       setSuccess(true);
       // Reset form
       setPacienteNome('');
