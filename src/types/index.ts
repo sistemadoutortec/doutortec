@@ -49,6 +49,8 @@ export interface CasoClinico {
   fechado_em?: string; // ISO Timestamp
   sla_horas?: number; // SLA acordado em horas para a prioridade/caso
   sla_limite?: string; // ISO Timestamp calculada de limite para resposta
+  devolutiva_conduta?: string; // Resposta Direta / Conduta
+  devolutiva_aps?: string; // Contribuições para a APS
 }
 
 export interface Especialidade {

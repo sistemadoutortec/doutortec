@@ -202,8 +202,8 @@ function App() {
         <DetalhesCaso
           caso={selectedCaso}
           onBack={() => setSelectedCaso(null)}
-          onUpdateCaso={() => {
-            setSelectedCaso(prev => prev ? { ...prev, status: 'fechado' } : null);
+          onUpdateCaso={(updated) => {
+            setSelectedCaso(updated);
           }}
         />
       );

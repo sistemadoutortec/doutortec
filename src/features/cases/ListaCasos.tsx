@@ -111,7 +111,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       let query = supabase
         .from('casos')
         .select(`
-          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, anexos,
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, anexos, devolutiva_conduta, devolutiva_aps, respondido_em, fechado_em,
           solicitante:perfis!solicitante_id(id, nome, municipio),
           especialista:perfis!especialista_id(id, nome)
         `)
@@ -122,12 +122,13 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       if (perfil.role === 'solicitante') {
         query = query.eq('solicitante_id', user.id);
       } else if (perfil.role === 'especialista') {
-        if (specialistMuns.length > 0) {
-          query = query.in('solicitante.municipio', specialistMuns);
+        if (statusFilter === 'novo') {
+          query = query.is('especialista_id', null);
+          if (specialistMuns.length > 0) {
+            query = query.in('solicitante.municipio', specialistMuns);
+          }
         } else {
-          setCasos([]);
-          setLoading(false);
-          return;
+          query = query.eq('especialista_id', user.id);
         }
       }
 
