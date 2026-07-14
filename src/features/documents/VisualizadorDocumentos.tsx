@@ -19,7 +19,7 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Image states
+  // Image/PDF states
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
 
@@ -60,6 +60,26 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
     setRotation(prev => (prev + 90) % 360);
   };
 
+  const handleDownload = async () => {
+    if (!url) return;
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = nome;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Erro ao baixar arquivo:', err);
+      // Fallback
+      window.open(url, '_blank');
+    }
+  };
+
   const isPdf = tipo === 'application/pdf' || nome.toLowerCase().endsWith('.pdf');
   const isImage = tipo.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(nome);
 
@@ -78,7 +98,7 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
 
         {/* Toolbar Controls */}
         <div className="flex items-center gap-2">
-          {isImage && !loading && !error && (
+          {(isImage || isPdf) && !loading && !error && (
             <>
               <button
                 onClick={handleZoomOut}
@@ -88,7 +108,7 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
               >
                 <ZoomOut className="h-5 w-5" />
               </button>
-              <span className="text-xs text-gray-450 w-10 text-center font-mono">
+              <span className="text-xs text-gray-400 w-10 text-center font-mono">
                 {zoom}%
               </span>
               <button
@@ -110,16 +130,13 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
           )}
 
           {url && (
-            <a
-              href={url}
-              download={nome}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={handleDownload}
               className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition"
               title="Download Direto"
             >
               <Download className="h-5 w-5" />
-            </a>
+            </button>
           )}
 
           <div className="h-6 w-px bg-gray-800 mx-1" />
@@ -137,7 +154,7 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
       {/* Viewport Content */}
       <div className="flex-1 overflow-auto flex items-center justify-center p-4 relative">
         {loading && (
-          <div className="flex flex-col items-center space-y-2 text-gray-450">
+          <div className="flex flex-col items-center space-y-2 text-gray-400">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
             <span className="text-xs font-semibold uppercase tracking-wider">Descriptografando arquivo...</span>
           </div>
@@ -165,22 +182,29 @@ export const VisualizadorDocumentos: React.FC<VisualizadorDocumentosProps> = ({
                 className="shadow-2xl rounded-sm"
               />
             ) : isPdf ? (
-              <iframe
-                src={`${url}#toolbar=0`}
-                title={nome}
-                className="w-full h-full max-w-5xl rounded-lg shadow-2xl bg-white border border-gray-800"
-              />
+              <div
+                style={{
+                  transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+                  transition: 'transform 0.2s ease-in-out',
+                }}
+                className="w-full h-full max-w-5xl flex items-center justify-center"
+              >
+                <iframe
+                  src={`${url}#toolbar=0`}
+                  title={nome}
+                  className="w-full h-full rounded-lg shadow-2xl bg-white border border-gray-800"
+                />
+              </div>
             ) : (
               <div className="text-center text-gray-400">
                 <p className="text-sm font-semibold mb-4">Tipo de arquivo não suportado para visualização direta.</p>
-                <a
-                  href={url}
-                  download={nome}
+                <button
+                  onClick={handleDownload}
                   className="rounded-lg bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-xs font-semibold text-white transition inline-flex items-center gap-2"
                 >
                   <Download className="h-4 w-4" />
                   Baixar Arquivo
-                </a>
+                </button>
               </div>
             )}
           </div>

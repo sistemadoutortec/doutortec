@@ -17,6 +17,7 @@ import { Municipios } from './features/municipios/Municipios';
 import { Pacientes } from './features/pacientes/Pacientes';
 import { Distribucao } from './features/distribuicao/Distribucao';
 import { Dashboard } from './features/dashboard/Dashboard';
+import { NotificacoesPage } from './features/notifications/Notificacoes';
 import { supabase } from './lib/supabase';
 import type { CasoClinico } from './types';
 
@@ -307,6 +308,11 @@ function App() {
     // 12. Distribuicao tab (Admin + Telerregulador)
     if (activeTab === 'distribuicao') {
       return <Distribucao />;
+    }
+
+    // 13. Notificações tab
+    if (activeTab === 'notificacoes') {
+      return <NotificacoesPage onSelectCaso={handleSelectCasoById} />;
     }
 
     // Default simulation content for other tabs (Financeiro, Ranking, etc.)

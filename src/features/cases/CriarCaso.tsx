@@ -192,7 +192,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
     setSubmitting(true);
     try {
-      const { error: insertError } = await supabase
+      const { data: novoCaso, error: insertError } = await supabase
         .from('casos')
         .insert([
           {
@@ -206,9 +206,47 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             status: 'novo',
             anexos
           }
-        ]);
+        ])
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+
+      const casoId = novoCaso?.id;
+      const especialidadeNome =
+        especialidades.find(e => e.id === especialidadeId)?.nome || 'Especialidade não informada';
+
+      // Notify: fetch all admins and specialists so they receive the alert
+      if (casoId) {
+        try {
+          const { data: destinatarios } = await supabase
+            .from('perfis')
+            .select('id')
+            .in('role', ['admin', 'especialista'])
+            .eq('status_cadastro', 'aprovado');
+
+          if (destinatarios && destinatarios.length > 0) {
+            const notificacoes = destinatarios.map((p: { id: string }) => ({
+              perfil_id: p.id,
+              caso_id: casoId,
+              tipo_evento: 'novo_caso',
+              mensagem_resumo: `Um novo caso de ${especialidadeNome} foi criado e aguarda avaliação.`,
+              is_lida: false,
+            }));
+
+            const { error: notifError } = await supabase
+              .from('notificacoes')
+              .insert(notificacoes);
+
+            if (notifError) {
+              console.warn('Aviso: notificações não puderam ser geradas:', notifError.message);
+            }
+          }
+        } catch (notifErr) {
+          // Non-blocking: case was saved, just log notification failure
+          console.warn('Erro ao gerar notificações para o novo caso:', notifErr);
+        }
+      }
 
       ignoreAutoSaveRef.current = true;
       localStorage.removeItem('criar_caso_draft');

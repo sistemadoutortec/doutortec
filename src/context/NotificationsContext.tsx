@@ -1,125 +1,152 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 
 export interface NotificacaoItem {
   id: string;
-  titulo: string;
-  mensagem: string;
-  lida: boolean;
-  created_at: string;
+  perfil_id: string;
   caso_id?: string;
+  tipo_evento: string;
+  mensagem_resumo: string;
+  is_lida: boolean;
+  criado_em: string;
 }
 
 interface NotificationsContextType {
   notificacoes: NotificacaoItem[];
   unreadCount: number;
-  marcarComoLida: (id: string) => void;
-  limparTodas: () => void;
+  loading: boolean;
+  marcarComoLida: (id: string) => Promise<void>;
+  marcarTodasComoLidas: () => Promise<void>;
+  refetch: () => void;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
 
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, perfil } = useAuth();
+  const { user } = useAuth();
   const [notificacoes, setNotificacoes] = useState<NotificacaoItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const unreadCount = notificacoes.filter(n => !n.lida).length;
+  const unreadCount = notificacoes.filter(n => !n.is_lida).length;
 
-  const marcarComoLida = (id: string) => {
+  const fetchNotificacoes = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('*')
+        .eq('perfil_id', user.id)
+        .order('criado_em', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.warn('Erro ao buscar notificações:', error.message);
+        setNotificacoes([]);
+      } else {
+        setNotificacoes((data as NotificacaoItem[]) || []);
+      }
+    } catch (err) {
+      console.error('Erro inesperado ao buscar notificações:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const marcarComoLida = async (id: string) => {
+    // Optimistic update
     setNotificacoes(prev =>
-      prev.map(n => (n.id === id ? { ...n, lida: true } : n))
+      prev.map(n => (n.id === id ? { ...n, is_lida: true } : n))
     );
+    try {
+      await supabase
+        .from('notificacoes')
+        .update({ is_lida: true })
+        .eq('id', id);
+    } catch (err) {
+      console.error('Erro ao marcar notificação como lida:', err);
+      // Revert on failure
+      fetchNotificacoes();
+    }
   };
 
-  const limparTodas = () => {
-    setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })));
+  const marcarTodasComoLidas = async () => {
+    if (!user) return;
+    // Optimistic update
+    setNotificacoes(prev => prev.map(n => ({ ...n, is_lida: true })));
+    try {
+      await supabase
+        .from('notificacoes')
+        .update({ is_lida: true })
+        .eq('perfil_id', user.id)
+        .eq('is_lida', false);
+    } catch (err) {
+      console.error('Erro ao limpar notificações:', err);
+      fetchNotificacoes();
+    }
   };
 
   useEffect(() => {
-    if (!user || !perfil) return;
-
-    const myCaseIds: string[] = [];
-
-    // Helper: If Solicitante, fetch case IDs to filter message notifications
-    const fetchMyCases = async () => {
-      if (perfil.role !== 'solicitante') return;
-      try {
-        const { data } = await supabase
-          .from('casos')
-          .select('id')
-          .eq('solicitante_id', user.id);
-        
-        if (data) {
-          data.forEach(c => myCaseIds.push(c.id));
-        }
-      } catch (err) {
-        console.error('Erro ao buscar casos para notificações:', err);
-      }
-    };
-
-    fetchMyCases();
-
-    // Set up Realtime listener channel
-    const channel = supabase.channel('notificacoes-realtime');
-
-    // 1. Listen for new clinical cases (for specialists)
-    if (perfil.role === 'especialista') {
-      channel.on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'casos' },
-        (payload) => {
-          const newCase = payload.new as any;
-          
-          // Verify if it is a new case and matches the specialist profile details
-          if (newCase.status === 'novo') {
-            const newNotif: NotificacaoItem = {
-              id: crypto.randomUUID(),
-              titulo: 'Novo Caso Disponível',
-              mensagem: `Paciente: ${newCase.paciente_nome} precisa de avaliação clínica.`,
-              lida: false,
-              created_at: new Date().toISOString(),
-              caso_id: newCase.id
-            };
-            setNotificacoes(prev => [newNotif, ...prev]);
-          }
-        }
-      );
+    if (!user) {
+      setNotificacoes([]);
+      return;
     }
 
-    // 2. Listen for new chat messages (for requesters)
-    if (perfil.role === 'solicitante') {
-      channel.on(
+    fetchNotificacoes();
+
+    // Realtime: listen for INSERT on notificacoes table filtered by this user
+    const channel = supabase
+      .channel(`notificacoes-user-${user.id}`)
+      .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'mensagens_chat' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `perfil_id=eq.${user.id}`,
+        },
         (payload) => {
-          const newMsg = payload.new as any;
-
-          // Notify only if it belongs to one of the requester's cases and is sent by someone else
-          if (myCaseIds.includes(newMsg.caso_id) && newMsg.remetente_id !== user.id) {
-            const newNotif: NotificacaoItem = {
-              id: crypto.randomUUID(),
-              titulo: 'Nova Resposta Recebida',
-              mensagem: `O especialista respondeu no chat do seu caso clínico.`,
-              lida: false,
-              created_at: new Date().toISOString(),
-              caso_id: newMsg.caso_id
-            };
-            setNotificacoes(prev => [newNotif, ...prev]);
-          }
+          const newNotif = payload.new as NotificacaoItem;
+          setNotificacoes(prev => {
+            if (prev.some(n => n.id === newNotif.id)) return prev;
+            return [newNotif, ...prev];
+          });
         }
-      );
-    }
-
-    channel.subscribe();
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `perfil_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as NotificacaoItem;
+          setNotificacoes(prev =>
+            prev.map(n => (n.id === updated.id ? updated : n))
+          );
+        }
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, perfil]);
+  }, [user, fetchNotificacoes]);
 
   return (
-    <NotificationsContext.Provider value={{ notificacoes, unreadCount, marcarComoLida, limparTodas }}>
+    <NotificationsContext.Provider
+      value={{
+        notificacoes,
+        unreadCount,
+        loading,
+        marcarComoLida,
+        marcarTodasComoLidas,
+        refetch: fetchNotificacoes,
+      }}
+    >
       {children}
     </NotificationsContext.Provider>
   );

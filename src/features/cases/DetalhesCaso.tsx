@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { VisualizadorDocumentos } from '../documents/VisualizadorDocumentos';
+import { useNotifications } from '../../context/NotificationsContext';
 
 interface DetalhesCasoProps {
   caso: CasoClinico;
@@ -93,6 +94,12 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   }, [currentCaso.created_at, currentCaso.prioridade, currentCaso.status]);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isChatOpenRef = useRef(isChatOpen);
+
+  useEffect(() => {
+    isChatOpenRef.current = isChatOpen;
+  }, [isChatOpen]);
 
   // Scroll to bottom helper
   const scrollToBottom = () => {
@@ -163,7 +170,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
-          
+
           if (!newMsg.nome_remetente && !sendersMap[newMsg.perfil_id]) {
             try {
               const { data } = await supabase
@@ -214,6 +221,9 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
       if (error) throw error;
       setNewMessage('');
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
       fetchMessages();
     } catch (err: any) {
       console.error('Erro ao enviar mensagem:', err.message || err);
@@ -341,7 +351,42 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   };
 
   const caseAnexos = (currentCaso as any).anexos || [];
-  const unreadMessagesCount = messages.length; // Simplification as unread tracker
+  
+  // Track read messages locally and sync notifications context
+  const { notificacoes, marcarComoLida } = useNotifications();
+  
+  const getStorageKey = () => `chat_last_seen_${currentCaso.id}_${user?.id}`;
+  const [lastSeenTimestamp, setLastSeenTimestamp] = useState<number>(() => {
+    const saved = localStorage.getItem(getStorageKey());
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  const updateLastSeen = (timestamp: number) => {
+    setLastSeenTimestamp(timestamp);
+    localStorage.setItem(getStorageKey(), timestamp.toString());
+  };
+
+  useEffect(() => {
+    if (isChatOpen) {
+      if (messages.length > 0) {
+        const latestMsgTime = new Date(messages[messages.length - 1].criado_em).getTime();
+        if (latestMsgTime > lastSeenTimestamp) {
+          updateLastSeen(latestMsgTime);
+        }
+      }
+      
+      // Mark matching notifications as read
+      notificacoes.forEach(n => {
+        if (n.caso_id === currentCaso.id && !n.is_lida) {
+          marcarComoLida(n.id);
+        }
+      });
+    }
+  }, [isChatOpen, messages, lastSeenTimestamp, notificacoes, currentCaso.id, marcarComoLida]);
+
+  const unreadMessagesCount = isChatOpen
+    ? 0
+    : messages.filter(m => m.perfil_id !== user?.id && new Date(m.criado_em).getTime() > lastSeenTimestamp).length;
 
   return (
     <div className="space-y-5 max-w-7xl mx-auto pb-10 relative">
@@ -590,11 +635,11 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                     />
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex justify-end">
                     <button
                       type="submit"
                       disabled={updatingStatus}
-                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-750 px-4 py-3.5 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
+                      className="w-full max-w-xs sm:max-w-md flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-750 px-4 py-3.5 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4.5 w-4.5" />}
                       Emitir Devolutiva e Resolver Chamado
@@ -692,19 +737,36 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                   Discussão encerrada.
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex gap-2">
-                  <input
-                    type="text"
+                <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-200 flex gap-2 items-end">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
                     disabled={loadingChat || sendingMessage}
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      // Auto-grow logic
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      // Submit on Enter (without Shift)
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (newMessage.trim() && !sendingMessage) {
+                          handleSendMessage(e as any);
+                        }
+                      }
+                    }}
                     placeholder="Perguntar ou solicitar dados ao médico..."
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-550 disabled:bg-gray-50"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-550 disabled:bg-gray-50 resize-none max-h-32 overflow-y-auto"
+                    style={{ minHeight: '32px', height: 'auto' }}
                   />
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || sendingMessage}
-                    className="rounded-lg bg-indigo-650 hover:bg-indigo-755 p-2 text-white transition disabled:bg-indigo-400 cursor-pointer"
+                    className="rounded-lg bg-indigo-650 hover:bg-indigo-755 p-2 text-white transition disabled:bg-indigo-400 cursor-pointer flex items-center justify-center shrink-0"
+                    style={{ height: '32px', width: '32px' }}
                   >
                     <Send className="h-4 w-4" />
                   </button>
