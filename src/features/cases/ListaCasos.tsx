@@ -112,6 +112,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
         .from('casos')
         .select(`
           id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, anexos, devolutiva_conduta, devolutiva_aps, respondido_em, fechado_em,
+          enfoque, formato, cid_10, ciap_2, encaminhamento_indicado, classificacao_risco, exames_solicitados, exames_descricao, referencias_bibliograficas, potencial_sof, justificativa_devolucao,
           solicitante:perfis!solicitante_id(id, nome, municipio),
           especialista:perfis!especialista_id(id, nome)
         `)

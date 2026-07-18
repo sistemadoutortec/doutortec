@@ -495,7 +495,9 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       if (data) {
         setCurrentCaso(data as CasoClinico);
         if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
-        // Feedback visual
+        queryClient.invalidateQueries({ queryKey: ['casos'] });
+        queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
+        alert('Rascunho salvo com sucesso!');
       }
     } catch (err: any) {
       console.error('Erro ao salvar rascunho:', err.message || err);
