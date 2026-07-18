@@ -38,6 +38,20 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [anexos, setAnexos] = useState<UploadedFileMetadata[]>([]);
 
+  // CID-10 & CIAP-2 Diagnosis States
+  const [cid10Selected, setCid10Selected] = useState<{ codigo: string; descricao: string } | null>(null);
+  const [ciap2Selected, setCiap2Selected] = useState<{ codigo: string; descricao: string } | null>(null);
+  const [cidSearch, setCidSearch] = useState('');
+  const [ciapSearch, setCiapSearch] = useState('');
+  const [cidOptions, setCidOptions] = useState<{ codigo: string; descricao: string }[]>([]);
+  const [ciapOptions, setCiapOptions] = useState<{ codigo: string; descricao: string }[]>([]);
+  const [loadingCid, setLoadingCid] = useState(false);
+  const [loadingCiap, setLoadingCiap] = useState(false);
+  const [cidDropdownOpen, setCidDropdownOpen] = useState(false);
+  const [ciapDropdownOpen, setCiapDropdownOpen] = useState(false);
+  const cidRef = useRef<HTMLDivElement>(null);
+  const ciapRef = useRef<HTMLDivElement>(null);
+
   // Status states
   const [especialidades, setEspecialidades] = useState<EspecialidadeOption[]>([]);
   const [loadingEspecialidades, setLoadingEspecialidades] = useState(true);
@@ -52,11 +66,17 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Click outside to close dropdown
+  // Click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (cidRef.current && !cidRef.current.contains(event.target as Node)) {
+        setCidDropdownOpen(false);
+      }
+      if (ciapRef.current && !ciapRef.current.contains(event.target as Node)) {
+        setCiapDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -112,6 +132,14 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
         if (draft.duvidaClinica) setDuvidaClinica(draft.duvidaClinica);
         if (draft.aceitouTermos !== undefined) setAceitouTermos(draft.aceitouTermos);
         if (draft.anexos) setAnexos(draft.anexos);
+        if (draft.cid10Selected) {
+          setCid10Selected(draft.cid10Selected);
+          setCidSearch(`${draft.cid10Selected.codigo} - ${draft.cid10Selected.descricao}`);
+        }
+        if (draft.ciap2Selected) {
+          setCiap2Selected(draft.ciap2Selected);
+          setCiapSearch(`${draft.ciap2Selected.codigo} - ${draft.ciap2Selected.descricao}`);
+        }
       }
     } catch (e) {
       console.error('Erro ao recuperar rascunho:', e);
@@ -131,11 +159,13 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       duvidaClinica,
       aceitouTermos,
       anexos,
+      cid10Selected,
+      ciap2Selected,
     };
-    if (pacienteNome || searchPatient || historicoClinico || condutaAtual || duvidaClinica || aceitouTermos || (anexos && anexos.length > 0)) {
+    if (pacienteNome || searchPatient || historicoClinico || condutaAtual || duvidaClinica || aceitouTermos || cid10Selected || ciap2Selected || (anexos && anexos.length > 0)) {
       localStorage.setItem('criar_caso_draft', JSON.stringify(draft));
     }
-  }, [pacienteNome, searchPatient, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica, aceitouTermos, anexos]);
+  }, [pacienteNome, searchPatient, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica, aceitouTermos, anexos, cid10Selected, ciap2Selected]);
 
   // Fetch patients
   useEffect(() => {
@@ -158,6 +188,62 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
     fetchPacientes();
   }, []);
+
+  // Fetch CID-10 on search change
+  useEffect(() => {
+    if (!cidSearch.trim() || (cid10Selected && cidSearch === `${cid10Selected.codigo} - ${cid10Selected.descricao}`)) {
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setLoadingCid(true);
+      try {
+        const { data, error } = await supabase
+          .from('cid10')
+          .select('codigo, descricao')
+          .or(`codigo.ilike.%${cidSearch}%,descricao.ilike.%${cidSearch}%`)
+          .limit(20);
+        
+        if (!error && data) {
+          setCidOptions(data);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar CID-10:', err);
+      } finally {
+        setLoadingCid(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [cidSearch, cid10Selected]);
+
+  // Fetch CIAP-2 on search change
+  useEffect(() => {
+    if (!ciapSearch.trim() || (ciap2Selected && ciapSearch === `${ciap2Selected.codigo} - ${ciap2Selected.descricao}`)) {
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setLoadingCiap(true);
+      try {
+        const { data, error } = await supabase
+          .from('ciap2')
+          .select('codigo, descricao')
+          .or(`codigo.ilike.%${ciapSearch}%,descricao.ilike.%${ciapSearch}%`)
+          .limit(20);
+        
+        if (!error && data) {
+          setCiapOptions(data);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar CIAP-2:', err);
+      } finally {
+        setLoadingCiap(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [ciapSearch, ciap2Selected]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,7 +290,9 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             duvida_clinica: duvidaClinica.trim(),
             solicitante_id: user.id,
             status: 'novo',
-            anexos
+            anexos,
+            cid_10: cid10Selected?.codigo || null,
+            ciap_2: ciap2Selected?.codigo || null
           }
         ])
         .select('id')
@@ -261,6 +349,10 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       setDuvidaClinica('');
       setAceitouTermos(false);
       setAnexos([]);
+      setCid10Selected(null);
+      setCiap2Selected(null);
+      setCidSearch('');
+      setCiapSearch('');
 
       setTimeout(() => {
         ignoreAutoSaveRef.current = false;
@@ -458,6 +550,133 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               <option value="media">Média (Até 48h)</option>
               <option value="baixa">Baixa (Até 72h)</option>
             </select>
+          </div>
+        </div>
+
+        {/* CID-10 & CIAP-2 Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-4 rounded-xl border border-gray-150">
+          <div className="relative" ref={cidRef}>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Código CID-10 (Opcional)
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                disabled={submitting}
+                value={cidSearch}
+                onChange={(e) => {
+                  setCidSearch(e.target.value);
+                  setCidDropdownOpen(true);
+                  if (cid10Selected && e.target.value !== `${cid10Selected.codigo} - ${cid10Selected.descricao}`) {
+                    setCid10Selected(null);
+                  }
+                }}
+                onFocus={() => {
+                  setCidDropdownOpen(true);
+                  if (cid10Selected) {
+                    setCidSearch('');
+                  }
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    if (cid10Selected) {
+                      setCidSearch(`${cid10Selected.codigo} - ${cid10Selected.descricao}`);
+                    } else {
+                      setCidSearch('');
+                    }
+                  }, 200);
+                }}
+                placeholder="Buscar por CID-10 ou descrição..."
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+              />
+              {loadingCid && (
+                <div className="absolute right-3 top-3">
+                  <div className="animate-spin rounded-full h-4.5 w-4.5 border-2 border-indigo-600 border-t-transparent"></div>
+                </div>
+              )}
+            </div>
+
+            {cidDropdownOpen && cidOptions.length > 0 && (
+              <div className="absolute z-35 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg text-xs">
+                {cidOptions.map((item) => (
+                  <button
+                    key={item.codigo}
+                    type="button"
+                    onClick={() => {
+                      setCid10Selected(item);
+                      setCidSearch(`${item.codigo} - ${item.descricao}`);
+                      setCidDropdownOpen(false);
+                    }}
+                    className="flex w-full flex-col px-4 py-2 text-left hover:bg-indigo-50 transition-colors cursor-pointer"
+                  >
+                    <span className="font-bold text-gray-900">{item.codigo}</span>
+                    <span className="text-gray-600">{item.descricao}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative" ref={ciapRef}>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Código CIAP-2 (Opcional)
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                disabled={submitting}
+                value={ciapSearch}
+                onChange={(e) => {
+                  setCiapSearch(e.target.value);
+                  setCiapDropdownOpen(true);
+                  if (ciap2Selected && e.target.value !== `${ciap2Selected.codigo} - ${ciap2Selected.descricao}`) {
+                    setCiap2Selected(null);
+                  }
+                }}
+                onFocus={() => {
+                  setCiapDropdownOpen(true);
+                  if (ciap2Selected) {
+                    setCiapSearch('');
+                  }
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    if (ciap2Selected) {
+                      setCiapSearch(`${ciap2Selected.codigo} - ${ciap2Selected.descricao}`);
+                    } else {
+                      setCiapSearch('');
+                    }
+                  }, 200);
+                }}
+                placeholder="Buscar por CIAP-2 ou descrição..."
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+              />
+              {loadingCiap && (
+                <div className="absolute right-3 top-3">
+                  <div className="animate-spin rounded-full h-4.5 w-4.5 border-2 border-indigo-600 border-t-transparent"></div>
+                </div>
+              )}
+            </div>
+
+            {ciapDropdownOpen && ciapOptions.length > 0 && (
+              <div className="absolute z-35 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg text-xs">
+                {ciapOptions.map((item) => (
+                  <button
+                    key={item.codigo}
+                    type="button"
+                    onClick={() => {
+                      setCiap2Selected(item);
+                      setCiapSearch(`${item.codigo} - ${item.descricao}`);
+                      setCiapDropdownOpen(false);
+                    }}
+                    className="flex w-full flex-col px-4 py-2 text-left hover:bg-indigo-50 transition-colors cursor-pointer"
+                  >
+                    <span className="font-bold text-gray-900">{item.codigo}</span>
+                    <span className="text-gray-600">{item.descricao}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

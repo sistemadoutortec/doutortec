@@ -51,6 +51,9 @@ export interface CasoClinico {
   sla_limite?: string; // ISO Timestamp calculada de limite para resposta
   devolutiva_conduta?: string; // Resposta Direta / Conduta
   devolutiva_aps?: string; // Contribuições para a APS
+  aceito_em?: string; // ISO Timestamp (início do atendimento pelo especialista)
+  cid_10?: string | null;
+  ciap_2?: string | null;
 }
 
 export interface Especialidade {
@@ -79,3 +82,23 @@ export interface HistoricoReatribuicao {
   justificativa?: string;
   created_at: string; // ISO Timestamp
 }
+
+export interface CasoAvaliacao {
+  id: string; // UUID
+  caso_id: string; // UUID referenciando casos
+  solicitante_id: string; // UUID referenciando perfis
+  especialista_id: string; // UUID referenciando perfis
+  resolveu_duvida: boolean;
+  grau_satisfacao: number; // 1 a 5
+  evitou_encaminhamento: boolean;
+  created_at: string; // ISO Timestamp
+}
+
+export interface FinanceiroBonus {
+  id: string; // UUID
+  especialista_id: string; // UUID referenciando perfis
+  valor: number;
+  justificativa: string;
+  created_at: string; // ISO Timestamp
+}
+

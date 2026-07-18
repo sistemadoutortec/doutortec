@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CasoClinico, MensagemChat } from '../../types';
 import { 
   Clock, 
@@ -29,6 +30,135 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   
   // Local case state
   const [currentCaso, setCurrentCaso] = useState<CasoClinico>(caso);
+  const [cidDesc, setCidDesc] = useState<string>('');
+  const [ciapDesc, setCiapDesc] = useState<string>('');
+
+  useEffect(() => {
+    const fetchDiagnosticosDescs = async () => {
+      if (currentCaso.cid_10) {
+        try {
+          const { data } = await supabase
+            .from('cid10')
+            .select('descricao')
+            .eq('codigo', currentCaso.cid_10)
+            .maybeSingle();
+          if (data) setCidDesc(data.descricao);
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        setCidDesc('');
+      }
+
+      if (currentCaso.ciap_2) {
+        try {
+          const { data } = await supabase
+            .from('ciap2')
+            .select('descricao')
+            .eq('codigo', currentCaso.ciap_2)
+            .maybeSingle();
+          if (data) setCiapDesc(data.descricao);
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        setCiapDesc('');
+      }
+    };
+
+    fetchDiagnosticosDescs();
+  }, [currentCaso.cid_10, currentCaso.ciap_2]);
+
+  const queryClient = useQueryClient();
+
+  // Evaluation Modal states
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [resolveuDuvida, setResolveuDuvida] = useState<boolean | null>(null);
+  const [grauSatisfacao, setGrauSatisfacao] = useState<number>(0);
+  const [evitouEncaminhamento, setEvitouEncaminhamento] = useState<boolean | null>(null);
+  const [hoveredStars, setHoveredStars] = useState<number>(0);
+
+  const closeAndEvaluateMutation = useMutation({
+    mutationFn: async (evalData: {
+      resolveuDuvida: boolean;
+      grauSatisfacao: number;
+      evitouEncaminhamento: boolean;
+    }) => {
+      const { error: evalError } = await supabase
+        .from('casos_avaliacoes')
+        .insert([
+          {
+            caso_id: currentCaso.id,
+            solicitante_id: currentCaso.solicitante_id,
+            especialista_id: currentCaso.especialista_id || null,
+            resolveu_duvida: evalData.resolveuDuvida,
+            grau_satisfacao: evalData.grauSatisfacao,
+            evitou_encaminhamento: evalData.evitouEncaminhamento
+          }
+        ]);
+      if (evalError) throw evalError;
+
+      const { data: updatedCaso, error: updateError } = await supabase
+        .from('casos')
+        .update({
+          status: 'fechado',
+          fechado_em: new Date().toISOString()
+        })
+        .eq('id', currentCaso.id)
+        .select(`
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, respondido_em, fechado_em, devolutiva_conduta, devolutiva_aps
+        `)
+        .single();
+      if (updateError) throw updateError;
+      return updatedCaso;
+    },
+    onSuccess: (data) => {
+      setCurrentCaso(data as CasoClinico);
+      if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+      setIsEvaluationModalOpen(false);
+      setResolveuDuvida(null);
+      setGrauSatisfacao(0);
+      setEvitouEncaminhamento(null);
+      queryClient.invalidateQueries({ queryKey: ['casos'] });
+      queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
+      queryClient.invalidateQueries({ queryKey: ['ranking-especialistas'] });
+      queryClient.invalidateQueries({ queryKey: ['painel-financeiro'] });
+    },
+    onError: (err: any) => {
+      console.error(err);
+      setActionError(`Erro ao registrar avaliação e fechar caso: ${err.message || err}`);
+    }
+  });
+
+  const closeDirectMutation = useMutation({
+    mutationFn: async () => {
+      const { data: updatedCaso, error: updateError } = await supabase
+        .from('casos')
+        .update({
+          status: 'fechado',
+          fechado_em: new Date().toISOString()
+        })
+        .eq('id', currentCaso.id)
+        .select(`
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, respondido_em, fechado_em, devolutiva_conduta, devolutiva_aps
+        `)
+        .single();
+      if (updateError) throw updateError;
+      return updatedCaso;
+    },
+    onSuccess: (data) => {
+      setCurrentCaso(data as CasoClinico);
+      if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+      queryClient.invalidateQueries({ queryKey: ['casos'] });
+      queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
+      queryClient.invalidateQueries({ queryKey: ['ranking-especialistas'] });
+      queryClient.invalidateQueries({ queryKey: ['painel-financeiro'] });
+    },
+    onError: (err: any) => {
+      console.error(err);
+      setActionError(`Erro ao fechar caso: ${err.message || err}`);
+    }
+  });
   
   // Collapsible Chat Drawer State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -301,34 +431,14 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     }
   };
 
-  // Action: Close/Archive Case (Specialist or Admin)
-  const handleCloseCase = async () => {
-    if (!user || updatingStatus) return;
-    setUpdatingStatus(true);
-    setActionError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('casos')
-        .update({
-          status: 'fechado',
-          fechado_em: new Date().toISOString()
-        })
-        .eq('id', currentCaso.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      if (data) {
-        setCurrentCaso(data as CasoClinico);
-        if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+  // Action: Close/Archive Case (Specialist or Admin or Solicitante if respondido)
+  const handleCloseCase = () => {
+    if (currentCaso.status === 'respondido') {
+      setIsEvaluationModalOpen(true);
+    } else {
+      if (window.confirm('Deseja realmente encerrar este chamado sem avaliação?')) {
+        closeDirectMutation.mutate();
       }
-    } catch (err: any) {
-      console.error('Erro ao fechar caso:', err.message || err);
-      setActionError('Não foi possível fechar/arquivar o caso.');
-    } finally {
-      setUpdatingStatus(false);
     }
   };
 
@@ -471,15 +581,26 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           )}
 
           {/* Close/Archive case */}
-          {currentCaso.status !== 'fechado' && (perfil?.role === 'admin' || (perfil?.role === 'especialista' && currentCaso.especialista_id === user?.id)) && (
+          {currentCaso.status !== 'fechado' && (
+            perfil?.role === 'admin' || 
+            (perfil?.role === 'especialista' && currentCaso.especialista_id === user?.id) ||
+            (perfil?.role === 'solicitante' && currentCaso.solicitante_id === user?.id && currentCaso.status === 'respondido')
+          ) && (
             <button
               type="button"
               onClick={handleCloseCase}
-              disabled={updatingStatus}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-750 px-4 py-2 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
+              disabled={closeAndEvaluateMutation.isPending || closeDirectMutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-605 hover:bg-rose-750 px-4 py-2 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
+              style={{ backgroundColor: '#e11d48' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#be123c'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e11d48'}
             >
-              {updatingStatus ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ban className="h-3.5 w-3.5" />}
-              Encerrar Ticket
+              {closeAndEvaluateMutation.isPending || closeDirectMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Ban className="h-3.5 w-3.5" />
+              )}
+              {currentCaso.status === 'respondido' ? 'Avaliar e Encerrar' : 'Encerrar Ticket'}
             </button>
           )}
         </div>
@@ -505,9 +626,27 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           <div className="px-6 py-4.5 border-b border-gray-150" style={{ backgroundColor: '#e8f3fc' }}>
             <p className="text-[9px] font-bold uppercase tracking-widest text-[#56657c] mb-0.5">Solicitação de Teleconsultoria</p>
             <h3 className="text-xl font-black" style={{ color: '#002157' }}>{currentCaso.paciente_nome}</h3>
-            <p className="text-xs text-gray-500 mt-1 font-medium">
-              Data de Abertura: <span className="text-gray-700">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1">
+              <p className="text-xs text-gray-500 font-medium">
+                Data de Abertura: <span className="text-gray-700">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
+              </p>
+              {(currentCaso.cid_10 || currentCaso.ciap_2) && (
+                <div className="flex flex-wrap gap-2">
+                  {currentCaso.cid_10 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 border border-blue-200" title={cidDesc}>
+                      <span className="bg-blue-250 text-blue-800 rounded px-1 py-0.5 text-[9px] font-mono font-bold uppercase">CID-10: {currentCaso.cid_10}</span>
+                      <span className="truncate max-w-[200px]">{cidDesc || 'Carregando descrição...'}</span>
+                    </span>
+                  )}
+                  {currentCaso.ciap_2 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 border border-purple-200" title={ciapDesc}>
+                      <span className="bg-purple-250 text-purple-800 rounded px-1 py-0.5 text-[9px] font-mono font-bold uppercase">CIAP-2: {currentCaso.ciap_2}</span>
+                      <span className="truncate max-w-[200px]">{ciapDesc || 'Carregando descrição...'}</span>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Details sections */}
@@ -774,6 +913,168 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               )}
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Evaluation Modal (Telessaúde / Ministério da Saúde) */}
+      {isEvaluationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 select-none animate-fade-in">
+          <div className="bg-white rounded-2xl border border-gray-250 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4.5 text-white shrink-0" style={{ backgroundColor: '#002157' }}>
+              <div className="flex items-center gap-2">
+                <FileCheck className="h-5 w-5 text-[#38bdf8]" />
+                <h3 className="text-sm font-bold uppercase tracking-wider">
+                  Avaliação da Teleconsultoria
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsEvaluationModalOpen(false)}
+                className="text-slate-300 hover:text-white transition cursor-pointer"
+                title="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (resolveuDuvida === null || grauSatisfacao === 0 || evitouEncaminhamento === null) return;
+                closeAndEvaluateMutation.mutate({
+                  resolveuDuvida,
+                  grauSatisfacao,
+                  evitouEncaminhamento
+                });
+              }} 
+              className="p-6 space-y-6 overflow-y-auto text-left flex-1"
+            >
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs leading-relaxed text-blue-900 font-semibold">
+                ℹ️ Esta avaliação é obrigatória segundo o manual de Telessaúde do Ministério da Saúde para o encerramento do chamado de teleconsultoria.
+              </div>
+
+              {/* Pergunta 1 */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wide">
+                  1. A teleconsultoria resolveu a sua dúvida? *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input 
+                      type="radio" 
+                      name="resolveu_duvida" 
+                      required
+                      checked={resolveuDuvida === true}
+                      onChange={() => setResolveuDuvida(true)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    Sim
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input 
+                      type="radio" 
+                      name="resolveu_duvida" 
+                      checked={resolveuDuvida === false}
+                      onChange={() => setResolveuDuvida(false)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    Não
+                  </label>
+                </div>
+              </div>
+
+              {/* Pergunta 2 */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wide">
+                  2. Qual o seu grau de satisfação com esta teleconsultoria? *
+                </label>
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const starVal = i + 1;
+                    const isActive = starVal <= (hoveredStars || grauSatisfacao);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setGrauSatisfacao(starVal)}
+                        onMouseEnter={() => setHoveredStars(starVal)}
+                        onMouseLeave={() => setHoveredStars(0)}
+                        className="p-1 cursor-pointer transition-transform hover:scale-125 focus:outline-hidden"
+                        title={`${starVal} Estrela${starVal > 1 ? 's' : ''}`}
+                      >
+                        <svg 
+                          className={`h-8 w-8 ${isActive ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor" 
+                          strokeWidth="2"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                      </button>
+                    );
+                  })}
+                  {grauSatisfacao > 0 && (
+                    <span className="text-xs font-bold text-gray-500 ml-2">
+                      ({grauSatisfacao} de 5)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Pergunta 3 */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wide">
+                  3. A teleconsultoria evitou o encaminhamento do paciente ao especialista? *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input 
+                      type="radio" 
+                      name="evitou_encaminhamento" 
+                      required
+                      checked={evitouEncaminhamento === true}
+                      onChange={() => setEvitouEncaminhamento(true)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    Sim
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input 
+                      type="radio" 
+                      name="evitou_encaminhamento" 
+                      checked={evitouEncaminhamento === false}
+                      onChange={() => setEvitouEncaminhamento(false)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    Não
+                  </label>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-150 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsEvaluationModalOpen(false)}
+                  className="rounded-lg border border-gray-300 hover:bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-750 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={resolveuDuvida === null || grauSatisfacao === 0 || evitouEncaminhamento === null || closeAndEvaluateMutation.isPending}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-750 px-5 py-2.5 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  style={{ backgroundColor: '#059669' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#047857'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#059669'}
+                >
+                  {closeAndEvaluateMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Confirmar e Fechar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
