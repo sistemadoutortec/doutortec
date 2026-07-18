@@ -18,7 +18,7 @@ export interface Perfil {
   updated_at?: string; // ISO Timestamp
 }
 
-export type CasoStatus = 'novo' | 'em_progresso' | 'respondido' | 'fechado';
+export type CasoStatus = 'novo' | 'em_progresso' | 'respondido' | 'fechado' | 'pendente_regulacao' | 'devolvido';
 
 export type CasoPrioridade = 'baixa' | 'media' | 'alta';
 
@@ -54,6 +54,15 @@ export interface CasoClinico {
   aceito_em?: string; // ISO Timestamp (início do atendimento pelo especialista)
   cid_10?: string | null;
   ciap_2?: string | null;
+  enfoque?: 'Diagnóstico' | 'Tratamento' | 'Prognóstico' | 'Processo de Trabalho' | 'Promoção e Prevenção' | null;
+  formato?: 'sincrono' | 'assincrono';
+  encaminhamento_indicado?: boolean | null;
+  classificacao_risco?: 'vermelha' | 'amarela' | 'verde' | 'azul' | null;
+  exames_solicitados?: boolean;
+  exames_descricao?: string | null;
+  referencias_bibliograficas?: string | null;
+  potencial_sof?: boolean;
+  justificativa_devolucao?: string | null;
 }
 
 export interface Especialidade {

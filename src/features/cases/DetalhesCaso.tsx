@@ -172,6 +172,17 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   // Devolutiva Form state
   const [devolutivaConduta, setDevolutivaConduta] = useState('');
   const [devolutivaAps, setDevolutivaAps] = useState('');
+  const [encaminhamentoIndicado, setEncaminhamentoIndicado] = useState<boolean | null>(null);
+  const [classificacaoRisco, setClassificacaoRisco] = useState<string>('');
+  const [examesSolicitados, setExamesSolicitados] = useState<boolean>(false);
+  const [examesDescricao, setExamesDescricao] = useState<string>('');
+  const [referenciasBibliograficas, setReferenciasBibliograficas] = useState<string>('');
+  const [potencialSof, setPotencialSof] = useState<boolean>(false);
+
+  // Status devolução
+  const [isDevolucaoModalOpen, setIsDevolucaoModalOpen] = useState(false);
+  const [devolucaoType, setDevolucaoType] = useState<'solicitante' | 'telerregulacao'>('solicitante');
+  const [justificativaDevolucao, setJustificativaDevolucao] = useState('');
   
   // Action state (assign/respond)
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -190,6 +201,12 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     setCurrentCaso(caso);
     setDevolutivaConduta(caso.devolutiva_conduta || '');
     setDevolutivaAps(caso.devolutiva_aps || '');
+    setEncaminhamentoIndicado(caso.encaminhamento_indicado ?? null);
+    setClassificacaoRisco(caso.classificacao_risco || '');
+    setExamesSolicitados(caso.exames_solicitados || false);
+    setExamesDescricao(caso.exames_descricao || '');
+    setReferenciasBibliograficas(caso.referencias_bibliograficas || '');
+    setPotencialSof(caso.potencial_sof || false);
   }, [caso]);
 
   useEffect(() => {
@@ -397,8 +414,17 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   const handleSubmitDevolutiva = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || updatingStatus) return;
-    if (!devolutivaConduta.trim() || !devolutivaAps.trim()) {
+    
+    if (!devolutivaConduta.trim() || !devolutivaAps.trim() || encaminhamentoIndicado === null || !referenciasBibliograficas.trim()) {
       setActionError('Por favor, preencha todos os campos obrigatórios da Devolutiva.');
+      return;
+    }
+    if (encaminhamentoIndicado && !classificacaoRisco) {
+      setActionError('Por favor, selecione a classificação de risco para o encaminhamento.');
+      return;
+    }
+    if (examesSolicitados && !examesDescricao.trim()) {
+      setActionError('Por favor, descreva os exames solicitados.');
       return;
     }
 
@@ -406,14 +432,22 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     setActionError(null);
 
     try {
+      const payload: any = {
+        status: 'respondido',
+        devolutiva_conduta: devolutivaConduta.trim(),
+        devolutiva_aps: devolutivaAps.trim(),
+        encaminhamento_indicado: encaminhamentoIndicado,
+        classificacao_risco: encaminhamentoIndicado ? classificacaoRisco : null,
+        exames_solicitados: examesSolicitados,
+        exames_descricao: examesSolicitados ? examesDescricao.trim() : null,
+        referencias_bibliograficas: referenciasBibliograficas.trim(),
+        potencial_sof: potencialSof,
+        respondido_em: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('casos')
-        .update({
-          status: 'respondido',
-          devolutiva_conduta: devolutivaConduta.trim(),
-          devolutiva_aps: devolutivaAps.trim(),
-          respondido_em: new Date().toISOString()
-        })
+        .update(payload)
         .eq('id', currentCaso.id)
         .select()
         .single();
@@ -422,10 +456,94 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       if (data) {
         setCurrentCaso(data as CasoClinico);
         if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+        queryClient.invalidateQueries({ queryKey: ['casos'] });
+        queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
       }
     } catch (err: any) {
       console.error('Erro ao enviar devolutiva:', err.message || err);
-      setActionError(`Erro ao salvar a Devolutiva Oficial no banco de dados: ${err.message || 'Erro desconhecido'}. Certifique-se de executar a migração SQL.`);
+      setActionError(`Erro ao salvar a Devolutiva Oficial no banco de dados: ${err.message || 'Erro desconhecido'}.`);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!user || updatingStatus) return;
+    setUpdatingStatus(true);
+    setActionError(null);
+
+    try {
+      const payload: any = {
+        devolutiva_conduta: devolutivaConduta.trim(),
+        devolutiva_aps: devolutivaAps.trim(),
+        encaminhamento_indicado: encaminhamentoIndicado,
+        classificacao_risco: encaminhamentoIndicado ? classificacaoRisco : null,
+        exames_solicitados: examesSolicitados,
+        exames_descricao: examesSolicitados ? examesDescricao.trim() : null,
+        referencias_bibliograficas: referenciasBibliograficas.trim(),
+        potencial_sof: potencialSof,
+      };
+
+      const { data, error } = await supabase
+        .from('casos')
+        .update(payload)
+        .eq('id', currentCaso.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setCurrentCaso(data as CasoClinico);
+        if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+        // Feedback visual
+      }
+    } catch (err: any) {
+      console.error('Erro ao salvar rascunho:', err.message || err);
+      setActionError(`Erro ao salvar rascunho: ${err.message || 'Erro desconhecido'}.`);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleDevolver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || updatingStatus) return;
+    if (!justificativaDevolucao.trim()) {
+      setActionError('Por favor, preencha a justificativa de devolução.');
+      return;
+    }
+
+    setUpdatingStatus(true);
+    setActionError(null);
+
+    const newStatus = devolucaoType === 'solicitante' ? 'devolvido' : 'pendente_regulacao';
+
+    try {
+      const payload: any = {
+        status: newStatus,
+        justificativa_devolucao: justificativaDevolucao.trim(),
+        especialista_id: devolucaoType === 'telerregulacao' ? null : currentCaso.especialista_id // Free specialist if sending to regulation
+      };
+
+      const { data, error } = await supabase
+        .from('casos')
+        .update(payload)
+        .eq('id', currentCaso.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setCurrentCaso(data as CasoClinico);
+        if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+        setIsDevolucaoModalOpen(false);
+        setJustificativaDevolucao('');
+        queryClient.invalidateQueries({ queryKey: ['casos'] });
+        queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
+      }
+    } catch (err: any) {
+      console.error('Erro ao devolver caso:', err.message || err);
+      setActionError(`Erro ao devolver o caso: ${err.message || 'Erro desconhecido'}.`);
     } finally {
       setUpdatingStatus(false);
     }
@@ -736,6 +854,40 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                       {currentCaso.devolutiva_aps || 'Nenhuma contribuição para a APS foi preenchida.'}
                     </div>
                   </div>
+
+                  <div>
+                    <h5 className="text-xs font-extrabold uppercase tracking-wider text-[#0f172a] mb-2">3. Orientação Específica</h5>
+                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                      {currentCaso.encaminhamento_indicado === false ? 'Manejo na APS' : 
+                       currentCaso.encaminhamento_indicado === true ? `Encaminhamento ao especialista (Risco: ${currentCaso.classificacao_risco})` : 'Não informado.'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-xs font-extrabold uppercase tracking-wider text-[#0f172a] mb-2">4. Exames Complementares Prévios</h5>
+                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                      {currentCaso.exames_solicitados ? currentCaso.exames_descricao : 'Nenhum exame solicitado.'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-xs font-extrabold uppercase tracking-wider text-[#0f172a] mb-2">5. Referências Bibliográficas</h5>
+                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                      {currentCaso.referencias_bibliograficas || 'Nenhuma referência citada.'}
+                    </div>
+                  </div>
+
+                  {currentCaso.potencial_sof && (
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4.5 flex gap-3.5">
+                      <ShieldCheck className="h-6 w-6 text-indigo-600 shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-extrabold text-indigo-900">Potencial Segunda Opinião Formativa (SOF)</h4>
+                        <p className="text-xs text-indigo-700 mt-0.5 font-medium">
+                          Esta resposta foi marcada com potencial para compor a biblioteca de SOF do sistema de telessaúde.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -774,14 +926,169 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                     />
                   </div>
 
-                  <div className="pt-2 flex justify-end">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                      Qual a sua orientação específica? *
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                        <input
+                          type="radio"
+                          name="encaminhamento"
+                          checked={encaminhamentoIndicado === false}
+                          onChange={() => setEncaminhamentoIndicado(false)}
+                          disabled={updatingStatus}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">Manejo na APS</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                        <input
+                          type="radio"
+                          name="encaminhamento"
+                          checked={encaminhamentoIndicado === true}
+                          onChange={() => setEncaminhamentoIndicado(true)}
+                          disabled={updatingStatus}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">Encaminhamento ao especialista</span>
+                      </label>
+                    </div>
+
+                    {encaminhamentoIndicado === true && (
+                      <div className="ml-4 pl-4 border-l-2 border-gray-200 mb-4">
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                          Classificação de Risco *
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <label className={`flex items-center justify-center gap-2 cursor-pointer p-2 rounded-lg border-2 transition font-bold text-xs ${classificacaoRisco === 'vermelha' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 hover:border-red-200 text-gray-600'}`}>
+                            <input type="radio" name="risco" value="vermelha" checked={classificacaoRisco === 'vermelha'} onChange={(e) => setClassificacaoRisco(e.target.value)} className="hidden" />
+                            Vermelha
+                          </label>
+                          <label className={`flex items-center justify-center gap-2 cursor-pointer p-2 rounded-lg border-2 transition font-bold text-xs ${classificacaoRisco === 'amarela' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 hover:border-amber-200 text-gray-600'}`}>
+                            <input type="radio" name="risco" value="amarela" checked={classificacaoRisco === 'amarela'} onChange={(e) => setClassificacaoRisco(e.target.value)} className="hidden" />
+                            Amarela
+                          </label>
+                          <label className={`flex items-center justify-center gap-2 cursor-pointer p-2 rounded-lg border-2 transition font-bold text-xs ${classificacaoRisco === 'verde' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 hover:border-emerald-200 text-gray-600'}`}>
+                            <input type="radio" name="risco" value="verde" checked={classificacaoRisco === 'verde'} onChange={(e) => setClassificacaoRisco(e.target.value)} className="hidden" />
+                            Verde
+                          </label>
+                          <label className={`flex items-center justify-center gap-2 cursor-pointer p-2 rounded-lg border-2 transition font-bold text-xs ${classificacaoRisco === 'azul' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-blue-200 text-gray-600'}`}>
+                            <input type="radio" name="risco" value="azul" checked={classificacaoRisco === 'azul'} onChange={(e) => setClassificacaoRisco(e.target.value)} className="hidden" />
+                            Azul
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                      Solicitação de Exames Complementares Prévios *
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-4 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                        <input
+                          type="radio"
+                          name="exames"
+                          checked={examesSolicitados === false}
+                          onChange={() => setExamesSolicitados(false)}
+                          disabled={updatingStatus}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">Não</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                        <input
+                          type="radio"
+                          name="exames"
+                          checked={examesSolicitados === true}
+                          onChange={() => setExamesSolicitados(true)}
+                          disabled={updatingStatus}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">Sim</span>
+                      </label>
+                    </div>
+                    {examesSolicitados === true && (
+                      <textarea
+                        required
+                        rows={2}
+                        placeholder="Quais exames são necessários?"
+                        value={examesDescricao}
+                        onChange={(e) => setExamesDescricao(e.target.value)}
+                        className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-550"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+                      Referências Bibliográficas (Padrão Vancouver) *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Ex: Ministério da Saúde. Protocolos de Atenção Básica. Brasília, 2023."
+                      value={referenciasBibliograficas}
+                      onChange={(e) => setReferenciasBibliograficas(e.target.value)}
+                      className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-550"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="sof"
+                      type="checkbox"
+                      checked={potencialSof}
+                      onChange={(e) => setPotencialSof(e.target.checked)}
+                      disabled={updatingStatus}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                    />
+                    <label htmlFor="sof" className="text-sm font-semibold text-slate-800 cursor-pointer">
+                      Marcar como potencial Segunda Opinião Formativa (SOF)
+                    </label>
+                  </div>
+
+                  <div className="pt-4 mt-6 border-t border-gray-150 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDevolucaoType('solicitante');
+                        setIsDevolucaoModalOpen(true);
+                      }}
+                      disabled={updatingStatus}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600 px-4 py-3 text-xs font-bold transition disabled:opacity-50 cursor-pointer"
+                    >
+                      <Ban className="h-4 w-4" />
+                      Devolver (Falta de Dados)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDevolucaoType('telerregulacao');
+                        setIsDevolucaoModalOpen(true);
+                      }}
+                      disabled={updatingStatus}
+                      className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-3 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer"
+                    >
+                      Devolver p/ Regulação
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      disabled={updatingStatus}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-4 py-3 text-xs font-bold transition disabled:opacity-50 cursor-pointer"
+                    >
+                      Salvar Rascunho
+                    </button>
                     <button
                       type="submit"
                       disabled={updatingStatus}
-                      className="w-full max-w-xs sm:max-w-md flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-750 px-4 py-3.5 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4.5 w-4.5" />}
-                      Emitir Devolutiva e Resolver Chamado
+                      Enviar Resposta
                     </button>
                   </div>
                 </form>
@@ -1072,6 +1379,69 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                 >
                   {closeAndEvaluateMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Confirmar e Fechar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Devolução Modal */}
+      {isDevolucaoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 select-none animate-fade-in">
+          <div className="bg-white rounded-2xl border border-gray-250 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className={`flex items-center justify-between px-6 py-4.5 text-white shrink-0 ${devolucaoType === 'solicitante' ? 'bg-red-600' : 'bg-blue-600'}`}>
+              <div className="flex items-center gap-2">
+                <Ban className="h-5 w-5 text-white" />
+                <h3 className="text-sm font-bold uppercase tracking-wider">
+                  {devolucaoType === 'solicitante' ? 'Devolver ao Solicitante' : 'Devolver para Regulação'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsDevolucaoModalOpen(false)}
+                className="text-white/80 hover:text-white transition cursor-pointer"
+                title="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleDevolver} className="p-6 space-y-4">
+              <div className={`border rounded-lg p-3 text-xs leading-relaxed font-semibold ${devolucaoType === 'solicitante' ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
+                {devolucaoType === 'solicitante' 
+                  ? 'Utilize esta opção se faltam dados clínicos essenciais para o parecer. O chamado voltará para o solicitante preencher.'
+                  : 'Utilize esta opção se este caso não pertence à sua especialidade. Ele voltará para a fila do telerregulador.'}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wide mb-2">
+                  Justificativa da Devolução *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Escreva o motivo detalhado..."
+                  value={justificativaDevolucao}
+                  onChange={(e) => setJustificativaDevolucao(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-550"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-150">
+                <button
+                  type="button"
+                  onClick={() => setIsDevolucaoModalOpen(false)}
+                  className="rounded-lg border border-gray-300 hover:bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-750 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingStatus || !justificativaDevolucao.trim()}
+                  className={`rounded-lg px-5 py-2.5 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-2 ${devolucaoType === 'solicitante' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {updatingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Confirmar Devolução
                 </button>
               </div>
             </form>

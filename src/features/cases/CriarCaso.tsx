@@ -35,6 +35,8 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
   const [historicoClinico, setHistoricoClinico] = useState('');
   const [condutaAtual, setCondutaAtual] = useState('');
   const [duvidaClinica, setDuvidaClinica] = useState('');
+  const [enfoque, setEnfoque] = useState<string>('');
+  const [formato, setFormato] = useState<'sincrono' | 'assincrono'>('assincrono');
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [anexos, setAnexos] = useState<UploadedFileMetadata[]>([]);
 
@@ -130,6 +132,8 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
         if (draft.historicoClinico) setHistoricoClinico(draft.historicoClinico);
         if (draft.condutaAtual) setCondutaAtual(draft.condutaAtual);
         if (draft.duvidaClinica) setDuvidaClinica(draft.duvidaClinica);
+        if (draft.enfoque) setEnfoque(draft.enfoque);
+        if (draft.formato) setFormato(draft.formato);
         if (draft.aceitouTermos !== undefined) setAceitouTermos(draft.aceitouTermos);
         if (draft.anexos) setAnexos(draft.anexos);
         if (draft.cid10Selected) {
@@ -157,15 +161,17 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       historicoClinico,
       condutaAtual,
       duvidaClinica,
+      enfoque,
+      formato,
       aceitouTermos,
       anexos,
       cid10Selected,
       ciap2Selected,
     };
-    if (pacienteNome || searchPatient || historicoClinico || condutaAtual || duvidaClinica || aceitouTermos || cid10Selected || ciap2Selected || (anexos && anexos.length > 0)) {
+    if (pacienteNome || searchPatient || historicoClinico || condutaAtual || duvidaClinica || enfoque || aceitouTermos || cid10Selected || ciap2Selected || (anexos && anexos.length > 0)) {
       localStorage.setItem('criar_caso_draft', JSON.stringify(draft));
     }
-  }, [pacienteNome, searchPatient, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica, aceitouTermos, anexos, cid10Selected, ciap2Selected]);
+  }, [pacienteNome, searchPatient, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica, enfoque, formato, aceitouTermos, anexos, cid10Selected, ciap2Selected]);
 
   // Fetch patients
   useEffect(() => {
@@ -288,6 +294,8 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             historico_clinico: historicoClinico.trim(),
             conduta_atual: condutaAtual.trim(),
             duvida_clinica: duvidaClinica.trim(),
+            enfoque: enfoque || null,
+            formato: formato,
             solicitante_id: user.id,
             status: 'novo',
             anexos,
@@ -347,6 +355,8 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       setHistoricoClinico('');
       setCondutaAtual('');
       setDuvidaClinica('');
+      setEnfoque('');
+      setFormato('assincrono');
       setAceitouTermos(false);
       setAnexos([]);
       setCid10Selected(null);
@@ -550,6 +560,59 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               <option value="media">Média (Até 48h)</option>
               <option value="baixa">Baixa (Até 72h)</option>
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="enfoque" className="block text-sm font-semibold text-gray-700 mb-1">
+              Enfoque da Solicitação *
+            </label>
+            <select
+              id="enfoque"
+              required
+              disabled={submitting}
+              value={enfoque}
+              onChange={(e) => setEnfoque(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecione um enfoque...</option>
+              <option value="Diagnóstico">Diagnóstico</option>
+              <option value="Tratamento">Tratamento</option>
+              <option value="Prognóstico">Prognóstico</option>
+              <option value="Processo de Trabalho">Processo de Trabalho</option>
+              <option value="Promoção e Prevenção">Promoção e Prevenção</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Formato da Teleconsultoria *
+            </label>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                <input
+                  type="radio"
+                  name="formato"
+                  value="assincrono"
+                  checked={formato === 'assincrono'}
+                  onChange={() => setFormato('assincrono')}
+                  disabled={submitting}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                />
+                <span className="text-sm font-semibold text-gray-800">Assíncrono (Texto)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                <input
+                  type="radio"
+                  name="formato"
+                  value="sincrono"
+                  checked={formato === 'sincrono'}
+                  onChange={() => setFormato('sincrono')}
+                  disabled={submitting}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                />
+                <span className="text-sm font-semibold text-gray-800">Síncrono (Vídeo)</span>
+              </label>
+            </div>
           </div>
         </div>
 
