@@ -665,7 +665,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
                   <button
                     key={item.codigo}
                     type="button"
-                    onClick={() => {
+                    onMouseDown={() => {
                       setCid10Selected(item);
                       setCidSearch(`${item.codigo} - ${item.descricao}`);
                       setCidDropdownOpen(false);
@@ -727,7 +727,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
                   <button
                     key={item.codigo}
                     type="button"
-                    onClick={() => {
+                    onMouseDown={() => {
                       setCiap2Selected(item);
                       setCiapSearch(`${item.codigo} - ${item.descricao}`);
                       setCiapDropdownOpen(false);
