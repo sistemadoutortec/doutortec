@@ -587,31 +587,10 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Formato da Teleconsultoria *
             </label>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
-                <input
-                  type="radio"
-                  name="formato"
-                  value="assincrono"
-                  checked={formato === 'assincrono'}
-                  onChange={() => setFormato('assincrono')}
-                  disabled={submitting}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                />
-                <span className="text-sm font-semibold text-gray-800">Assíncrono (Texto)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
-                <input
-                  type="radio"
-                  name="formato"
-                  value="sincrono"
-                  checked={formato === 'sincrono'}
-                  onChange={() => setFormato('sincrono')}
-                  disabled={submitting}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                />
-                <span className="text-sm font-semibold text-gray-800">Síncrono (Vídeo)</span>
-              </label>
+            <div className="flex items-center">
+              <div className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-700 font-medium text-sm border border-indigo-100">
+                Assíncrono (Texto)
+              </div>
             </div>
           </div>
         </div>
