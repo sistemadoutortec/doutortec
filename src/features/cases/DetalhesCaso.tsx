@@ -550,20 +550,28 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     const newStatus = devolucaoType === 'solicitante' ? 'devolvido' : 'pendente_regulacao';
 
     try {
-      const payload: any = {
-        status: newStatus,
-        justificativa_devolucao: justificativaDevolucao.trim(),
-        especialista_id: devolucaoType === 'telerregulacao' ? null : currentCaso.especialista_id // Free specialist if sending to regulation
-      };
+      const limparEspecialista = devolucaoType === 'telerregulacao';
 
-      const { data, error } = await supabase
+      // Usa RPC com SECURITY DEFINER para contornar limitação de RLS
+      // ao setar especialista_id = null no fluxo de devolução para regulação
+      const { error: rpcError } = await supabase.rpc('devolver_caso', {
+        p_caso_id: currentCaso.id,
+        p_status: newStatus,
+        p_justificativa: justificativaDevolucao.trim(),
+        p_limpar_especialista: limparEspecialista
+      });
+
+      if (rpcError) throw rpcError;
+
+      // Busca o caso atualizado para refletir as mudanças no estado local
+      const { data, error: fetchError } = await supabase
         .from('casos')
-        .update(payload)
+        .select('*')
         .eq('id', currentCaso.id)
-        .select()
         .single();
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+
       if (data) {
         setCurrentCaso(data as CasoClinico);
         if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
