@@ -23,7 +23,7 @@ ON public.casos
 FOR UPDATE
 TO authenticated
 USING (auth.uid() = especialista_id)
-WITH CHECK (auth.uid() = especialista_id);
+WITH CHECK (auth.uid() = especialista_id OR especialista_id IS NULL);
 
 -- 4. Criar política de UPDATE para Administradores
 -- Administradores podem atualizar qualquer caso (reatribuir, fechar, etc)
