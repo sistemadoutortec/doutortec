@@ -580,17 +580,46 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         queryClient.invalidateQueries({ queryKey: ['casos'] });
         queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
 
-        if (devolucaoType === 'solicitante' && currentCaso.solicitante_id) {
+        // Notifica o solicitante em ambos os tipos de devolução
+        if (currentCaso.solicitante_id) {
+          const mensagem = devolucaoType === 'solicitante'
+            ? `O caso do paciente ${currentCaso.paciente_nome} foi devolvido pelo especialista por falta de dados.`
+            : `O caso do paciente ${currentCaso.paciente_nome} foi devolvido à regulação. Aguarde nova distribuição.`;
+
           try {
             await supabase.from('notificacoes').insert({
               perfil_id: currentCaso.solicitante_id,
               caso_id: currentCaso.id,
               tipo_evento: 'caso_devolvido',
-              mensagem_resumo: `O caso do paciente ${currentCaso.paciente_nome} foi devolvido pelo especialista por falta de dados.`,
+              mensagem_resumo: mensagem,
               is_lida: false
             });
           } catch (e) {
             console.warn('Falha ao enviar notificação de devolução:', e);
+          }
+        }
+
+        // Se foi para regulação, notifica os admins/telerreguladores também
+        if (devolucaoType === 'telerregulacao') {
+          try {
+            const { data: admins } = await supabase
+              .from('perfis')
+              .select('id')
+              .in('role', ['admin', 'telerregulador'])
+              .eq('status_cadastro', 'aprovado');
+
+            if (admins && admins.length > 0) {
+              const notifAdmins = admins.map((p: { id: string }) => ({
+                perfil_id: p.id,
+                caso_id: currentCaso.id,
+                tipo_evento: 'caso_devolvido',
+                mensagem_resumo: `O caso do paciente ${currentCaso.paciente_nome} foi devolvido pelo especialista e aguarda nova regulação.`,
+                is_lida: false
+              }));
+              await supabase.from('notificacoes').insert(notifAdmins);
+            }
+          } catch (e) {
+            console.warn('Falha ao notificar reguladores:', e);
           }
         }
       }
