@@ -372,6 +372,21 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         textareaRef.current.style.height = 'auto';
       }
       fetchMessages();
+      
+      const destinatario_id = user.id === currentCaso.solicitante_id ? currentCaso.especialista_id : currentCaso.solicitante_id;
+      if (destinatario_id) {
+        try {
+          await supabase.from('notificacoes').insert({
+            perfil_id: destinatario_id,
+            caso_id: currentCaso.id,
+            tipo_evento: 'nova_mensagem',
+            mensagem_resumo: `Nova mensagem no chat do caso do paciente ${currentCaso.paciente_nome}.`,
+            is_lida: false
+          });
+        } catch (e) {
+          console.warn('Falha ao enviar notificação de chat:', e);
+        }
+      }
     } catch (err: any) {
       console.error('Erro ao enviar mensagem:', err.message || err);
       setActionError('Erro ao enviar mensagem no chat.');
@@ -458,6 +473,20 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
         queryClient.invalidateQueries({ queryKey: ['casos'] });
         queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
+
+        if (currentCaso.solicitante_id) {
+          try {
+            await supabase.from('notificacoes').insert({
+              perfil_id: currentCaso.solicitante_id,
+              caso_id: currentCaso.id,
+              tipo_evento: 'caso_respondido',
+              mensagem_resumo: `O caso do paciente ${currentCaso.paciente_nome} foi respondido pelo especialista.`,
+              is_lida: false
+            });
+          } catch (e) {
+            console.warn('Falha ao enviar notificação de devolutiva:', e);
+          }
+        }
       }
     } catch (err: any) {
       console.error('Erro ao enviar devolutiva:', err.message || err);
@@ -542,6 +571,20 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         setJustificativaDevolucao('');
         queryClient.invalidateQueries({ queryKey: ['casos'] });
         queryClient.invalidateQueries({ queryKey: ['caso', currentCaso.id] });
+
+        if (devolucaoType === 'solicitante' && currentCaso.solicitante_id) {
+          try {
+            await supabase.from('notificacoes').insert({
+              perfil_id: currentCaso.solicitante_id,
+              caso_id: currentCaso.id,
+              tipo_evento: 'caso_devolvido',
+              mensagem_resumo: `O caso do paciente ${currentCaso.paciente_nome} foi devolvido pelo especialista por falta de dados.`,
+              is_lida: false
+            });
+          } catch (e) {
+            console.warn('Falha ao enviar notificação de devolução:', e);
+          }
+        }
       }
     } catch (err: any) {
       console.error('Erro ao devolver caso:', err.message || err);
