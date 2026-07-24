@@ -36,7 +36,7 @@ export const RankingEspecialistas: React.FC = () => {
       let casesQuery = supabase
         .from('casos')
         .select(`
-          id, especialista_id, status, created_at, respondido_em, solicitante_id,
+          id, especialista_id, status, created_at, aceito_em, respondido_em, solicitante_id,
           solicitante:perfis!solicitante_id(municipio)
         `)
         .not('especialista_id', 'is', null)
@@ -86,7 +86,7 @@ export const RankingEspecialistas: React.FC = () => {
         espCasosResolvidos.forEach(c => {
           if (c.respondido_em) {
             const fim = new Date(c.respondido_em).getTime();
-            const inicio = new Date(c.created_at).getTime();
+            const inicio = new Date(c.aceito_em || c.created_at).getTime();
             const diffMs = fim - inicio;
             if (diffMs > 0) {
               totalHoras += diffMs / (1000 * 60 * 60);

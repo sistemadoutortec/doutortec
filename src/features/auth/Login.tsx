@@ -36,16 +36,20 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
       const { error: signInError } = await signIn(email, password);
       if (signInError) {
+        setLoading(false);
         if (signInError.message === 'Invalid login credentials') {
           setError('E-mail ou senha incorretos. Por favor, tente novamente.');
         } else {
@@ -62,6 +66,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
         }
       }
     } catch (err: any) {
+      setLoading(false);
       console.error(err);
       if (err.message === 'Invalid login credentials') {
         setError('E-mail ou senha incorretos. Por favor, tente novamente.');
@@ -101,7 +106,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+      className="flex min-h-screen flex-col items-center justify-center overflow-y-auto px-4 py-12 sm:px-6 lg:px-8"
       style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
     >
       <div 
@@ -172,7 +177,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
             </div>
           </form>
         ) : (
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
               <div className="rounded-lg bg-red-50 p-3 border border-red-200">
                 <div className="text-sm text-red-700">{error}</div>

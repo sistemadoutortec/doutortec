@@ -26,6 +26,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
   // Filter States
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [prioridadeFilter, setPrioridadeFilter] = useState<string>('all');
+  const [especialidadeFilter, setEspecialidadeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   
   // Pagination State
@@ -133,12 +134,14 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
         }
       }
 
-      // Apply API filters if not doing client-side search (to protect performance)
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
       if (prioridadeFilter !== 'all') {
         query = query.eq('prioridade', prioridadeFilter);
+      }
+      if (especialidadeFilter !== 'all') {
+        query = query.eq('especialidade_id', especialidadeFilter);
       }
 
       const { data, error: queryError } = await query;
@@ -180,7 +183,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
     } finally {
       setLoading(false);
     }
-  }, [user, perfil, statusFilter, prioridadeFilter, page, limit, specialistMuns]);
+  }, [user, perfil, statusFilter, prioridadeFilter, especialidadeFilter, page, limit, specialistMuns]);
 
   // Load reference data on mount
   useEffect(() => {
@@ -190,7 +193,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
   // Fetch cases when filters change or on mount
   useEffect(() => {
     fetchCasos(false);
-  }, [statusFilter, prioridadeFilter]);
+  }, [statusFilter, prioridadeFilter, especialidadeFilter]);
 
   // Client-side text filter on patient name
   const filteredCasos = casos.filter(caso => {
@@ -247,7 +250,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
     <div className="space-y-6">
       {/* Filters bar */}
       {showFilters && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4 bg-white p-4 rounded-xl border border-gray-150 shadow-xs">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5 bg-white p-4 rounded-xl border border-gray-150 shadow-xs">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
@@ -286,12 +289,26 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
             </select>
           </div>
 
+          <div>
+            <select
+              value={especialidadeFilter}
+              onChange={(e) => setEspecialidadeFilter(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+            >
+              <option value="all">Todas as Especialidades</option>
+              {Object.entries(specialtiesMap).map(([id, nome]) => (
+                <option key={id} value={id}>{nome}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex items-center justify-end">
             <button 
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
                 setPrioridadeFilter('all');
+                setEspecialidadeFilter('all');
               }}
               className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 transition"
             >
@@ -346,7 +363,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
                 onClick={() => onSelectCaso?.(caso)}
                 className={`rounded-xl border p-5 transition duration-150 flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${
                   onSelectCaso ? 'cursor-pointer hover:border-blue-400 hover:shadow-xs' : ''
-                }`}
+                } ${caso.status === 'novo' ? 'border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.4)] animate-pulse' : ''}`}
                 style={{ backgroundColor: isEven ? '#white' : 'rgba(232, 243, 252, 0.4)' }}
               >
                 <div className="space-y-2">
