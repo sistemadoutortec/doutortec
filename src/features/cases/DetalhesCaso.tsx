@@ -77,6 +77,26 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
   const [grauSatisfacao, setGrauSatisfacao] = useState<number>(0);
   const [evitouEncaminhamento, setEvitouEncaminhamento] = useState<boolean | null>(null);
   const [hoveredStars, setHoveredStars] = useState<number>(0);
+  const [hasEvaluation, setHasEvaluation] = useState<boolean | null>(null);
+  const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false);
+
+  useEffect(() => {
+    const checkEvaluation = async () => {
+      if (!currentCaso?.id) return;
+      try {
+        const { data } = await supabase
+          .from('casos_avaliacoes')
+          .select('id')
+          .eq('caso_id', currentCaso.id)
+          .maybeSingle();
+        
+        setHasEvaluation(!!data);
+      } catch (err) {
+        console.error('Erro ao verificar avaliação:', err);
+      }
+    };
+    checkEvaluation();
+  }, [currentCaso?.id]);
 
   const closeAndEvaluateMutation = useMutation({
     mutationFn: async (evalData: {
@@ -86,7 +106,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     }) => {
       const { error: evalError } = await supabase
         .from('casos_avaliacoes')
-        .insert([
+        .upsert(
           {
             caso_id: currentCaso.id,
             solicitante_id: currentCaso.solicitante_id,
@@ -94,8 +114,9 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             resolveu_duvida: evalData.resolveuDuvida,
             grau_satisfacao: evalData.grauSatisfacao,
             evitou_encaminhamento: evalData.evitouEncaminhamento
-          }
-        ]);
+          },
+          { onConflict: 'caso_id' }
+        );
       if (evalError) throw evalError;
 
       const { data: updatedCaso, error: updateError } = await supabase
@@ -113,6 +134,8 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       return updatedCaso;
     },
     onSuccess: (data) => {
+      setIsSubmittingEvaluation(false);
+      setHasEvaluation(true);
       setCurrentCaso(data as CasoClinico);
       if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
       setIsEvaluationModalOpen(false);
@@ -125,8 +148,14 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       queryClient.invalidateQueries({ queryKey: ['painel-financeiro'] });
     },
     onError: (err: any) => {
+      setIsSubmittingEvaluation(false);
       console.error(err);
-      setActionError(`Erro ao registrar avaliação e fechar caso: ${err.message || err}`);
+      let friendlyMessage = err.message || err;
+      if (err.code === '23505' || (err.message && err.message.includes('unique constraint'))) {
+        friendlyMessage = 'Este caso já foi encerrado e avaliado.';
+        setHasEvaluation(true);
+      }
+      setActionError(`Erro ao registrar avaliação e fechar caso: ${friendlyMessage}`);
     }
   });
 
@@ -633,10 +662,11 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
   // Action: Close/Archive Case (Specialist or Admin or Solicitante if respondido)
   const handleCloseCase = () => {
-    if (currentCaso.status === 'respondido') {
+    if (currentCaso.status === 'respondido' && !hasEvaluation) {
       setIsEvaluationModalOpen(true);
     } else {
-      if (window.confirm('Deseja realmente encerrar este chamado sem avaliação?')) {
+      const skipConfirm = !!hasEvaluation;
+      if (skipConfirm || window.confirm('Deseja realmente encerrar este chamado sem avaliação?')) {
         closeDirectMutation.mutate();
       }
     }
@@ -789,18 +819,18 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             <button
               type="button"
               onClick={handleCloseCase}
-              disabled={closeAndEvaluateMutation.isPending || closeDirectMutation.isPending}
+              disabled={hasEvaluation === null || closeAndEvaluateMutation.isPending || closeDirectMutation.isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-rose-605 hover:bg-rose-750 px-4 py-2 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
               style={{ backgroundColor: '#e11d48' }}
               onMouseEnter={e => e.currentTarget.style.backgroundColor = '#be123c'}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e11d48'}
             >
-              {closeAndEvaluateMutation.isPending || closeDirectMutation.isPending ? (
+              {hasEvaluation === null || closeAndEvaluateMutation.isPending || closeDirectMutation.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Ban className="h-3.5 w-3.5" />
               )}
-              {currentCaso.status === 'respondido' ? 'Avaliar e Encerrar' : 'Encerrar Ticket'}
+              {currentCaso.status === 'respondido' && !hasEvaluation ? 'Avaliar e Encerrar' : 'Encerrar Ticket'}
             </button>
           )}
         </div>
@@ -1331,7 +1361,8 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
-                if (resolveuDuvida === null || grauSatisfacao === 0 || evitouEncaminhamento === null) return;
+                if (resolveuDuvida === null || grauSatisfacao === 0 || evitouEncaminhamento === null || isSubmittingEvaluation) return;
+                setIsSubmittingEvaluation(true);
                 closeAndEvaluateMutation.mutate({
                   resolveuDuvida,
                   grauSatisfacao,
@@ -1453,14 +1484,20 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                 </button>
                 <button
                   type="submit"
-                  disabled={resolveuDuvida === null || grauSatisfacao === 0 || evitouEncaminhamento === null || closeAndEvaluateMutation.isPending}
+                  disabled={resolveuDuvida === null || grauSatisfacao === 0 || evitouEncaminhamento === null || closeAndEvaluateMutation.isPending || isSubmittingEvaluation}
                   className="rounded-lg bg-emerald-600 hover:bg-emerald-750 px-5 py-2.5 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   style={{ backgroundColor: '#059669' }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = '#047857'}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = '#059669'}
                 >
-                  {closeAndEvaluateMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Confirmar e Fechar
+                  {(closeAndEvaluateMutation.isPending || isSubmittingEvaluation) ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    'Confirmar e Fechar'
+                  )}
                 </button>
               </div>
             </form>
