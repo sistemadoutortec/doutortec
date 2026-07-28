@@ -379,6 +379,7 @@ export const Distribucao: React.FC = () => {
         .update({
           especialista_id: selectedEspId,
           status: 'em_progresso',
+          aceito_em: new Date().toISOString()
         })
         .eq('id', selectedCaso.id);
 

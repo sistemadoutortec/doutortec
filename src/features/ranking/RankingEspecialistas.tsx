@@ -131,7 +131,7 @@ export const RankingEspecialistas: React.FC = () => {
   const getScoreBadge = (score: number) => {
     if (score === 0) {
       return (
-        <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-500 border border-gray-200">
+        <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-500 border border-gray-200 whitespace-nowrap">
           Sem avaliações
         </span>
       );
@@ -151,7 +151,7 @@ export const RankingEspecialistas: React.FC = () => {
       );
     }
     return (
-      <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-250">
+      <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-250 whitespace-nowrap">
         Precisa Melhorar
       </span>
     );

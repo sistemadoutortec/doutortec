@@ -127,7 +127,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         })
         .eq('id', currentCaso.id)
         .select(`
-          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, respondido_em, fechado_em, devolutiva_conduta, devolutiva_aps
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, respondido_em, fechado_em, devolutiva_conduta, devolutiva_aps, aceito_em
         `)
         .single();
       if (updateError) throw updateError;
@@ -169,7 +169,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         })
         .eq('id', currentCaso.id)
         .select(`
-          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, respondido_em, fechado_em, devolutiva_conduta, devolutiva_aps
+          id, paciente_nome, especialidade_id, prioridade, historico_clinico, conduta_atual, duvida_clinica, solicitante_id, especialista_id, status, created_at, respondido_em, fechado_em, devolutiva_conduta, devolutiva_aps, aceito_em
         `)
         .single();
       if (updateError) throw updateError;
@@ -435,7 +435,8 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         .from('casos')
         .update({
           especialista_id: user.id,
-          status: 'em_progresso'
+          status: 'em_progresso',
+          aceito_em: new Date().toISOString()
         })
         .eq('id', currentCaso.id)
         .select()
@@ -813,7 +814,6 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           {/* Close/Archive case */}
           {currentCaso.status !== 'fechado' && (
             perfil?.role === 'admin' || 
-            (perfil?.role === 'especialista' && currentCaso.especialista_id === user?.id) ||
             (perfil?.role === 'solicitante' && currentCaso.solicitante_id === user?.id && currentCaso.status === 'respondido')
           ) && (
             <button
@@ -1200,7 +1200,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                       className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-xs font-bold text-white transition disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4.5 w-4.5" />}
-                      Enviar Resposta
+                      Enviar Parecer
                     </button>
                   </div>
                 </form>
