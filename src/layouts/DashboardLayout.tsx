@@ -18,8 +18,10 @@ import {
   LogOut,
   Menu,
   X,
-  UserCheck
+  UserCheck,
+  HelpCircle
 } from 'lucide-react';
+import { ModalAjuda } from '../components/ModalAjuda';
 
 interface SidebarItem {
   label: string;
@@ -45,6 +47,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const getMenuLinks = (): SidebarItem[] => {
     const role = perfil?.role;
@@ -149,6 +152,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               </div>
             );
           })}
+          <div className="pt-2 mt-2 border-t border-white/5">
+            <button
+              onClick={() => {
+                setHelpOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-xl py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-white/60 hover:text-white hover:bg-white/5 transition-all duration-200 cursor-pointer"
+            >
+              <HelpCircle className="h-4.5 w-4.5 shrink-0 text-white/40" />
+              AJUDA & GUIA
+            </button>
+          </div>
         </nav>
       </div>
 
@@ -220,6 +235,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
 
           <div className="flex items-center gap-4 relative">
+            {/* Help Icon Trigger */}
+            <button 
+              onClick={() => setHelpOpen(true)}
+              className="rounded-lg p-1.5 transition hover:bg-white/10 cursor-pointer"
+              style={{ color: '#ffffff' }}
+              title="Central de Ajuda e Guia do Sistema"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </button>
+
             {/* Bell Icon Trigger */}
             <button 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -259,6 +284,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {children}
         </main>
       </div>
+
+      {/* Help Modal */}
+      <ModalAjuda 
+        isOpen={helpOpen} 
+        onClose={() => setHelpOpen(false)} 
+        defaultRole={
+          perfil?.role === 'especialista' 
+            ? 'especialista' 
+            : perfil?.role === 'admin' 
+            ? 'admin' 
+            : 'solicitante'
+        } 
+      />
     </div>
   );
 };
