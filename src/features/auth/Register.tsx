@@ -133,7 +133,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
           <div className="mt-6">
             <button
               onClick={onSwitchToLogin}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              className="w-full text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 font-medium rounded-lg text-sm px-5 py-3 text-center shadow-lg transition-all cursor-pointer"
             >
               Voltar para o Login
             </button>
@@ -149,48 +149,51 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
     >
       <div 
-        className="w-full max-w-lg space-y-6 rounded-2xl p-8 shadow-2xl"
-        style={{ backgroundColor: '#091151' }}
+        className="w-full max-w-lg space-y-6 bg-white shadow-2xl rounded-2xl p-8"
       >
-        <div className="flex flex-col items-center gap-3">
-          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
-          <div className="text-center">
-            <h2 className="text-2xl font-black tracking-tight text-white">
-              Cadastro Doutortec
-            </h2>
-            <p className="mt-1.5 text-sm font-medium text-slate-300">
-              Solicite acesso à plataforma de teleinterconsulta
-            </p>
-          </div>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 border border-red-200">
-              <div className="flex">
-                <div className="text-sm text-red-700">{error}</div>
-              </div>
-            </div>
-          )}
+         <div className="text-center">
+           <img 
+             src="/Logo-Doutortec-Original.png" 
+             alt="Doutortec" 
+             className="w-60 md:w-64 max-w-[275px] h-auto object-contain mx-auto mb-8 contrast-125 brightness-95" 
+           />
+           <div>
+             <h2 className="text-2xl font-black tracking-tight text-slate-900">
+               Cadastro Doutortec
+             </h2>
+             <p className="mt-1.5 text-sm font-medium text-slate-500">
+               Solicite acesso à plataforma de teleinterconsulta
+             </p>
+           </div>
+         </div>
+         <form className="space-y-4" onSubmit={handleSubmit}>
+           {error && (
+             <div className="rounded-md bg-red-50 p-4 border border-red-200">
+               <div className="flex">
+                 <div className="text-sm text-red-700">{error}</div>
+               </div>
+             </div>
+           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="name" className="block text-sm font-medium text-slate-200 mb-1">
-                Nome Completo *
-              </label>
-              <input
-                id="name"
-                type="text"
-                required
-                disabled={loading}
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
-                placeholder="Insira seu nome completo"
-              />
-            </div>
+           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+             <div className="sm:col-span-2">
+               <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                 Nome Completo *
+               </label>
+               <input
+                 id="name"
+                 type="text"
+                 required
+                 disabled={loading}
+                 value={nome}
+                 onChange={(e) => setNome(e.target.value)}
+                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                 placeholder="Insira seu nome completo"
+               />
+             </div>
 
             <div>
-              <label htmlFor="reg-email" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="reg-email" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 E-mail Profissional *
               </label>
               <input
@@ -200,13 +203,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="nome@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="cpf" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="cpf" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 CPF *
               </label>
               <input
@@ -216,13 +219,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="000.000.000-00"
               />
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="role" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Perfil de Acesso *
               </label>
               <select
@@ -230,7 +233,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2 text-slate-900 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
               >
                 <option value="solicitante" className="bg-white text-slate-900">Solicitante (Clínico/Enfermeiro/Generalista)</option>
                 <option value="especialista" className="bg-white text-slate-900">Especialista (Médico Especialista)</option>
@@ -238,7 +241,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
             </div>
 
             <div>
-              <label htmlFor="crm_coren" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="crm_coren" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Registro Profissional (CRM/COREN)
               </label>
               <input
@@ -247,13 +250,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={crmCoren}
                 onChange={(e) => setCrmCoren(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="Ex: CRM-SP 123456"
               />
             </div>
 
             <div>
-              <label htmlFor="instituicao" className="block text-sm font-medium text-slate-200 mb-1 whitespace-nowrap">
+              <label htmlFor="instituicao" className="block text-sm font-semibold text-slate-700 mb-1.5 whitespace-nowrap">
                 Instituição / Unidade de Saúde *
               </label>
               <input
@@ -263,13 +266,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={instituicao}
                 onChange={(e) => setInstituicao(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="Hospital, UBS ou Clínica"
               />
             </div>
 
             <div>
-              <label htmlFor="municipio" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="municipio" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Município *
               </label>
               <input
@@ -279,13 +282,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={municipio}
                 onChange={(e) => setMunicipio(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="Sua cidade"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="telefone" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="telefone" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Telefone de Contato
               </label>
               <input
@@ -294,13 +297,13 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 disabled={loading}
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="(00) 00000-0000"
               />
             </div>
 
             <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="reg-password" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Senha *
               </label>
               <div className="relative">
@@ -311,7 +314,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                   disabled={loading}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 pr-10 transition disabled:bg-gray-100 disabled:text-gray-400"
                   placeholder="Mínimo 6 caracteres"
                 />
                 <button
@@ -329,7 +332,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-200 mb-1">
+              <label htmlFor="confirm-password" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Confirmar Senha *
               </label>
               <div className="relative">
@@ -340,7 +343,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                   disabled={loading}
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
+                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 pr-10 transition disabled:bg-gray-100 disabled:text-gray-400"
                   placeholder="Repita sua senha"
                 />
                 <button
@@ -362,13 +365,10 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#0ea5e9' }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0284c7'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9'; }}
+              className="w-full text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 font-medium rounded-lg text-sm px-5 py-3 text-center shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -383,17 +383,14 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
         </form>
 
         {onSwitchToLogin && (
-          <div className="text-center mt-4 border-t border-slate-700/50 pt-4">
+          <div className="text-center mt-6 border-t border-slate-100 pt-4">
             <button
               type="button"
               onClick={onSwitchToLogin}
               disabled={loading}
-              className="text-sm font-semibold transition disabled:opacity-50"
-              style={{ color: '#94a3b8' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#38bdf8'}
-              onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+              className="text-sm text-slate-500 transition disabled:opacity-50"
             >
-              Já possui uma conta? Faça login
+              Já possui uma conta? <span className="text-blue-600 font-semibold hover:underline">Faça login</span>
             </button>
           </div>
         )}

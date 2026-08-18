@@ -110,18 +110,21 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
     >
       <div 
-        className="w-full max-w-md space-y-6 rounded-2xl p-8 shadow-2xl"
-        style={{ backgroundColor: '#091151' }}
+        className="w-full max-w-md space-y-6 bg-white shadow-2xl rounded-2xl p-8"
       >
-        <div className="flex flex-col items-center gap-3">
-          <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
+        <div className="text-center">
+          <img 
+            src="/Logo-Doutortec-Original.png" 
+            alt="Doutortec" 
+            className="w-60 md:w-64 max-w-[275px] h-auto object-contain mx-auto mb-8 contrast-125 brightness-95" 
+          />
         </div>
 
         {showRecovery ? (
           <form className="space-y-5" onSubmit={handleRecoverySubmit}>
             <div className="text-center">
-              <h2 className="text-lg font-bold text-white mb-1">Recuperar Senha</h2>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Recuperar Senha</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Digite seu e-mail cadastrado e enviaremos um link de recuperação.
               </p>
             </div>
@@ -138,7 +141,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
             )}
 
             <div>
-              <label htmlFor="recovery-email" className="block text-sm font-bold text-slate-200 mb-1.5">
+              <label htmlFor="recovery-email" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Endereço de e-mail
               </label>
               <input
@@ -148,7 +151,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                 disabled={recoveryLoading}
                 value={recoveryEmail}
                 onChange={(e) => setRecoveryEmail(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                 placeholder="exemplo@doutortec.com.br"
               />
             </div>
@@ -157,8 +160,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
               <button
                 type="submit"
                 disabled={recoveryLoading || !!recoverySuccess}
-                className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-[#091151] transition disabled:opacity-60 cursor-pointer shadow-xs"
-                style={{ backgroundColor: '#28ffb2' }}
+                className="w-full text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 font-medium rounded-lg text-sm px-5 py-3 text-center shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {recoveryLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
               </button>
@@ -170,7 +172,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                   setRecoveryError(null);
                   setRecoverySuccess(null);
                 }}
-                className="flex w-full justify-center rounded-lg border border-slate-700 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 cursor-pointer"
+                className="flex w-full justify-center rounded-lg border border-slate-200 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
               >
                 Voltar ao Login
               </button>
@@ -185,7 +187,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
             )}
             <div className="space-y-4">
               <div>
-                <label htmlFor="email-address" className="block text-sm font-bold text-slate-200 mb-1.5">
+                <label htmlFor="email-address" className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Endereço de e-mail
                 </label>
                 <input
@@ -197,16 +199,13 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                   disabled={loading}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                  style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
-                  onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
-                  onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                   placeholder="exemplo@doutortec.com.br"
                 />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label htmlFor="password" className="block text-sm font-bold text-slate-200">
+                  <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
                     Senha
                   </label>
                   <button
@@ -215,7 +214,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                       setShowRecovery(true);
                       setError(null);
                     }}
-                    className="text-xs font-semibold text-slate-400 hover:text-[#28ffb2] transition cursor-pointer"
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium transition cursor-pointer"
                   >
                     Esqueci minha senha
                   </button>
@@ -230,10 +229,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
                     disabled={loading}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full rounded-lg border border-gray-300 bg-white pl-3 pr-10 py-2.5 text-slate-900 placeholder-gray-400 focus:outline-none sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                    style={{ '--tw-ring-color': '#0ea5e9' } as React.CSSProperties}
-                    onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 2px rgba(14,165,233,0.15)'; }}
-                    onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                    className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 pr-10 transition disabled:bg-gray-100 disabled:text-gray-400"
                     placeholder="Digite sua senha"
                   />
                   <button
@@ -255,13 +251,10 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#0ea5e9' }}
-                onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#0284c7'; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#0ea5e9'; }}
+                className="w-full text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 font-medium rounded-lg text-sm px-5 py-3 text-center shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -277,17 +270,14 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
         )}
 
         {onSwitchToRegister && (
-          <div className="text-center border-t border-slate-700/50 pt-4">
+          <div className="text-center border-t border-slate-100 pt-4 mt-6">
             <button
               type="button"
               onClick={onSwitchToRegister}
               disabled={loading}
-              className="text-sm font-semibold transition disabled:opacity-50"
-              style={{ color: '#94a3b8' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#38bdf8'}
-              onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+              className="text-sm text-slate-500 transition disabled:opacity-50"
             >
-              Ainda não tem conta? Cadastre-se
+              Ainda não tem conta? <span className="text-blue-600 font-semibold hover:underline">Cadastre-se</span>
             </button>
           </div>
         )}

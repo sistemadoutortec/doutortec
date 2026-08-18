@@ -149,7 +149,7 @@ function App() {
           style={{ backgroundColor: '#091151' }}
         >
           <div className="flex flex-col items-center gap-3">
-            <img src="/Logo-Doutortec.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
+            <img src="/Logo-Doutortec-Original.png" alt="Doutortec" className="h-24 w-auto object-contain mb-1" />
           </div>
 
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 border border-slate-750">
