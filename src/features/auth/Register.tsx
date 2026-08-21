@@ -203,21 +203,39 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-lg border border-gray-100 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+      <div 
+        className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+        style={{ background: 'radial-gradient(circle, #28ffb2 0%, #0448af 100%)' }}
+      >
+        <div className="w-full max-w-lg space-y-6 bg-white shadow-2xl rounded-2xl p-8 text-center">
+          <div className="text-center mb-4">
+            <img 
+              src="/Logo-Doutortec-Original.png" 
+              alt="Doutortec" 
+              className="mx-auto h-12 w-auto mb-3"
+            />
+          </div>
+          
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200">
+            <svg className="h-7 w-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">Cadastro Recebido!</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sua solicitação de cadastro foi enviada com sucesso e está **pendente de aprovação** pelo administrador.
-          </p>
-          <div className="mt-6">
+          
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Cadastro Recebido!</h2>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Sua solicitação de cadastro foi enviada com sucesso e está <strong className="text-indigo-600">pendente de aprovação</strong> pelo administrador.
+            </p>
+          </div>
+
+          <div className="pt-2">
             <button
               onClick={onSwitchToLogin}
-              className="w-full text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 font-medium rounded-lg text-sm px-5 py-3 text-center shadow-lg transition-all cursor-pointer"
+              className="w-full text-white font-bold rounded-xl text-xs px-5 py-3.5 text-center shadow-md transition-all cursor-pointer"
+              style={{ backgroundColor: '#091151' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#000530'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#091151'}
             >
               Voltar para o Login
             </button>
