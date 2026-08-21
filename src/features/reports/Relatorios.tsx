@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
 import { supabase } from '../../lib/supabase';
+import { getPricingForCaso } from '../../lib/financeUtils';
 import { 
   FileBarChart2, 
   Filter, 
@@ -42,6 +43,8 @@ interface CasoRelatorio {
   especialista_nome?: string;
   valor_bonus?: number;
   tempo_resposta_horas?: number;
+  faturamento_caso?: number;
+  repasse_especialista?: number;
 }
 
 interface MunicipioOption {
@@ -91,6 +94,7 @@ export const Relatorios: React.FC = () => {
   const [municipios, setMunicipios] = useState<MunicipioOption[]>([]);
   const [especialidades, setEspecialidades] = useState<EspecialidadeOption[]>([]);
   const [especialistas, setEspecialistas] = useState<PerfilOption[]>([]);
+  const [configs, setConfigs] = useState<any[]>([]);
 
   // Dados Principais
   const [casosRaw, setCasosRaw] = useState<CasoRelatorio[]>([]);
@@ -99,15 +103,17 @@ export const Relatorios: React.FC = () => {
   useEffect(() => {
     const fetchSupportData = async () => {
       try {
-        const [munsRes, espsRes, profsRes] = await Promise.all([
+        const [munsRes, espsRes, profsRes, configsRes] = await Promise.all([
           supabase.from('fluxos_municipios').select('id, municipio').order('municipio'),
           supabase.from('especialidades').select('id, nome').order('nome'),
-          supabase.from('perfis').select('id, nome, role').eq('role', 'especialista').order('nome')
+          supabase.from('perfis').select('id, nome, role').eq('role', 'especialista').order('nome'),
+          supabase.from('configuracoes_financeiras').select('*')
         ]);
 
         if (munsRes.data) setMunicipios(munsRes.data);
         if (espsRes.data) setEspecialidades(espsRes.data);
         if (profsRes.data) setEspecialistas(profsRes.data);
+        if (configsRes.data) setConfigs(configsRes.data);
       } catch (err) {
         console.error('Erro ao buscar dados de apoio dos relatórios:', err);
       }
@@ -150,7 +156,16 @@ export const Relatorios: React.FC = () => {
       // 3. Processamento de enriquecimento no front-end
       const enriched: CasoRelatorio[] = items.map(item => {
         const casoDet = casosMap.get(item.caso_id);
-        const valorBonus = bonusMap.get(item.caso_id) ?? (item.status === 'respondido' ? 150.00 : 0.00);
+        
+        // Resolve dynamic pricing
+        const pricing = getPricingForCaso(
+          item.especialidade_id,
+          item.municipio_nome,
+          configs,
+          municipios
+        );
+
+        const valorBonus = bonusMap.get(item.caso_id) ?? (item.status === 'respondido' ? pricing.valorRepasseSpec : 0.00);
         
         // Simulação realista de tempo de resposta para casos respondidos (entre 1.2h e 4.5h se não registrado)
         const tempoResposta = item.status === 'respondido' 
@@ -164,7 +179,9 @@ export const Relatorios: React.FC = () => {
           especialista_nome: item.especialista_id ? (espNameMap.get(item.especialista_id) || 'Especialista Externo') : 'Aguardando',
           especialidade_nome: specialtyNameMap.get(item.especialidade_id) || 'Clínica Geral',
           valor_bonus: valorBonus,
-          tempo_resposta_horas: tempoResposta
+          tempo_resposta_horas: tempoResposta,
+          faturamento_caso: pricing.valorTotal,
+          repasse_especialista: pricing.valorRepasseSpec
         };
       });
 
@@ -219,14 +236,18 @@ export const Relatorios: React.FC = () => {
       ? parseFloat((temposValidos.reduce((a, b) => a + b, 0) / temposValidos.length).toFixed(1)) 
       : 0;
 
-    // Faturamento Total (soma de bônus)
-    const faturamento = filteredData.reduce((acc, curr) => acc + (curr.valor_bonus || 0), 0);
+    // Faturamento Total (soma do faturamento real do caso para resolvidos)
+    const faturamento = filteredData.reduce((acc, curr) => acc + (curr.status === 'respondido' ? (curr.faturamento_caso || 0) : 0), 0);
+    const repasses = filteredData.reduce((acc, curr) => acc + (curr.valor_bonus || 0), 0);
+    const lucro = faturamento - repasses;
 
     return {
       total,
       taxaResolucao,
       tempoMedio,
-      faturamento
+      faturamento,
+      repasses,
+      lucro
     };
   }, [filteredData]);
 
@@ -265,7 +286,7 @@ export const Relatorios: React.FC = () => {
         groupMap[key] = { total: 0, faturamento: 0 };
       }
       groupMap[key].total += 1;
-      groupMap[key].faturamento += (c.valor_bonus || 0);
+      groupMap[key].faturamento += (c.status === 'respondido' ? (c.faturamento_caso || 0) : 0);
     });
 
     return Object.entries(groupMap).map(([name, val]) => ({
@@ -539,14 +560,15 @@ export const Relatorios: React.FC = () => {
               </div>
             </div>
 
-            {/* KPI 4: Faturamento Total */}
+            {/* KPI 4: Resultados Financeiros */}
             <div className="bg-white p-5 rounded-xl border border-gray-150 shadow-xs flex items-center gap-4">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-lg shrink-0">
                 <DollarSign className="h-6 w-6" />
               </div>
-              <div>
-                <span className="text-[11px] font-bold text-gray-450 uppercase tracking-wider block">Faturamento Estimado</span>
-                <span className="text-2xl font-extrabold text-gray-900">R$ {kpis.faturamento.toFixed(2)}</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-[11px] font-bold text-gray-450 uppercase tracking-wider block">Resultados Financeiros</span>
+                <span className="text-lg font-extrabold text-gray-900 block leading-tight">Fat: R$ {kpis.faturamento.toFixed(2)}</span>
+                <span className="text-[11px] font-semibold text-green-600 block mt-0.5" title="Faturamento menos repasses e bônus">Margem: R$ {kpis.lucro.toFixed(2)}</span>
               </div>
             </div>
           </div>

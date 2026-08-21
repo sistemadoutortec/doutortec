@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import type { UserRole } from '../../types';
 import { Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface RegisterProps {
   onSwitchToLogin?: () => void;
@@ -17,18 +18,59 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   const [showSenha, setShowSenha] = useState(false);
   const [confirmarShowSenha, setConfirmarShowSenha] = useState(false);
   const [cpf, setCpf] = useState('');
-  const [crmCoren, setCrmCoren] = useState('');
+  const [registroNumero, setRegistroNumero] = useState('');
+  const [uf, setUf] = useState('');
   const [role, setRole] = useState<UserRole>('solicitante');
+  const [rqe, setRqe] = useState('');
+  const [especialidades, setEspecialidades] = useState<{ id: string; nome: string }[]>([]);
+  const [selectedEspecialidade, setSelectedEspecialidade] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [instituicao, setInstituicao] = useState('');
   const [telefone, setTelefone] = useState('');
+
+  // Format telephone number as (99) 99999-9999 or (99) 9999-9999
+  const formatTelefone = (value: string) => {
+    const clean = value.replace(/\D/g, '');
+    const numbers = clean.slice(0, 11);
+    if (numbers.length <= 2) {
+      return numbers;
+    }
+    if (numbers.length <= 6) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    }
+    if (numbers.length <= 10) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+    }
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  };
+
+  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTelefone(formatTelefone(e.target.value));
+  };
+
+  // Fetch specialties for specialist role
+  useEffect(() => {
+    const fetchEspecialidades = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('especialidades')
+          .select('id, nome')
+          .order('nome');
+        if (error) throw error;
+        setEspecialidades(data || []);
+      } catch (err) {
+        console.error('Erro ao carregar especialidades:', err);
+      }
+    };
+    fetchEspecialidades();
+  }, []);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cpf.trim() || !municipio.trim() || !instituicao.trim()) {
+    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cpf.trim() || !municipio.trim() || !telefone.trim()) {
       setError('Por favor, preencha todos os campos obrigatórios (*).');
       return false;
     }
@@ -49,6 +91,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       return false;
     }
 
+    // CPF validation
     const cleanCpf = cpf.replace(/\D/g, '');
     if (cleanCpf.length !== 11) {
       setError('O CPF informado deve conter 11 dígitos.');
@@ -79,6 +122,31 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       return false;
     }
 
+    // Telephone validation (validates DDD and number - 10 or 11 digits)
+    const cleanPhone = telefone.replace(/\D/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+      setError('Por favor, insira um telefone de contato válido com DDD (10 ou 11 dígitos).');
+      return false;
+    }
+
+    // Validate UF selection if registration number is filled
+    if (registroNumero.trim() && !uf) {
+      setError('Por favor, selecione a UF do seu registro profissional.');
+      return false;
+    }
+
+    // Specialist validation
+    if (role === 'especialista') {
+      if (!rqe.trim()) {
+        setError('Por favor, informe seu Registro de Qualificação de Especialista (RQE).');
+        return false;
+      }
+      if (!selectedEspecialidade) {
+        setError('Por favor, selecione sua Especialidade Médica.');
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -91,14 +159,30 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
 
     setLoading(true);
     try {
+      // Find specialty name if specialist
+      let categoriaProfissional: string | undefined = undefined;
+      if (role === 'especialista' && selectedEspecialidade) {
+        const found = especialidades.find(esp => esp.id === selectedEspecialidade);
+        if (found) {
+          categoriaProfissional = found.nome;
+        }
+      }
+
+      // Format CRM / COREN with UF if provided
+      const formattedCrmCoren = registroNumero.trim() 
+        ? `${registroNumero.trim()} / ${uf}` 
+        : undefined;
+
       const { error: signUpError } = await signUp(email, senha, {
         nome,
         cpf: cpf.replace(/\D/g, ''),
         role,
-        crm_coren: crmCoren.trim() || undefined,
+        crm_coren: formattedCrmCoren,
         municipio,
-        instituicao,
-        telefone: telefone.trim() || undefined,
+        instituicao: instituicao.trim() || 'Não especificado',
+        telefone: telefone.trim(),
+        rqe: role === 'especialista' ? rqe.trim() : undefined,
+        categoria_profissional: categoriaProfissional,
       });
 
       if (signUpError) {
@@ -225,82 +309,144 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Perfil de Acesso *
-              </label>
-              <select
-                id="role"
-                disabled={loading}
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="solicitante" className="bg-white text-slate-900">Solicitante (Clínico/Enfermeiro/Generalista)</option>
-                <option value="especialista" className="bg-white text-slate-900">Especialista (Médico Especialista)</option>
-              </select>
-            </div>
+               <label htmlFor="role" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                 Perfil de Acesso *
+               </label>
+               <select
+                 id="role"
+                 disabled={loading}
+                 value={role}
+                 onChange={(e) => setRole(e.target.value as UserRole)}
+                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+               >
+                 <option value="solicitante" className="bg-white text-slate-900">Clínico(a)</option>
+                 <option value="especialista" className="bg-white text-slate-900">Especialista (Médico de Referência)</option>
+               </select>
+             </div>
 
-            <div>
-              <label htmlFor="crm_coren" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Registro Profissional (CRM/COREN)
-              </label>
-              <input
-                id="crm_coren"
-                type="text"
-                disabled={loading}
-                value={crmCoren}
-                onChange={(e) => setCrmCoren(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                placeholder="Ex: CRM-SP 123456"
-              />
-            </div>
+             <div className="sm:col-span-2">
+               <div className="grid grid-cols-3 gap-4">
+                 <div className="col-span-2">
+                   <label htmlFor="registro_numero" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                     Número do Registro (CRM/COREN)
+                   </label>
+                   <input
+                     id="registro_numero"
+                     type="text"
+                     disabled={loading}
+                     value={registroNumero}
+                     onChange={(e) => setRegistroNumero(e.target.value)}
+                     className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                     placeholder="Ex: 123456"
+                   />
+                 </div>
+                 <div>
+                   <label htmlFor="uf" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                     UF
+                   </label>
+                   <select
+                     id="uf"
+                     disabled={loading}
+                     value={uf}
+                     onChange={(e) => setUf(e.target.value)}
+                     className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                   >
+                     <option value="" className="bg-white text-slate-450">UF</option>
+                     {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(state => (
+                       <option key={state} value={state} className="bg-white text-slate-900">{state}</option>
+                     ))}
+                   </select>
+                 </div>
+               </div>
+             </div>
 
-            <div>
-              <label htmlFor="instituicao" className="block text-sm font-semibold text-slate-700 mb-1.5 whitespace-nowrap">
-                Instituição / Unidade de Saúde *
-              </label>
-              <input
-                id="instituicao"
-                type="text"
-                required
-                disabled={loading}
-                value={instituicao}
-                onChange={(e) => setInstituicao(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                placeholder="Hospital, UBS ou Clínica"
-              />
-            </div>
+             {role === 'especialista' && (
+               <>
+                 <div>
+                   <label htmlFor="rqe" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                     RQE (Registro de Qualificação de Especialista) *
+                   </label>
+                   <input
+                     id="rqe"
+                     type="text"
+                     required
+                     disabled={loading}
+                     value={rqe}
+                     onChange={(e) => setRqe(e.target.value)}
+                     className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                     placeholder="Ex: 12345"
+                   />
+                 </div>
 
-            <div>
-              <label htmlFor="municipio" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Município *
-              </label>
-              <input
-                id="municipio"
-                type="text"
-                required
-                disabled={loading}
-                value={municipio}
-                onChange={(e) => setMunicipio(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                placeholder="Sua cidade"
-              />
-            </div>
+                 <div>
+                   <label htmlFor="especialidade" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                     Especialidade Médica *
+                   </label>
+                   <select
+                     id="especialidade"
+                     required
+                     disabled={loading}
+                     value={selectedEspecialidade}
+                     onChange={(e) => setSelectedEspecialidade(e.target.value)}
+                     className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                   >
+                     <option value="" className="bg-white text-slate-900">Selecione uma especialidade...</option>
+                     {especialidades.map(esp => (
+                       <option key={esp.id} value={esp.id} className="bg-white text-slate-900">
+                         {esp.nome}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+               </>
+             )}
 
-            <div className="sm:col-span-2">
-              <label htmlFor="telefone" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Telefone de Contato
-              </label>
-              <input
-                id="telefone"
-                type="text"
-                disabled={loading}
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                placeholder="(00) 00000-0000"
-              />
-            </div>
+             <div>
+               <label htmlFor="instituicao" className="block text-sm font-semibold text-slate-700 mb-1.5 whitespace-nowrap">
+                 Instituição / Unidade de Saúde
+               </label>
+               <input
+                 id="instituicao"
+                 type="text"
+                 disabled={loading}
+                 value={instituicao}
+                 onChange={(e) => setInstituicao(e.target.value)}
+                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                 placeholder="Hospital, UBS ou Clínica (Opcional)"
+               />
+             </div>
+
+             <div>
+               <label htmlFor="municipio" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                 Município *
+               </label>
+               <input
+                 id="municipio"
+                 type="text"
+                 required
+                 disabled={loading}
+                 value={municipio}
+                 onChange={(e) => setMunicipio(e.target.value)}
+                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                 placeholder="Sua cidade"
+               />
+             </div>
+
+             <div className="sm:col-span-2">
+               <label htmlFor="telefone" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                 Telefone de Contato *
+               </label>
+               <input
+                 id="telefone"
+                 type="text"
+                 required
+                 disabled={loading}
+                 value={telefone}
+                 onChange={handleTelefoneChange}
+                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                 placeholder="(00) 00000-0000"
+               />
+             </div>
 
             <div>
               <label htmlFor="reg-password" className="block text-sm font-semibold text-slate-700 mb-1.5">

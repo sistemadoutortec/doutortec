@@ -20,6 +20,8 @@ interface AuthContextType {
       municipio: string;
       instituicao: string;
       telefone?: string;
+      rqe?: string;
+      categoria_profissional?: string;
     }
   ) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<{ error: any }>;
@@ -35,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Helper to fetch the profile of a given user ID
   const fetchPerfil = async (userId: string) => {
     try {
-      let columns = 'id, nome, email, cpf, crm_coren, role, municipio, instituicao, telefone, status_cadastro, created_at';
+      let columns = 'id, nome, email, cpf, crm_coren, role, municipio, instituicao, telefone, status_cadastro, categoria_profissional, rqe, created_at';
       let result = await supabase.from('perfis').select(columns).eq('id', userId).maybeSingle();
 
       if (result.error) {
@@ -51,6 +53,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (result.error.message.includes('crm_coren')) {
           columns = columns.replace('crm_coren, ', '');
+        }
+
+        if (result.error.message.includes('rqe')) {
+          columns = columns.replace('rqe, ', '');
+        }
+
+        if (result.error.message.includes('categoria_profissional')) {
+          columns = columns.replace('categoria_profissional, ', '');
         }
 
         result = await supabase.from('perfis').select(columns).eq('id', userId).maybeSingle();
@@ -147,6 +157,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       municipio: string;
       instituicao: string;
       telefone?: string;
+      rqe?: string;
+      categoria_profissional?: string;
     }
   ) => {
     try {
@@ -179,6 +191,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         telefone: metadata.telefone || null,
         crm_coren: metadata.crm_coren || null,
         status_cadastro: (metadata.role === 'solicitante' || metadata.role === 'especialista') ? 'pendente' : 'aprovado',
+        categoria_profissional: metadata.categoria_profissional || null,
+        rqe: metadata.rqe || null,
       };
 
       console.log('[signUp] Tentando inserir perfil:', payload);
@@ -200,6 +214,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             hint: perfilError.hint,
           }
         };
+      }
+
+      // 3. Se for especialista e tiver categoria/especialidade selecionada, cria o fluxo
+      if (metadata.role === 'especialista' && metadata.categoria_profissional) {
+        const { error: fluxoError } = await supabase
+          .from('fluxos_especialidades')
+          .insert([{
+            especialista_id: authData.user.id,
+            nome_fluxo: metadata.categoria_profissional,
+            tipo_fluxo: 'Consultivo',
+            idade_minima: null,
+            idade_maxima: null,
+            sexo: null,
+          }]);
+
+        if (fluxoError) {
+          console.error('[signUp] ERRO ao criar fluxo de especialidade:', fluxoError);
+          // Não vamos travar o cadastro inteiro por conta do fluxo, mas registramos no console.
+        } else {
+          console.log('[signUp] Fluxo de especialidade criado com sucesso para o especialista.');
+        }
       }
 
       console.log('[signUp] Perfil inserido com sucesso:', perfilData);

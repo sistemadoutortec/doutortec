@@ -14,6 +14,7 @@ export interface Perfil {
   telefone?: string; // Opcional
   status_cadastro: CadastroStatus;
   categoria_profissional?: string | null;
+  rqe?: string | null;
   created_at: string; // ISO Timestamp
   updated_at?: string; // ISO Timestamp
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import type { Perfil, UserRole } from '../../types';
-import { Search, Check, Ban, Loader2, ShieldAlert, RefreshCw, User, Plus, X, CheckCircle2 } from 'lucide-react';
+import { Search, Check, Ban, Loader2, ShieldAlert, RefreshCw, User, Plus, X, CheckCircle2, Edit } from 'lucide-react';
 
 export const GerenciamentoPerfis: React.FC = () => {
   const [perfis, setPerfis] = useState<Perfil[]>([]);
@@ -31,6 +31,30 @@ export const GerenciamentoPerfis: React.FC = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<boolean>(false);
 
+  // Edit Professional Modal States
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProf, setEditProf] = useState<{
+    id: string;
+    nome: string;
+    email: string;
+    cpf: string;
+    crm_coren_num: string;
+    uf: string;
+    role: UserRole;
+    rqe: string;
+    especialidadeId: string;
+    municipiosIds: string[];
+    instituicao: string;
+    municipio: string;
+    telefone: string;
+  } | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+
+  // Municipios list state
+  const [municipiosList, setMunicipiosList] = useState<{ id: string; municipio: string; uf: string }[]>([]);
+
   // Fetch specialties
   const fetchEspecialidades = async () => {
     try {
@@ -46,9 +70,270 @@ export const GerenciamentoPerfis: React.FC = () => {
     }
   };
 
+  // Fetch municipalities list
+  const fetchMunicipiosList = async () => {
+    try {
+      const { data } = await supabase
+        .from('fluxos_municipios')
+        .select('id, municipio, uf')
+        .order('uf', { ascending: true })
+        .order('municipio', { ascending: true });
+      if (data) {
+        setMunicipiosList(data);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar lista de municípios:', err);
+    }
+  };
+
   useEffect(() => {
     fetchEspecialidades();
+    fetchMunicipiosList();
   }, []);
+
+  // Format telephone number as (99) 99999-9999 or (99) 9999-9999
+  const formatTelefone = (value: string) => {
+    const clean = value.replace(/\D/g, '');
+    const numbers = clean.slice(0, 11);
+    if (numbers.length <= 2) {
+      return numbers;
+    }
+    if (numbers.length <= 6) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    }
+    if (numbers.length <= 10) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+    }
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  };
+
+  const handleOpenEditModal = async (profile: Perfil) => {
+    setError(null);
+    setEditError(null);
+    setEditSuccess(false);
+
+    // Split CRM / COREN and UF
+    let num = '';
+    let ufVal = 'SP';
+    if (profile.crm_coren) {
+      const parts = profile.crm_coren.split('/');
+      num = parts[0]?.trim() || '';
+      ufVal = parts[1]?.trim() || 'SP';
+    }
+
+    // Try to fetch their specialty flow and coverage municipalities if specialist
+    let espId = '';
+    let selectedMunIds: string[] = [];
+    if (profile.role === 'especialista') {
+      try {
+        const { data: flowData } = await supabase
+          .from('fluxos_especialidades')
+          .select('id, nome_fluxo')
+          .eq('especialista_id', profile.id)
+          .maybeSingle();
+
+        if (flowData) {
+          const found = especialidades.find(e => e.nome.toLowerCase() === flowData.nome_fluxo.toLowerCase());
+          if (found) {
+            espId = found.id;
+          }
+
+          // Fetch municipios linked to this flow_id
+          const { data: linkData } = await supabase
+            .from('fluxos_especialidades_municipios')
+            .select('municipio_id')
+            .eq('fluxo_id', flowData.id);
+
+          if (linkData) {
+            selectedMunIds = linkData.map(l => l.municipio_id);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar fluxo/municípios do especialista:', err);
+      }
+    }
+
+    setEditProf({
+      id: profile.id,
+      nome: profile.nome,
+      email: profile.email,
+      cpf: profile.cpf,
+      crm_coren_num: num,
+      uf: ufVal,
+      role: profile.role,
+      rqe: profile.rqe || '',
+      especialidadeId: espId,
+      municipiosIds: selectedMunIds,
+      instituicao: profile.instituicao || '',
+      municipio: profile.municipio || '',
+      telefone: profile.telefone ? formatTelefone(profile.telefone) : '',
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editProf) return;
+
+    setEditLoading(true);
+    setEditError(null);
+    setEditSuccess(false);
+
+    try {
+      if (!editProf.nome.trim() || !editProf.email.trim() || !editProf.cpf.trim()) {
+        throw new Error('Nome, E-mail e CPF são obrigatórios.');
+      }
+      const cleanCpf = editProf.cpf.replace(/\D/g, '');
+      if (cleanCpf.length !== 11) {
+        throw new Error('O CPF deve conter 11 dígitos.');
+      }
+
+      // Telephone validation
+      if (editProf.telefone.trim()) {
+        const cleanPhone = editProf.telefone.replace(/\D/g, '');
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+          throw new Error('Por favor, insira um telefone de contato válido com DDD (10 ou 11 dígitos).');
+        }
+      }
+
+      if (editProf.role === 'especialista') {
+        if (!editProf.rqe.trim()) {
+          throw new Error('O RQE é obrigatório para médicos especialistas.');
+        }
+        if (!editProf.especialidadeId) {
+          throw new Error('A especialidade médica é obrigatória para médicos especialistas.');
+        }
+        if (!editProf.municipiosIds || editProf.municipiosIds.length === 0) {
+          throw new Error('Por favor, selecione ao menos um município atendido para a rede de cobertura do especialista.');
+        }
+      }
+
+      const selectedEsp = especialidades.find(e => e.id === editProf.especialidadeId);
+      const categoryName = editProf.role === 'especialista' && selectedEsp 
+        ? selectedEsp.nome 
+        : (editProf.role === 'solicitante' ? 'Clínico Geral' : null);
+
+      const formattedCrm = editProf.crm_coren_num.trim() 
+        ? `${editProf.crm_coren_num.trim()} / ${editProf.uf}` 
+        : null;
+
+      // 1. Update perfis table
+      const { error: profileError } = await supabase
+        .from('perfis')
+        .update({
+          nome: editProf.nome.trim(),
+          email: editProf.email.trim(),
+          cpf: cleanCpf,
+          role: editProf.role,
+          crm_coren: formattedCrm,
+          rqe: editProf.role === 'especialista' ? editProf.rqe.trim() : null,
+          categoria_profissional: categoryName,
+          instituicao: editProf.instituicao.trim() || 'Não especificado',
+          municipio: editProf.municipio.trim() || 'Não especificado',
+          telefone: editProf.telefone.trim() ? editProf.telefone.replace(/\D/g, '') : null,
+        })
+        .eq('id', editProf.id);
+
+      if (profileError) throw profileError;
+
+      // 2. Manage fluxos_especialidades & fluxos_especialidades_municipios
+      if (editProf.role === 'especialista' && selectedEsp) {
+        // Check if flow already exists
+        const { data: existingFlow, error: checkError } = await supabase
+          .from('fluxos_especialidades')
+          .select('id')
+          .eq('especialista_id', editProf.id)
+          .maybeSingle();
+
+        let flowId = '';
+        if (checkError) console.error('Erro ao verificar fluxo existente:', checkError);
+
+        if (existingFlow) {
+          flowId = existingFlow.id;
+          // Update
+          const { error: flowUpdateError } = await supabase
+            .from('fluxos_especialidades')
+            .update({ nome_fluxo: selectedEsp.nome })
+            .eq('especialista_id', editProf.id);
+          if (flowUpdateError) throw flowUpdateError;
+        } else {
+          // Insert
+          const { data: newFlow, error: flowInsertError } = await supabase
+            .from('fluxos_especialidades')
+            .insert([{
+              especialista_id: editProf.id,
+              nome_fluxo: selectedEsp.nome,
+              tipo_fluxo: 'Consultivo',
+              idade_minima: null,
+              idade_maxima: null,
+              sexo: null,
+            }])
+            .select('id')
+            .single();
+
+          if (flowInsertError) throw flowInsertError;
+          if (newFlow) {
+            flowId = newFlow.id;
+          }
+        }
+
+        if (flowId) {
+          // Delete old links
+          const { error: deleteLinksError } = await supabase
+            .from('fluxos_especialidades_municipios')
+            .delete()
+            .eq('fluxo_id', flowId);
+          if (deleteLinksError) throw deleteLinksError;
+
+          // Insert new links
+          if (editProf.municipiosIds && editProf.municipiosIds.length > 0) {
+            const linkPayload = editProf.municipiosIds.map(mId => ({
+              fluxo_id: flowId,
+              municipio_id: mId
+            }));
+            const { error: insertLinksError } = await supabase
+              .from('fluxos_especialidades_municipios')
+              .insert(linkPayload);
+            if (insertLinksError) throw insertLinksError;
+          }
+        }
+      } else {
+        // If no longer specialist, remove their flow and links
+        const { data: oldFlow } = await supabase
+          .from('fluxos_especialidades')
+          .select('id')
+          .eq('especialista_id', editProf.id)
+          .maybeSingle();
+
+        if (oldFlow) {
+          await supabase
+            .from('fluxos_especialidades_municipios')
+            .delete()
+            .eq('fluxo_id', oldFlow.id);
+
+          const { error: flowDeleteError } = await supabase
+            .from('fluxos_especialidades')
+            .delete()
+            .eq('especialista_id', editProf.id);
+          if (flowDeleteError) console.error('Erro ao remover fluxo de especialidade do ex-especialista:', flowDeleteError);
+        }
+      }
+
+      setEditSuccess(true);
+      setTimeout(() => {
+        setEditModalOpen(false);
+        setEditSuccess(false);
+        setEditProf(null);
+        fetchPerfis();
+      }, 1500);
+
+    } catch (err: any) {
+      console.error(err);
+      setEditError(err.message || 'Erro ao salvar alterações do profissional.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -496,6 +781,15 @@ export const GerenciamentoPerfis: React.FC = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => handleOpenEditModal(item)}
+                            disabled={isActioning}
+                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 disabled:bg-gray-50 text-indigo-700 disabled:text-gray-400 border border-indigo-200 disabled:border-gray-200 px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed cursor-pointer"
+                            title="Editar Dados"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                            Editar
+                          </button>
+                          <button
                             onClick={() => handleUpdateStatus(item.id, 'aprovado')}
                             disabled={isActioning || item.status_cadastro === 'aprovado'}
                             className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 disabled:bg-gray-50 text-emerald-700 disabled:text-gray-400 border border-emerald-200 disabled:border-gray-200 px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed cursor-pointer"
@@ -768,6 +1062,310 @@ export const GerenciamentoPerfis: React.FC = () => {
                     </>
                   ) : (
                     'Cadastrar Profissional'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Professional Modal */}
+      {editModalOpen && editProf && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-250 shadow-2xl w-full max-w-xl overflow-hidden my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-150" style={{ backgroundColor: '#091151' }}>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Edit className="h-5 w-5 text-[#28ffb2]" />
+                Editar Profissional
+              </h3>
+              <button 
+                onClick={() => { setEditModalOpen(false); setEditProf(null); }}
+                className="text-slate-300 hover:text-white transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSubmitEdit} className="p-6 space-y-4">
+              {editError && (
+                <div className="rounded-lg bg-rose-50 border border-rose-200 p-3.5 text-xs text-rose-700 flex items-start gap-2">
+                  <ShieldAlert className="h-4.5 w-4.5 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{editError}</span>
+                </div>
+              )}
+
+              {editSuccess && (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3.5 text-xs text-emerald-700 flex items-center gap-2">
+                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
+                  <span>Alterações salvas com sucesso!</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Nome Completo */}
+                <div className="sm:col-span-2">
+                  <label htmlFor="edit-nome" className="block text-xs font-bold text-gray-700 mb-1">
+                    Nome Completo *
+                  </label>
+                  <input
+                    id="edit-nome"
+                    type="text"
+                    required
+                    disabled={editLoading}
+                    placeholder="Ex: Dr. Roberto Alencar"
+                    value={editProf.nome}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, nome: e.target.value }) : null)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* E-mail */}
+                <div>
+                  <label htmlFor="edit-email" className="block text-xs font-bold text-gray-700 mb-1">
+                    Endereço de E-mail *
+                  </label>
+                  <input
+                    id="edit-email"
+                    type="email"
+                    required
+                    disabled={editLoading}
+                    placeholder="medico@exemplo.com.br"
+                    value={editProf.email}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, email: e.target.value }) : null)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* CPF */}
+                <div>
+                  <label htmlFor="edit-cpf" className="block text-xs font-bold text-gray-700 mb-1">
+                    CPF *
+                  </label>
+                  <input
+                    id="edit-cpf"
+                    type="text"
+                    required
+                    disabled={editLoading}
+                    placeholder="Apenas números (11 dígitos)"
+                    value={editProf.cpf}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, cpf: e.target.value.replace(/\D/g, '') }) : null)}
+                    maxLength={11}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* Telefone */}
+                <div>
+                  <label htmlFor="edit-telefone" className="block text-xs font-bold text-gray-700 mb-1">
+                    Telefone de Contato
+                  </label>
+                  <input
+                    id="edit-telefone"
+                    type="text"
+                    disabled={editLoading}
+                    placeholder="(00) 00000-0000"
+                    value={editProf.telefone}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, telefone: formatTelefone(e.target.value) }) : null)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* Perfil/Função */}
+                <div>
+                  <label htmlFor="edit-role" className="block text-xs font-bold text-gray-700 mb-1">
+                    Perfil / Função *
+                  </label>
+                  <select
+                    id="edit-role"
+                    required
+                    disabled={editLoading}
+                    value={editProf.role}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, role: e.target.value as UserRole }) : null)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                  >
+                    <option value="especialista">Especialista (Médico de Referência)</option>
+                    <option value="solicitante">Solicitante (Clínico da Unidade)</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+
+                {/* CRM/COREN e UF */}
+                <div>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label htmlFor="edit-crm" className="block text-xs font-bold text-gray-700 mb-1">
+                        CRM / COREN
+                      </label>
+                      <input
+                        id="edit-crm"
+                        type="text"
+                        disabled={editLoading}
+                        placeholder="Número do Registro"
+                        value={editProf.crm_coren_num}
+                        onChange={e => setEditProf(prev => prev ? ({ ...prev, crm_coren_num: e.target.value }) : null)}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="w-20">
+                      <label htmlFor="edit-uf" className="block text-xs font-bold text-gray-700 mb-1">
+                        UF
+                      </label>
+                      <select
+                        id="edit-uf"
+                        disabled={editLoading}
+                        value={editProf.uf}
+                        onChange={e => setEditProf(prev => prev ? ({ ...prev, uf: e.target.value }) : null)}
+                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                      >
+                        <option value="">UF</option>
+                        {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
+                          <option key={uf} value={uf}>{uf}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RQE (Somente para Especialistas) */}
+                {editProf.role === 'especialista' && (
+                  <div>
+                    <label htmlFor="edit-rqe" className="block text-xs font-bold text-gray-700 mb-1">
+                      RQE *
+                    </label>
+                    <input
+                      id="edit-rqe"
+                      type="text"
+                      required={editProf.role === 'especialista'}
+                      disabled={editLoading}
+                      placeholder="Registro de Qualificação"
+                      value={editProf.rqe}
+                      onChange={e => setEditProf(prev => prev ? ({ ...prev, rqe: e.target.value }) : null)}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                    />
+                  </div>
+                )}
+
+                {/* Especialidade Médica (Somente para Especialistas) */}
+                {editProf.role === 'especialista' && (
+                  <div className={editProf.role === 'especialista' ? '' : 'sm:col-span-2'}>
+                    <label htmlFor="edit-especialidade" className="block text-xs font-bold text-gray-700 mb-1">
+                      Especialidade Médica *
+                    </label>
+                    <select
+                      id="edit-especialidade"
+                      required={editProf.role === 'especialista'}
+                      disabled={editLoading}
+                      value={editProf.especialidadeId}
+                      onChange={e => setEditProf(prev => prev ? ({ ...prev, especialidadeId: e.target.value }) : null)}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                    >
+                      <option value="">Selecione uma especialidade...</option>
+                      {especialidades.map(esp => (
+                        <option key={esp.id} value={esp.id}>{esp.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Municípios Atendidos (Somente para Especialistas) */}
+                {editProf.role === 'especialista' && (
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                      Municípios Atendidos / Rede de Cobertura *
+                    </label>
+                    <div className="border border-gray-300 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50/50 space-y-2">
+                      {municipiosList.length === 0 ? (
+                        <span className="text-gray-400 text-xs italic">Nenhum município cadastrado no sistema.</span>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {municipiosList.map(m => {
+                            const isChecked = editProf.municipiosIds?.includes(m.id) || false;
+                            return (
+                              <label key={m.id} className="flex items-center gap-2 text-xs text-gray-800 cursor-pointer hover:bg-gray-100/50 p-1 rounded transition">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setEditProf(prev => {
+                                      if (!prev) return null;
+                                      const currentIds = prev.municipiosIds || [];
+                                      const updatedIds = checked
+                                        ? [...currentIds, m.id]
+                                        : currentIds.filter(id => id !== m.id);
+                                      return { ...prev, municipiosIds: updatedIds };
+                                    });
+                                  }}
+                                  className="rounded text-indigo-655 focus:ring-indigo-500 h-3.5 w-3.5"
+                                />
+                                <span>{m.municipio} - {m.uf}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Unidade / Vínculo */}
+                <div>
+                  <label htmlFor="edit-instituicao" className="block text-xs font-bold text-gray-700 mb-1">
+                    Unidade / Vínculo
+                  </label>
+                  <input
+                    id="edit-instituicao"
+                    type="text"
+                    disabled={editLoading}
+                    placeholder="Ex: UBS Santa Marta"
+                    value={editProf.instituicao}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, instituicao: e.target.value }) : null)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                </div>
+
+                {/* Município */}
+                <div>
+                  <label htmlFor="edit-municipio" className="block text-xs font-bold text-gray-700 mb-1">
+                    Município
+                  </label>
+                  <input
+                    id="edit-municipio"
+                    type="text"
+                    disabled={editLoading}
+                    placeholder="Ex: São Paulo"
+                    value={editProf.municipio}
+                    onChange={e => setEditProf(prev => prev ? ({ ...prev, municipio: e.target.value }) : null)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-150 mt-5">
+                <button
+                  type="button"
+                  disabled={editLoading}
+                  onClick={() => { setEditModalOpen(false); setEditProf(null); }}
+                  className="rounded-lg border border-gray-300 hover:bg-gray-50 px-4.5 py-2 text-xs font-semibold text-gray-700 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading || editSuccess}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-750 px-5 py-2 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50"
+                >
+                  {editLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Alterações'
                   )}
                 </button>
               </div>

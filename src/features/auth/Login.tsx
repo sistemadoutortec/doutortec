@@ -50,10 +50,20 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       const { error: signInError } = await signIn(email, password);
       if (signInError) {
         setLoading(false);
-        if (signInError.message === 'Invalid login credentials') {
+        const rawMsg = typeof signInError === 'string'
+          ? signInError
+          : (signInError.message && typeof signInError.message === 'string')
+            ? signInError.message
+            : String(signInError.error_description || signInError.error || '');
+
+        if (rawMsg.includes('Invalid login credentials')) {
           setError('E-mail ou senha incorretos. Por favor, tente novamente.');
+        } else if (rawMsg.includes('Email not confirmed')) {
+          setError('E-mail não confirmado no Supabase. Confirme o usuário no painel do Supabase.');
+        } else if (!rawMsg || rawMsg === '{}' || rawMsg === '[object Object]') {
+          setError('E-mail ou senha incorretos. Verifique suas credenciais.');
         } else {
-          setError(signInError.message || 'Falha ao realizar login. Verifique suas credenciais.');
+          setError(rawMsg);
         }
       } else {
         if (password === 'Mudar@123') {
@@ -68,10 +78,11 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
     } catch (err: any) {
       setLoading(false);
       console.error(err);
-      if (err.message === 'Invalid login credentials') {
+      const rawMsg = err?.message || String(err || '');
+      if (rawMsg.includes('Invalid login credentials')) {
         setError('E-mail ou senha incorretos. Por favor, tente novamente.');
       } else {
-        setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
+        setError('E-mail ou senha incorretos. Tente novamente mais tarde.');
       }
     } finally {
       setLoading(false);

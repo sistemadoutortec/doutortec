@@ -315,34 +315,36 @@ export const Distribucao: React.FC = () => {
         const coveringFluxoIds = municipioFluxoMap[patientMun] ?? [];
 
         // For each specialist, compute match level
-        const enriched: Especialista[] = (specsRes.data || []).map((p) => {
-          const espId = p.id as string;
+        const enriched: Especialista[] = (specsRes.data || [])
+          .map((p) => {
+            const espId = p.id as string;
 
-          // Find any fluxo that covers the patient's municipality AND belongs to this specialist
-          const matchingFluxoId = coveringFluxoIds.find(
-            (fId) => fluxoEspMap[fId]?.especialistaId === espId,
-          );
+            // Find any fluxo that covers the patient's municipality AND belongs to this specialist
+            const matchingFluxoId = coveringFluxoIds.find(
+              (fId) => fluxoEspMap[fId]?.especialistaId === espId,
+            );
 
-          let match: Especialista['match'] = 'available';
-          let matchFluxoNome: string | undefined;
+            let match: Especialista['match'] = 'available';
+            let matchFluxoNome: string | undefined;
 
-          if (matchingFluxoId) {
-            match = 'recommended';
-            matchFluxoNome = fluxoEspMap[matchingFluxoId]?.nomeFluxo;
-          }
+            if (matchingFluxoId) {
+              match = 'recommended';
+              matchFluxoNome = fluxoEspMap[matchingFluxoId]?.nomeFluxo;
+            }
 
-          return {
-            id: espId,
-            nome: p.nome as string,
-            email: p.email as string,
-            crm_coren: p.crm_coren as string | null,
-            municipio: p.municipio as string,
-            instituicao: p.instituicao as string,
-            activeCaseCount: caseCountMap[espId] ?? 0,
-            match,
-            matchFluxoNome,
-          };
-        });
+            return {
+              id: espId,
+              nome: p.nome as string,
+              email: p.email as string,
+              crm_coren: p.crm_coren as string | null,
+              municipio: p.municipio as string,
+              instituicao: p.instituicao as string,
+              activeCaseCount: caseCountMap[espId] ?? 0,
+              match,
+              matchFluxoNome,
+            };
+          })
+          .filter((e) => e.match === 'recommended');
 
         // Sort: recommended first, then by active case count ascending
         enriched.sort((a, b) => {

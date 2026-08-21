@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
-import { DollarSign, Filter, Loader2, AlertCircle, Plus, Trash2, X, Pencil } from 'lucide-react';
+import { DollarSign, Filter, Loader2, AlertCircle, Plus, Trash2, X, Pencil, Settings } from 'lucide-react';
+import { ConfiguracoesFinanceiras } from './ConfiguracoesFinanceiras';
+import { getPricingForCaso } from '../../lib/financeUtils';
 
 interface FinanceLaunch {
   id: string;
@@ -56,6 +58,9 @@ export const PainelFinanceiro: React.FC = () => {
   const [editJustificativa, setEditJustificativa] = useState('');
   const [editBonusError, setEditBonusError] = useState<string | null>(null);
 
+  // States for configuring rates
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+
   // 1. Fetch Specialists for mapping
   const { data: specialists = [], isLoading: loadingSpecs } = useQuery({
     queryKey: ['financeiro-especialistas'],
@@ -74,14 +79,16 @@ export const PainelFinanceiro: React.FC = () => {
   const { data: cases = [], isLoading: loadingCases } = useQuery({
     queryKey: ['financeiro-casos', selectedMonth],
     queryFn: async () => {
-      // Fetch only columns needed
       const { data, error } = await supabase
         .from('casos')
-        .select('id, especialista_id, status, created_at, respondido_em, fechado_em')
+        .select(`
+          id, especialista_id, status, created_at, respondido_em, fechado_em, especialidade_id,
+          solicitante:perfis!solicitante_id(municipio)
+        `)
         .not('especialista_id', 'is', null)
         .in('status', ['respondido', 'fechado']);
       if (error) throw error;
-      return data || [];
+      return (data as any) || [];
     }
   });
 
@@ -92,6 +99,30 @@ export const PainelFinanceiro: React.FC = () => {
       const { data, error } = await supabase
         .from('financeiro_bonus')
         .select('id, especialista_id, valor, justificativa, created_at');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // 4. Fetch financial pricing parameters
+  const { data: configs = [], isLoading: loadingConfigs } = useQuery({
+    queryKey: ['financeiro-configuracoes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('configuracoes_financeiras')
+        .select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // 5. Fetch municipalities reference list for name resolution
+  const { data: municipiosList = [], isLoading: loadingMuns } = useQuery({
+    queryKey: ['financeiro-municipios'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fluxos_municipios')
+        .select('id, municipio');
       if (error) throw error;
       return data || [];
     }
@@ -202,7 +233,7 @@ export const PainelFinanceiro: React.FC = () => {
     const specMap = new Map(specialists.map(s => [s.id, s]));
     
     // Filter resolved cases in the selected month
-    const casesInMonth = cases.filter(c => {
+    const casesInMonth = cases.filter((c: any) => {
       const dateToCheck = c.respondido_em || c.fechado_em || c.created_at;
       if (!dateToCheck) return false;
       return dateToCheck.substring(0, 7) === selectedMonth;
@@ -230,11 +261,16 @@ export const PainelFinanceiro: React.FC = () => {
 
     // 2. Production per specialist
     const productionList: SpecialistProduction[] = specialists.map(esp => {
-      const espCasos = casesInMonth.filter(c => c.especialista_id === esp.id);
+      const espCasos = casesInMonth.filter((c: any) => c.especialista_id === esp.id);
       const espBonuses = bonusesInMonth.filter(b => b.especialista_id === esp.id);
 
       const quantidadeCasos = espCasos.length;
-      const valorBase = quantidadeCasos * 150.00; // Pactuado R$ 150,00 por caso
+      let valorBase = 0;
+      espCasos.forEach((c: any) => {
+        const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList);
+        valorBase += pricing.valorRepasseSpec;
+      });
+
       const bonusAdicionais = espBonuses.reduce((acc, curr) => acc + Number(curr.valor), 0);
       const valorTotal = valorBase + bonusAdicionais;
 
@@ -251,12 +287,17 @@ export const PainelFinanceiro: React.FC = () => {
 
     // Compute Global KPIs
     const totalCases = casesInMonth.length;
-    const totalBaseRepasses = totalCases * 150.00;
+    let totalBaseRepasses = 0;
+    let platformFaturamento = 0;
+
+    casesInMonth.forEach((c: any) => {
+      const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList);
+      platformFaturamento += pricing.valorTotal;
+      totalBaseRepasses += pricing.valorRepasseSpec;
+    });
+
     const totalBonusRepasses = bonusesInMonth.reduce((acc, curr) => acc + Number(curr.valor), 0);
     const totalRepasses = totalBaseRepasses + totalBonusRepasses;
-    
-    // Platform Pricing (Platform charges R$ 225.00 per case to municipalities)
-    const platformFaturamento = totalCases * 225.00;
     const platformLucroLiquido = platformFaturamento - totalRepasses;
 
     // Filtered lists for specialist dashboard
@@ -267,12 +308,19 @@ export const PainelFinanceiro: React.FC = () => {
     const myTotalValue = myProduction?.valorTotal || 0;
     
     // For specialist, cases on 'respondido' status are pending liquidity, 'fechado' cases are paid
-    const specialistCases = casesInMonth.filter(c => c.especialista_id === perfil?.id);
-    const pendingCases = specialistCases.filter(c => c.status === 'respondido').length;
-    const closedCases = specialistCases.filter(c => c.status === 'fechado').length;
+    const specialistCases = casesInMonth.filter((c: any) => c.especialista_id === perfil?.id);
     
-    const saldoAReceber = (pendingCases * 150.00) + myBonusValue; // includes all bonuses in month as receivable or separate
-    const totalPago = closedCases * 150.00;
+    let saldoAReceber = myBonusValue;
+    let totalPago = 0;
+
+    specialistCases.forEach((c: any) => {
+      const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList);
+      if (c.status === 'respondido') {
+        saldoAReceber += pricing.valorRepasseSpec;
+      } else if (c.status === 'fechado') {
+        totalPago += pricing.valorRepasseSpec;
+      }
+    });
 
     return {
       bonusesList,
@@ -389,7 +437,7 @@ export const PainelFinanceiro: React.FC = () => {
   };
 
   const { bonusesList, productionList, adminKpis, specKpis, myBonusValue, myBaseValue } = processDashboardData();
-  const loading = loadingSpecs || loadingCases || loadingBonuses;
+  const loading = loadingSpecs || loadingCases || loadingBonuses || loadingConfigs || loadingMuns;
 
   return (
     <div className="space-y-6 max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
@@ -408,13 +456,22 @@ export const PainelFinanceiro: React.FC = () => {
         </div>
 
         {isAdmin && (
-          <button
-            onClick={() => setBonusModalOpen(true)}
-            className="rounded-lg bg-indigo-650 hover:bg-indigo-700 px-4 py-2.5 text-xs font-semibold text-white transition flex items-center gap-2 cursor-pointer shadow-xs shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            Lançar Bônus Extra
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => setConfigModalOpen(true)}
+              className="rounded-lg border border-gray-300 hover:bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-700 transition flex items-center gap-2 cursor-pointer shadow-xs shrink-0"
+            >
+              <Settings className="h-4 w-4 text-gray-550" />
+              Configurar Tarifas
+            </button>
+            <button
+              onClick={() => setBonusModalOpen(true)}
+              className="rounded-lg bg-indigo-650 hover:bg-indigo-700 px-4 py-2.5 text-xs font-semibold text-white transition flex items-center gap-2 cursor-pointer shadow-xs shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+              Lançar Bônus Extra
+            </button>
+          </div>
         )}
       </div>
 
@@ -943,6 +1000,17 @@ export const PainelFinanceiro: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+      {/* Rate/Pricing Configurations Modal */}
+      {configModalOpen && (
+        <ConfiguracoesFinanceiras
+          isOpen={configModalOpen}
+          onClose={() => setConfigModalOpen(false)}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['financeiro-configuracoes'] });
+            queryClient.invalidateQueries({ queryKey: ['financeiro-casos', selectedMonth] });
+          }}
+        />
       )}
     </div>
   );
