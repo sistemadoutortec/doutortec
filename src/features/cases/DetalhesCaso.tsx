@@ -460,7 +460,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     e.preventDefault();
     if (!user || updatingStatus) return;
     
-    if (!devolutivaConduta.trim() || !devolutivaAps.trim() || encaminhamentoIndicado === null || !referenciasBibliograficas.trim()) {
+    if (!devolutivaConduta.trim() || !devolutivaAps.trim() || encaminhamentoIndicado === null) {
       setActionError('Por favor, preencha todos os campos obrigatórios da Devolutiva.');
       return;
     }
@@ -1136,10 +1136,9 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
-                      Referências Bibliográficas (Padrão Vancouver) *
+                      Referências Bibliográficas (Padrão Vancouver) (Opcional)
                     </label>
                     <textarea
-                      required
                       rows={3}
                       placeholder="Ex: Ministério da Saúde. Protocolos de Atenção Básica. Brasília, 2023."
                       value={referenciasBibliograficas}
