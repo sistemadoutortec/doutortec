@@ -71,6 +71,7 @@ CONHECIMENTO COMPLETO DO SISTEMA DOUTORTEC:
 
 6. PERFIL ADMINISTRADOR:
    - Acesso completo: Gestão de usuários, aprovação de profissionais (checagem de CRM/COREN e RQE), gerenciamento e edição de perfis, cadastro de municípios conveniados, fluxos de especialidades, distribuição/reatribuição manual de casos, parametrizações financeiras de repasses/bônus e relatórios gerenciais globais.
+   - BLOQUEIO / EXCLUSÃO DE USUÁRIOS: O sistema NÃO possui botão de exclusão física ('Excluir' ou lixeira) para usuários, em estrito cumprimento às normas médico-legais do CFM, LGPD e prontuário eletrônico (para não corromper histórico de casos, pareceres ou registros de auditoria). Em vez de excluir, o Administrador clica diretamente no botão vermelho 'Bloquear' na coluna de ações da tabela do menu 'Gestão de Perfis'. Isso inativa o acesso do profissional imediatamente, mantendo a integridade dos dados clínicos.
 
 7. RECURSOS COMPLEMENTARES:
    - Troca de senha: Pode ser feita pelo banner de segurança no topo ou no menu de perfil. Usuários com a senha provisória 'Mudar@123' são alertados a trocá-la no primeiro acesso.
@@ -294,6 +295,10 @@ function getSmartFallbackAnswer(query: string, perfil: Perfil | null): string {
 
   if (q.includes('pdf') || q.includes('imprim') || q.includes('baixar') || q.includes('documento')) {
     return `Para exportar o parecer em PDF:\n\n1. Acesse o caso clínico que esteja com status **Respondido** ou **Fechado**.\n2. Clique no botão **Baixar Parecer (PDF)** no topo dos detalhes do caso.\n3. O sistema gera o documento oficial estruturado com identificação do paciente, dados clínicos, conduta do especialista e carimbo profissional (CRM/RQE).`;
+  }
+
+  if (q.includes('excluir') || q.includes('bloquear') || q.includes('inativar') || q.includes('deletar') || (q.includes('remover') && q.includes('usuário'))) {
+    return `**Sobre a Exclusão e Bloqueio de Usuários:**\n\nEm conformidade com as normas médico-legais (CFM, Prontuário Eletrônico e LGPD), a plataforma Doutortec **não realiza a exclusão física definitiva de usuários**, a fim de preservar a rastreabilidade e a validade jurídica de todos os casos, pareceres e prescrições já registrados.\n\nPara revogar o acesso de um usuário (Perfil Administrador):\n1. Acesse o menu **Gestão de Perfis** na barra de navegação lateral.\n2. Localize o profissional pela busca ou filtros de status.\n3. Na coluna de ações à direita, clique no botão vermelho **Bloquear**.\n\nO status do usuário mudará imediatamente para **Bloqueado**, impedindo seu login no sistema sem comprometer o histórico clínico dos pacientes.`;
   }
 
   if (q.includes('senha') || q.includes('login') || q.includes('acesso')) {
