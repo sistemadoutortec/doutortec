@@ -250,16 +250,21 @@ function getSmartFallbackAnswer(query: string, perfil: Perfil | null): string {
   return `Estou à sua disposição para apoiar sua atuação na plataforma Doutortec!\n\nVocê pode me perguntar sobre:\n• Como abrir e gerenciar casos clínicos;\n• Prazos de atendimento e regras de SLA;\n• Como emitir a Devolutiva Oficial ou anexar exames;\n• Funcionalidades específicas do seu perfil de acesso.\n\nVocê também pode consultar o Guia completo no menu de **Ajuda** (ícone de interrogação no topo da tela).`;
 }
 
-const STORAGE_KEY_MESSAGES = 'doutortec_suporte_ia_messages';
+const getStorageKey = (userId?: string | null): string => {
+  return userId ? `doutortec_suporte_ia_messages_${userId}` : 'doutortec_suporte_ia_messages_guest';
+};
 
 export const SuporteIAWidget: React.FC = () => {
-  const { perfil } = useAuth();
+  const { user, perfil } = useAuth();
+  const userId = user?.id || perfil?.id || null;
+  const storageKey = getStorageKey(userId);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Persistência profissional das mensagens no localStorage (não somem ao mudar de aba ou atualizar)
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+  // Carrega o histórico exclusivo do usuário conectado
+  const loadUserMessages = (targetUserId: string | null, targetPerfil: Perfil | null): ChatMessage[] => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_MESSAGES);
+      const key = getStorageKey(targetUserId);
+      const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -270,19 +275,26 @@ export const SuporteIAWidget: React.FC = () => {
         }
       }
     } catch (e) {
-      console.warn('Erro ao restaurar histórico do chat:', e);
+      console.warn('Erro ao restaurar histórico do chat do usuário:', e);
     }
     return [
       {
         id: 'welcome-msg',
         sender: 'assistant',
-        text: getWelcomeMessage(null),
+        text: getWelcomeMessage(targetPerfil),
         timestamp: new Date(),
       }
     ];
-  });
+  };
 
-  // Atualiza a mensagem inicial com personalização assim que o perfil é carregado (se o chat estiver no início)
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadUserMessages(userId, perfil));
+
+  // Sempre que o usuário conectado mudar (login, logout ou troca de conta), recarrega o chat exclusivo dele
+  useEffect(() => {
+    setMessages(loadUserMessages(userId, perfil));
+  }, [userId]);
+
+  // Atualiza a saudação personalizada assim que o perfil detalhado terminar de carregar (se ainda não houver conversa em andamento)
   useEffect(() => {
     if (perfil && messages.length === 1 && messages[0].id === 'welcome-msg') {
       const personalizedWelcome = getWelcomeMessage(perfil);
@@ -302,14 +314,16 @@ export const SuporteIAWidget: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Salva no localStorage sempre que as mensagens mudarem
+  // Salva no localStorage exclusivo do usuário atual sempre que as mensagens mudarem
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+      if (userId) {
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+      }
     } catch (e) {
-      console.warn('Erro ao persistir mensagens:', e);
+      console.warn('Erro ao persistir mensagens do usuário:', e);
     }
-  }, [messages]);
+  }, [messages, storageKey, userId]);
 
   // Auto-scroll para o final do chat
   useEffect(() => {
@@ -490,7 +504,12 @@ Seja sempre acolhedor, objetivo, humanizado e prestativo.`;
       }
     ];
     setMessages(initial);
-    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    try {
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem('doutortec_suporte_ia_messages');
+    } catch (e) {
+      console.warn('Erro ao limpar histórico do chat:', e);
+    }
   };
 
   const primeiroNome = perfil?.nome ? perfil.nome.split(' ')[0] : '';
