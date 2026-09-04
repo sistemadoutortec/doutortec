@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import type { UserRole, Perfil } from '../types';
 import { 
   Bot, 
   X, 
   Send, 
   Loader2, 
   Sparkles, 
-  RotateCcw,
-  Key
+  RotateCcw
 } from 'lucide-react';
 
 interface ChatMessage {
@@ -22,7 +23,7 @@ const SYSTEM_INSTRUCTION = `Você é o Assistente Virtual Oficial da plataforma 
 Seu propósito é fornecer suporte operacional humanizado, claro, acolhedor e didático a todos os usuários da plataforma, explicando como utilizar cada funcionalidade, fluxo e recurso.
 
 DIRETRIZES DE ESTILO E COMUNICAÇÃO:
-- Seja sempre gentil, prestativo e converse de forma natural e humana.
+- Seja sempre gentil, prestativo e converse de forma natural e humana. Trate o usuário pelo nome com cortesia.
 - Estruture suas respostas com parágrafos bem espaçados, tópicos e passos numerados claros quando for explicar um procedimento.
 - SEGURANÇA E PRIVACIDADE: NUNCA revele detalhes internos de código, banco de dados (tabelas, SQL, Supabase), nomes de arquivos de código, APIs, endpoints, tokens ou segredos técnicos do sistema. Você fala apenas do ponto de vista do USUÁRIO final (menus, telas, botões, formulários e regras de negócio).
 - ESCOPO: Seu foco é o suporte e a capacitação no uso da plataforma. Não prescreva diagnósticos ou condutas médicas diretas a pacientes; oriente os profissionais sobre os fluxos do sistema.
@@ -77,14 +78,84 @@ CONHECIMENTO COMPLETO DO SISTEMA DOUTORTEC:
    - Relatórios em PDF: Tanto o parecer clínico individual quanto os relatórios consolidados podem ser exportados em formato PDF oficial para arquivamento ou anexação ao prontuário eletrônico.
    - Central de Ajuda: Ícone de interrogação no topo da tela abre o manual detalhado com passo a passo por abas.`;
 
-const QUICK_PROMPTS = [
-  'Como abrir um novo caso clínico?',
-  'Como cadastrar um paciente?',
-  'Qual a função do Gestor Municipal?',
-  'Como o Especialista emite a resposta?',
-  'O campo de referências é obrigatório?',
-  'Como funciona o SLA e prazos?'
-];
+const getQuickPromptsForRole = (role?: UserRole): string[] => {
+  switch (role) {
+    case 'solicitante':
+      return [
+        'Como abrir um novo caso clínico?',
+        'Como cadastrar um paciente?',
+        'Como anexar e visualizar exames?',
+        'Quais são os prazos de resposta (SLA)?',
+        'Como avaliar e encerrar um caso respondido?'
+      ];
+    case 'especialista':
+    case 'teleconsultor':
+      return [
+        'Como aceitar e atender um caso?',
+        'Como preencher a Devolutiva Oficial?',
+        'O campo de referências é obrigatório?',
+        'Como devolver caso por falta de dados?',
+        'Onde vejo meus repasses financeiros?'
+      ];
+    case 'gestor_municipal':
+      return [
+        'Como monitorar os casos da minha cidade?',
+        'Como exportar os relatórios municipais?',
+        'Como é calculada a resolutividade?',
+        'Como acompanhar os prazos de atendimento (SLA)?',
+        'Meus dados são isolados de outros municípios?'
+      ];
+    case 'admin':
+      return [
+        'Como gerenciar e editar perfis de usuários?',
+        'Como cadastrar e conveniar municípios?',
+        'Como reatribuir casos na distribuição?',
+        'Como parametrizar repasses e bônus?',
+        'Como emitir relatórios consolidados globais?'
+      ];
+    default:
+      return [
+        'Como abrir um novo caso clínico?',
+        'Como cadastrar um paciente?',
+        'Como o Especialista emite a resposta?',
+        'Qual a função do Gestor Municipal?',
+        'Como funciona o SLA e prazos?'
+      ];
+  }
+};
+
+const getRoleDisplayTitle = (role?: UserRole): string => {
+  switch (role) {
+    case 'solicitante': return 'Solicitante (APS)';
+    case 'especialista': return 'Médico Especialista';
+    case 'teleconsultor': return 'Teleconsultor';
+    case 'gestor_municipal': return 'Gestor Municipal';
+    case 'admin': return 'Administrador';
+    case 'telerregulador': return 'Telerregulador';
+    case 'visualizador': return 'Visualizador';
+    default: return 'Usuário Doutortec';
+  }
+};
+
+const getWelcomeMessage = (perfil: Perfil | null): string => {
+  const primeiroNome = perfil?.nome ? perfil.nome.split(' ')[0] : '';
+  const role = perfil?.role;
+
+  if (role === 'especialista' || role === 'teleconsultor') {
+    return `Olá${primeiroNome ? `, Dr(a). ${primeiroNome}` : ''}! Sou o Assistente Virtual Doutortec para Médicos Especialistas.\n\nComo posso te apoiar na sua fila de teleconsultorias, emissão de pareceres ou no painel financeiro hoje?`;
+  }
+  if (role === 'solicitante') {
+    return `Olá${primeiroNome ? `, Dr(a). ${primeiroNome}` : ''}! Sou o Assistente Virtual Doutortec para a Atenção Primária.\n\nComo posso te auxiliar com o cadastro de pacientes, abertura de novos casos ou acompanhamento de respostas hoje?`;
+  }
+  if (role === 'gestor_municipal') {
+    const cidade = perfil?.municipio ? ` de ${perfil.municipio}` : '';
+    return `Olá${primeiroNome ? `, ${primeiroNome}` : ''}! Sou o Assistente Virtual Doutortec para Gestão Municipal.\n\nComo posso te auxiliar no monitoramento dos indicadores de saúde, resolutividade e relatórios${cidade}?`;
+  }
+  if (role === 'admin') {
+    return `Olá${primeiroNome ? `, ${primeiroNome}` : ''}! Sou o Assistente Virtual Doutortec.\n\nEstou à disposição para auxiliá-lo na administração geral, parametrização financeira, gestão de perfis e relatórios globais. Como posso ajudar?`;
+  }
+  return `Olá${primeiroNome ? `, ${primeiroNome}` : ''}! Sou o Assistente Virtual Doutortec. Como posso te ajudar com o uso da plataforma hoje?`;
+};
 
 // Parser de formatação visual amigável (Markdown elegante)
 const FormattedMessage: React.FC<{ content: string; isUser: boolean }> = ({ content, isUser }) => {
@@ -165,8 +236,26 @@ const FormattedMessage: React.FC<{ content: string; isUser: boolean }> = ({ cont
 };
 
 // Fallback operacional inteligente caso a API não responda
-function getSmartFallbackAnswer(query: string): string {
+function getSmartFallbackAnswer(query: string, perfil: Perfil | null): string {
   const q = query.toLowerCase();
+  const role = perfil?.role;
+
+  // Dúvidas sobre o próprio perfil ou funções
+  if (q.includes('minhas funções') || q.includes('o que posso fazer') || q.includes('meu papel') || q.includes('minha função') || q.includes('meu perfil')) {
+    if (role === 'solicitante') {
+      return `Como **Profissional Solicitante (APS)**, suas principais funções são:\n\n1. **Cadastrar Pacientes:** Registrar os dados dos pacientes atendidos na Atenção Primária.\n2. **Abrir Casos Clínicos:** Solicitar pareceres e interconsultas com médicos especialistas, definindo a prioridade e anexando exames.\n3. **Interagir no Chat:** Esclarecer dúvidas diretamente com o especialista responsável durante o atendimento.\n4. **Avaliar e Encerrar:** Receber a devolutiva oficial com conduta, baixar o parecer em PDF e registrar a avaliação de resolutividade.`;
+    }
+    if (role === 'especialista' || role === 'teleconsultor') {
+      return `Como **Médico Especialista (Teleconsultor)**, suas principais funções são:\n\n1. **Fila de Atendimento:** Localizar e aceitar casos clínicos da sua especialidade.\n2. **Chat com Solicitante:** Tirar dúvidas prévias diretamente com o médico/enfermeiro da APS.\n3. **Devolutiva Oficial:** Emitir o parecer estruturado com conduta clínica, recomendações para a APS, classificação de gravidade e exames sugeridos.\n4. **Painel Financeiro & Ranking:** Acompanhar seus laudos emitidos, indicadores de SLA e repasses financeiros.`;
+    }
+    if (role === 'gestor_municipal') {
+      const cidade = perfil?.municipio ? ` de **${perfil.municipio}**` : '';
+      return `Como **Gestor Municipal**${cidade}, suas principais funções são:\n\n1. **Monitoramento Municipal:** Acompanhar exclusivamente os casos, pacientes e métricas da sua cidade.\n2. **Indicador de Resolutividade:** Verificar quantos casos foram solucionados na própria atenção primária e quantos encaminhamentos presenciais foram evitados.\n3. **Auditoria & Relatórios:** Exportar relatórios em PDF com dados consolidados da saúde do município.`;
+    }
+    if (role === 'admin') {
+      return `Como **Administrador Geral**, você possui controle total da plataforma:\n\n1. **Usuários e Perfis:** Aprovar novos cadastros de profissionais (CRM/COREN e RQE) e editar permissões.\n2. **Municípios Conveniados:** Cadastrar e gerenciar as cidades atendidas.\n3. **Distribuição de Casos:** Distribuir ou reatribuir casos clínicos manualmente.\n4. **Parametrização Financeira:** Configurar valores por parecer, bônus e auditar relatórios gerenciais globais.`;
+    }
+  }
 
   if (
     q.includes('caso') && (q.includes('criar') || q.includes('abrir') || q.includes('novo') || q.includes('solicita') || q.includes('iniciar') || q.includes('fazer')) ||
@@ -179,8 +268,9 @@ function getSmartFallbackAnswer(query: string): string {
     return `Para cadastrar um paciente no sistema:\n\n1. Acesse o menu **Pacientes** na barra de navegação.\n2. Clique no botão **+ Novo Paciente**.\n3. Preencha os campos obrigatórios:\n   • Nome Completo\n   • CPF (validado automaticamente)\n   • Data de Nascimento e Sexo\n   • Cartão Nacional de Saúde (SUS)\n   • Município de residência\n4. Clique em **Salvar Paciente**.\n\nPronto! O paciente já estará disponível para vinculação em novos casos clínicos.`;
   }
 
-  if (q.includes('gestor') || q.includes('municip') || q.includes('cidade')) {
-    return `O perfil **Gestor Municipal** é dedicado ao monitoramento da saúde municipal:\n\n• **Isolamento de Dados:** Visualiza exclusivamente os casos, pacientes, métricas e relatórios do seu próprio município.\n• **Indicadores de Resolutividade:** Acompanha a taxa de resolutividade da APS e quantos encaminhamentos presenciais foram evitados.\n• **Controle de SLA:** Monitora o cumprimento dos prazos de resposta aos munícipes.`;
+  if (q.includes('gestor') || q.includes('municip') || q.includes('cidade') || q.includes('isolamento')) {
+    const cidade = perfil?.municipio ? ` de **${perfil.municipio}**` : '';
+    return `O perfil **Gestor Municipal**${cidade} é dedicado ao monitoramento da saúde municipal:\n\n• **Isolamento de Dados:** Visualiza exclusivamente os casos, pacientes, métricas e relatórios da sua própria cidade. Não tem acesso a dados de outros municípios.\n• **Indicadores de Resolutividade:** Acompanha a taxa de resolutividade da APS e quantos encaminhamentos presenciais foram evitados.\n• **Controle de SLA:** Monitora o cumprimento dos prazos de resposta aos munícipes.\n• **Relatórios:** Permite exportar relatórios consolidados em PDF para auditoria.`;
   }
 
   if (q.includes('especialista') || q.includes('devolutiva') || q.includes('parecer') || q.includes('responder') || q.includes('aceitar')) {
@@ -195,6 +285,13 @@ function getSmartFallbackAnswer(query: string): string {
     return `Os prazos de atendimento (SLA) são calculados conforme a prioridade do caso:\n\n• 🔴 **Alta Prioridade:** Prazo limite de **até 12 horas**.\n• 🟡 **Média Prioridade:** Prazo limite de **até 48 horas**.\n• 🔵 **Baixa Prioridade:** Prazo limite de **até 72 horas**.\n\nOs cards possuem badges visuais: Verde (no prazo), Âmbar (próximo do vencimento) e Vermelho (atrasado).`;
   }
 
+  if (q.includes('financeiro') || q.includes('bonus') || q.includes('bônus') || q.includes('repasses') || q.includes('faturamento')) {
+    if (role === 'admin') {
+      return `Como Administrador, você pode gerenciar o painel financeiro pelo menu **Financeiro**:\n\n• Parametrizar valores de repasse por laudo/parecer concluído.\n• Lançar bônus manuais para especialistas com base em produtividade ou plantões.\n• Visualizar o consolidado de repasses por período e exportar para conferência.`;
+    }
+    return `No menu **Financeiro**, o Especialista acompanha:\n\n• Quantidade total de pareceres emitidos no mês.\n• Valor acumulado a receber por teleconsultorias concluídas.\n• Discriminação de bônus lançados pela gestão administrativa.`;
+  }
+
   if (q.includes('pdf') || q.includes('imprim') || q.includes('baixar') || q.includes('documento')) {
     return `Para exportar o parecer em PDF:\n\n1. Acesse o caso clínico que esteja com status **Respondido** ou **Fechado**.\n2. Clique no botão **Baixar Parecer (PDF)** no topo dos detalhes do caso.\n3. O sistema gera o documento oficial estruturado com identificação do paciente, dados clínicos, conduta do especialista e carimbo profissional (CRM/RQE).`;
   }
@@ -203,18 +300,14 @@ function getSmartFallbackAnswer(query: string): string {
     return `Para alterar sua senha:\n\n• Se estiver com a senha provisória padrão (*Mudar@123*), clique em **Alterar Senha** no banner de aviso no topo da tela.\n• Você também pode alterar sua senha a qualquer momento clicando no botão de perfil.`;
   }
 
-  return `Posso te orientar sobre qualquer função do Doutortec!\n\n• **Casos Clínicos:** Como abrir uma solicitação, prazos (SLA) e anexar exames.\n• **Pacientes:** Como cadastrar e consultar pacientes.\n• **Devolutiva:** Como o especialista emite o parecer e usa o chat.\n• **Perfis:** Recursos do Solicitante, Especialista, Gestor Municipal e Administrador.\n\nVocê também pode consultar o Guia completo no menu de **Ajuda** (ícone de interrogação no topo da tela).`;
+  return `Estou à sua disposição para apoiar sua atuação na plataforma Doutortec!\n\nVocê pode me perguntar sobre:\n• Como abrir e gerenciar casos clínicos;\n• Prazos de atendimento e regras de SLA;\n• Como emitir a Devolutiva Oficial ou anexar exames;\n• Funcionalidades específicas do seu perfil de acesso.\n\nVocê também pode consultar o Guia completo no menu de **Ajuda** (ícone de interrogação no topo da tela).`;
 }
 
 const STORAGE_KEY_MESSAGES = 'doutortec_suporte_ia_messages';
-const STORAGE_KEY_CUSTOM_KEY = 'doutortec_gemini_custom_key';
 
 export const SuporteIAWidget: React.FC = () => {
+  const { perfil } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [customKeyInput, setCustomKeyInput] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY_CUSTOM_KEY) || '';
-  });
 
   // Persistência profissional das mensagens no localStorage (não somem ao mudar de aba ou atualizar)
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -236,11 +329,26 @@ export const SuporteIAWidget: React.FC = () => {
       {
         id: 'welcome-msg',
         sender: 'assistant',
-        text: 'Olá! Sou o Assistente Virtual Doutortec. Como posso te ajudar com o uso da plataforma hoje?',
+        text: getWelcomeMessage(null),
         timestamp: new Date(),
       }
     ];
   });
+
+  // Atualiza a mensagem inicial com personalização assim que o perfil é carregado (se o chat estiver no início)
+  useEffect(() => {
+    if (perfil && messages.length === 1 && messages[0].id === 'welcome-msg') {
+      const personalizedWelcome = getWelcomeMessage(perfil);
+      setMessages([
+        {
+          id: 'welcome-msg',
+          sender: 'assistant',
+          text: personalizedWelcome,
+          timestamp: new Date(),
+        }
+      ]);
+    }
+  }, [perfil]);
 
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -270,18 +378,16 @@ export const SuporteIAWidget: React.FC = () => {
     }
   }, [isOpen]);
 
-  // Obtém a melhor chave disponível (localStorage ou .env/Vercel)
+  // Obtém a chave de ambiente configurada na Vercel ou .env
   const getActiveApiKey = (): string => {
-    const fromStorage = localStorage.getItem(STORAGE_KEY_CUSTOM_KEY);
-    if (fromStorage && fromStorage.trim().length > 10) {
-      return fromStorage.trim();
-    }
     const fromEnv = import.meta.env.VITE_GEMINI_API_KEY;
     if (fromEnv && typeof fromEnv === 'string' && fromEnv.trim().length > 10) {
       return fromEnv.trim();
     }
     return '';
   };
+
+  const quickPrompts = getQuickPromptsForRole(perfil?.role);
 
   const handleSendMessage = async (textToSend?: string) => {
     const messageContent = (textToSend || inputText).trim();
@@ -302,7 +408,7 @@ export const SuporteIAWidget: React.FC = () => {
 
     // Se nenhuma chave estiver configurada, responde via motor local inteligente com formatação humana
     if (!activeKey) {
-      const answer = getSmartFallbackAnswer(messageContent);
+      const answer = getSmartFallbackAnswer(messageContent, perfil);
       setTimeout(() => {
         setMessages(prev => [
           ...prev,
@@ -336,6 +442,23 @@ export const SuporteIAWidget: React.FC = () => {
         }
       ];
 
+      // Contexto customizado de acordo com o perfil do usuário logado
+      const userContextPrompt = `
+DADOS DO USUÁRIO ATUALMENTE CONECTADO:
+- Nome: ${perfil?.nome || 'Profissional'}
+- Papel no Sistema (Role): ${perfil?.role || 'solicitante'} (${getRoleDisplayTitle(perfil?.role)})
+${perfil?.municipio ? `- Município de Atuação: ${perfil.municipio}` : ''}
+${perfil?.crm_coren ? `- Registro Profissional: ${perfil.crm_coren}` : ''}
+
+INSTRUÇÃO DE PERSONALIZAÇÃO POR PERFIL:
+Você está prestando suporte diretamente a ${perfil?.nome || 'o usuário'}, cujo perfil de acesso é ${getRoleDisplayTitle(perfil?.role)}.
+Adapte suas explicações ao escopo deste usuário:
+- Se for Solicitante (APS): oriente sobre abrir casos clínicos, cadastrar pacientes, anexar exames, acompanhar o prazo de SLA e avaliar/encerrar casos.
+- Se for Especialista / Teleconsultor: oriente sobre aceitar casos na fila, emitir a Devolutiva Oficial, preencher a conduta e recomendações APS, tirar dúvidas no chat com o solicitante, entender que o campo de referências é opcional e consultar o painel financeiro.
+- Se for Gestor Municipal: oriente sobre monitorar os casos e indicadores do seu próprio município (${perfil?.municipio || 'da cidade'}), verificar a resolutividade na atenção básica, redução de encaminhamentos físicos e exportação de relatórios. Enfatize que seus dados são estritamente isolados da sua cidade.
+- Se for Administrador: auxilie com a administração completa da plataforma (gestão de perfis, aprovação de profissionais, cadastro de municípios, distribuição manual e relatórios gerenciais globais).
+Seja sempre acolhedor, objetivo, humanizado e prestativo.`;
+
       // Tenta chamar gemini-3.6-flash ou gemini-2.5-flash via REST API oficial
       const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-flash-latest'];
       let responseText = '';
@@ -350,7 +473,7 @@ export const SuporteIAWidget: React.FC = () => {
             },
             body: JSON.stringify({
               systemInstruction: {
-                parts: [{ text: SYSTEM_INSTRUCTION }]
+                parts: [{ text: `${SYSTEM_INSTRUCTION}\n\n${userContextPrompt}` }]
               },
               contents: contents
             })
@@ -381,7 +504,7 @@ export const SuporteIAWidget: React.FC = () => {
         ]);
       } else {
         // Fallback inteligente para garantir que o usuário NUNCA fique sem resposta
-        const fallbackAnswer = getSmartFallbackAnswer(messageContent);
+        const fallbackAnswer = getSmartFallbackAnswer(messageContent, perfil);
         setMessages(prev => [
           ...prev,
           {
@@ -394,7 +517,7 @@ export const SuporteIAWidget: React.FC = () => {
       }
     } catch (err: any) {
       console.warn('Suporte IA Doutortec: Erro inesperado, acionando base operacional:', err);
-      const fallbackAnswer = getSmartFallbackAnswer(messageContent);
+      const fallbackAnswer = getSmartFallbackAnswer(messageContent, perfil);
 
       setMessages(prev => [
         ...prev,
@@ -415,7 +538,7 @@ export const SuporteIAWidget: React.FC = () => {
       {
         id: 'welcome-msg',
         sender: 'assistant',
-        text: 'Olá! Sou o Assistente Virtual Doutortec. Como posso te ajudar com o uso da plataforma hoje?',
+        text: getWelcomeMessage(perfil),
         timestamp: new Date(),
       }
     ];
@@ -423,62 +546,10 @@ export const SuporteIAWidget: React.FC = () => {
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
   };
 
-  const handleSaveCustomKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customKeyInput.trim()) {
-      localStorage.setItem(STORAGE_KEY_CUSTOM_KEY, customKeyInput.trim());
-    } else {
-      localStorage.removeItem(STORAGE_KEY_CUSTOM_KEY);
-    }
-    setShowKeyModal(false);
-  };
+  const primeiroNome = perfil?.nome ? perfil.nome.split(' ')[0] : '';
 
   return (
     <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end print:hidden">
-      {/* Modal para Ajuste Rápido de Chave de API */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#091151] flex items-center gap-2">
-                <Key className="h-4 w-4 text-[#0ea5e9]" />
-                Configurar Chave Gemini API
-              </h3>
-              <button onClick={() => setShowKeyModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed mb-4">
-              Você pode inserir sua chave da API do Google Gemini abaixo. Ela ficará salva com segurança no seu navegador para ativar a IA em tempo real imediatamente:
-            </p>
-            <form onSubmit={handleSaveCustomKey} className="space-y-4">
-              <input
-                type="text"
-                value={customKeyInput}
-                onChange={(e) => setCustomKeyInput(e.target.value)}
-                placeholder="Ex: AIzaSy... ou AQ..."
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-800 focus:outline-hidden focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowKeyModal(false)}
-                  className="rounded-lg px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-lg bg-[#091151] hover:bg-[#0c166b] text-white px-4 py-1.5 text-xs font-bold transition shadow-xs"
-                >
-                  Salvar Chave
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Janela de Chat Profissional */}
       {isOpen && (
         <div 
@@ -499,27 +570,24 @@ export const SuporteIAWidget: React.FC = () => {
                   Assistente Doutortec
                   <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 </h4>
-                <p className="text-[10px] text-slate-300">Suporte Inteligente &amp; Operacional</p>
+                <p className="text-[10px] text-cyan-300 font-medium">
+                  {getRoleDisplayTitle(perfil?.role)}
+                  {primeiroNome ? ` • ${primeiroNome}` : ''}
+                  {perfil?.role === 'gestor_municipal' && perfil?.municipio ? ` (${perfil.municipio})` : ''}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setShowKeyModal(true)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
-                title="Configurar Chave API"
-              >
-                <Key className="h-3.5 w-3.5" />
-              </button>
-              <button
                 onClick={handleResetChat}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
                 title="Reiniciar conversa"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
                 title="Fechar janela"
               >
                 <X className="h-4 w-4" />
@@ -573,18 +641,18 @@ export const SuporteIAWidget: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Sugestões Rápidas (Exibidas quando há poucas mensagens) */}
+          {/* Sugestões Rápidas Personalizadas por Perfil */}
           {messages.length <= 2 && (
             <div className="px-3.5 py-2 bg-white border-t border-slate-150 flex flex-wrap gap-1.5 shrink-0">
               <span className="w-full text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
-                Dúvidas Frequentes:
+                Dúvidas para seu perfil:
               </span>
-              {QUICK_PROMPTS.map((prompt, i) => (
+              {quickPrompts.map((prompt, i) => (
                 <button
                   key={i}
                   onClick={() => handleSendMessage(prompt)}
                   disabled={loading}
-                  className="rounded-lg bg-slate-100 hover:bg-slate-200 hover:text-[#0ea5e9] px-2.5 py-1 text-[10px] text-slate-700 font-medium transition text-left shrink-0 disabled:opacity-50"
+                  className="rounded-lg bg-slate-100 hover:bg-slate-200 hover:text-[#0ea5e9] px-2.5 py-1 text-[10px] text-slate-700 font-medium transition text-left shrink-0 disabled:opacity-50 cursor-pointer"
                 >
                   {prompt}
                 </button>
@@ -646,3 +714,4 @@ export const SuporteIAWidget: React.FC = () => {
     </div>
   );
 };
+
