@@ -515,7 +515,8 @@ export const GerenciamentoPerfis: React.FC = () => {
       solicitante: 'Solicitante',
       telerregulador: 'Telerregulador',
       teleconsultor: 'Teleconsultor',
-      visualizador: 'Visualizador'
+      visualizador: 'Visualizador',
+      gestor_municipal: 'Gestor Municipal'
     };
     return roleMap[role] || role;
   };
@@ -534,6 +535,8 @@ export const GerenciamentoPerfis: React.FC = () => {
         return 'bg-blue-50 border-blue-200 text-blue-700';
       case 'visualizador':
         return 'bg-teal-50 border-teal-200 text-teal-700';
+      case 'gestor_municipal':
+        return 'bg-amber-50 border-amber-200 text-amber-700';
       default:
         return 'bg-gray-50 border-gray-200 text-gray-700';
     }
@@ -1188,6 +1191,7 @@ export const GerenciamentoPerfis: React.FC = () => {
                   >
                     <option value="especialista">Especialista (Médico de Referência)</option>
                     <option value="solicitante">Solicitante (Clínico da Unidade)</option>
+                    <option value="gestor_municipal">Gestor Municipal</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>

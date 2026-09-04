@@ -6,9 +6,6 @@ import {
   Send, 
   Loader2, 
   Sparkles, 
-  HelpCircle, 
-  ChevronDown, 
-  AlertCircle,
   RotateCcw
 } from 'lucide-react';
 
@@ -110,7 +107,6 @@ export const SuporteIAWidget: React.FC = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [hasCustomKeyError, setHasCustomKeyError] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -212,7 +208,6 @@ export const SuporteIAWidget: React.FC = () => {
       ]);
     } catch (err: any) {
       console.warn('Suporte IA Doutortec: Erro silencioso ao chamar Gemini API:', err?.message || err);
-      setHasCustomKeyError(true);
 
       // Friendly in-chat fail-safe notification (never crashes application)
       setMessages(prev => [
@@ -239,7 +234,6 @@ export const SuporteIAWidget: React.FC = () => {
         timestamp: new Date(),
       }
     ]);
-    setHasCustomKeyError(false);
   };
 
   return (
