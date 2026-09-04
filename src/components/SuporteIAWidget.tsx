@@ -85,15 +85,55 @@ const QUICK_PROMPTS = [
   'Como funciona o SLA e prazos?'
 ];
 
-// Fallback responses when API key is not configured yet
-const FALLBACK_KNOWLEDGE: Record<string, string> = {
-  'como abrir um novo caso clínico?': `Para abrir uma nova solicitação (Perfil Solicitante):\n1. Acesse o menu **Casos** no painel lateral.\n2. Clique no botão **+ Novo Caso Clínico**.\n3. Selecione o paciente já cadastrado (ou cadastre no menu Pacientes).\n4. Escolha a Especialidade desejada e a Prioridade (Baixa: até 72h, Média: até 48h, Alta: até 12h).\n5. Descreva o histórico clínico, conduta atual e a dúvida diagnóstica/terapêutica.\n6. Anexe exames ou laudos em PDF/imagens (até 15MB por arquivo).\n7. Aceite o termo de responsabilidade e clique em **Enviar Caso Clínico**.`,
-  'como cadastrar um paciente?': `Para cadastrar um paciente:\n1. Acesse o menu **Pacientes** na barra de navegação.\n2. Clique em **+ Novo Paciente**.\n3. Preencha Nome Completo, CPF, Cartão Nacional de Saúde (SUS), Data de Nascimento, Sexo e Município.\n4. Clique em **Salvar Paciente**. Ele estará disponível imediatamente para abertura de casos.`,
-  'qual a função do gestor municipal?': `O **Gestor Municipal** é o perfil dedicado ao monitoramento da saúde local no Doutortec:\n• Possui visualização restrita exclusivamente aos casos, pacientes, métricas e relatórios do seu próprio município.\n• Acompanha em tempo real a taxa de resolutividade da Atenção Primária e quantos encaminhamentos presenciais foram evitados.\n• Monitora o cumprimento dos prazos de resposta (SLA) para a população da sua cidade.`,
-  'como o especialista emite a resposta?': `O **Médico Especialista** responde o caso da seguinte forma:\n1. Localiza o caso com status 'Novo' e clica em **Aceitar Atendimento**.\n2. Se os dados forem insuficientes, pode clicar em **Devolver (Falta de Dados)**.\n3. Para emitir a Devolutiva Oficial, preenche:\n   - Conduta imediata e orientações para a APS;\n   - Indicação ou não de encaminhamento presencial com classificação de risco;\n   - Exames solicitados (se houver);\n   - Referências bibliográficas (campo opcional);\n   - Marcação de potencial SOF (Segunda Opinião Formativa).\n4. Clica em **Emitir Devolutiva Oficial**. O caso passa para o status 'Respondido'.`,
-  'o campo de referências é obrigatório?': `**Não!** O campo de Referências Bibliográficas é **opcional**.\nO especialista pode citar protocolos, diretrizes do Ministério da Saúde ou artigos científicos quando considerar agregador, mas o parecer pode ser enviado normalmente sem o preenchimento desse campo.`,
-  'como funciona o sla e prazos?': `Os prazos de resposta da teleconsultoria dependem da prioridade definida na abertura do caso:\n• **Alta Prioridade:** Prazo de até 12 horas.\n• **Média Prioridade:** Prazo de até 48 horas.\n• **Baixa Prioridade:** Prazo de até 72 horas.\n\nO sistema exibe um cronômetro visual em tempo real em cada caso: verde quando está no prazo, amarelo/laranja quando está próximo do vencimento e vermelho quando vencido.`
-};
+// Intelligent fuzzy matcher for operational guidance
+function getSmartFallbackAnswer(query: string): string {
+  const q = query.toLowerCase();
+
+  // 1. Criar / Abrir novo caso / solicitação
+  if (
+    q.includes('caso') && (q.includes('criar') || q.includes('abrir') || q.includes('novo') || q.includes('solicita') || q.includes('iniciar') || q.includes('fazer')) ||
+    q.includes('como abrir') || q.includes('como criar') || q.includes('abrir caso') || q.includes('criar caso')
+  ) {
+    return `Para abrir uma nova solicitação de caso clínico (Perfil Solicitante):\n\n1. Acesse o menu **Casos** no painel lateral esquerdo.\n2. Clique no botão **+ Novo Caso Clínico** (no topo da tela).\n3. Selecione o **Paciente** previamente cadastrado no menu *Pacientes*.\n4. Escolha a **Especialidade Médica** desejada e a **Prioridade**:\n   • *Alta:* resposta em até 12 horas\n   • *Média:* resposta em até 48 horas\n   • *Baixa:* resposta em até 72 horas\n5. Preencha o histórico clínico, conduta atual e a sua **dúvida clínica diagnóstica/terapêutica**.\n6. Anexe exames, fotos ou laudos em PDF/imagens (até 15MB por arquivo).\n7. Aceite o termo de responsabilidade e clique em **Enviar Caso Clínico**.\n\nO caso entrará imediatamente na fila de teleconsultoria do especialista!`;
+  }
+
+  // 2. Paciente / cadastrar paciente
+  if (q.includes('paciente') || q.includes('cadastr')) {
+    return `Para cadastrar um paciente no sistema:\n\n1. Acesse o menu **Pacientes** na barra de navegação.\n2. Clique no botão **+ Novo Paciente**.\n3. Preencha os campos:\n   • Nome Completo\n   • CPF (validado automaticamente)\n   • Data de Nascimento e Sexo\n   • Cartão Nacional de Saúde (SUS)\n   • Município do paciente\n4. Clique em **Salvar Paciente**.\n\nO paciente estará disponível imediatamente para abertura de casos.`;
+  }
+
+  // 3. Gestor Municipal
+  if (q.includes('gestor') || q.includes('municip') || q.includes('cidade')) {
+    return `O perfil **Gestor Municipal** é voltado ao monitoramento da saúde municipal:\n\n• **Isolamento de Dados:** Visualiza exclusivamente os casos, pacientes, métricas e relatórios do seu próprio município.\n• **Resolutividade:** Acompanha a taxa de resolutividade da APS e quantos encaminhamentos presenciais foram evitados.\n• **Controle de SLA:** Monitora o tempo de resposta e cumprimento dos prazos para os munícipes.`;
+  }
+
+  // 4. Especialista / Responder / Devolutiva / Parecer
+  if (q.includes('especialista') || q.includes('devolutiva') || q.includes('parecer') || q.includes('responder') || q.includes('aceitar')) {
+    return `Como o **Médico Especialista** atua no caso clínico:\n\n1. **Aceite:** Localiza os casos com status *Novo* na sua especialidade e clica em **Aceitar Atendimento** (iniciando o SLA).\n2. **Chat do Caso:** Se precisar de mais detalhes, conversa diretamente com o clínico no chat integrado.\n3. **Devolução:** Se faltarem dados essenciais, pode clicar em **Devolver (Falta de Dados)** com justificativa.\n4. **Devolutiva Oficial:** Preenche a conduta imediata, recomendações para a APS, classificação de risco/encaminhamento e referências (opcionais), clicando em **Emitir Devolutiva Oficial**.`;
+  }
+
+  // 5. Referências bibliográficas
+  if (q.includes('referencia') || q.includes('referência') || q.includes('bibliograf')) {
+    return `**O campo de Referências Bibliográficas é OPCIONAL!**\n\nO especialista pode citar diretrizes do Ministério da Saúde, protocolos clínicos ou artigos científicos quando julgar agregador, mas o parecer pode ser enviado normalmente sem preencher esse campo.`;
+  }
+
+  // 6. SLA / Prazos
+  if (q.includes('sla') || q.includes('prazo') || q.includes('tempo') || q.includes('urgente') || q.includes('prioridade')) {
+    return `Os prazos de atendimento (SLA) são calculados conforme a prioridade do caso:\n\n• 🔴 **Alta Prioridade:** Prazo limite de **até 12 horas**.\n• 🟡 **Média Prioridade:** Prazo limite de **até 48 horas**.\n• 🔵 **Baixa Prioridade:** Prazo limite de **até 72 horas**.\n\nOs cards possuem badges visuais: Verde (no prazo), Âmbar (próximo do vencimento) e Vermelho (atrasado).`;
+  }
+
+  // 7. Relatório / PDF / Parecer impresso
+  if (q.includes('pdf') || q.includes('imprim') || q.includes('baixar') || q.includes('documento')) {
+    return `Para exportar o parecer em PDF:\n\n1. Acesse o caso clínico que esteja com status **Respondido** ou **Fechado**.\n2. Clique no botão **Baixar Parecer (PDF)** no topo dos detalhes do caso.\n3. O sistema gera o documento oficial estruturado com identificação do paciente, dados clínicos, conduta do especialista e carimbo profissional (CRM/RQE).`;
+  }
+
+  // 8. Senha / Login
+  if (q.includes('senha') || q.includes('login') || q.includes('acesso')) {
+    return `Para alterar sua senha:\n\n• Se estiver com a senha provisória padrão (*Mudar@123*), clique em **Alterar Senha** no banner de aviso no topo da tela.\n• Você também pode alterar sua senha a qualquer momento clicando no botão de perfil.`;
+  }
+
+  return `Posso te orientar sobre qualquer função do Doutortec!\n\n• **Casos Clínicos:** Como abrir uma solicitação, prazos (SLA) e anexar exames.\n• **Pacientes:** Como cadastrar e consultar pacientes.\n• **Devolutiva:** Como o especialista emite o parecer e usa o chat.\n• **Perfis:** Recursos do Solicitante, Especialista, Gestor Municipal e Administrador.\n\nVocê também pode consultar o Guia completo no menu de **Ajuda** (ícone de interrogação no topo da tela).`;
+}
 
 export const SuporteIAWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -139,49 +179,35 @@ export const SuporteIAWidget: React.FC = () => {
     if (!textToSend) setInputText('');
     setLoading(true);
 
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const rawKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const isValidGeminiKey = rawKey && typeof rawKey === 'string' && rawKey.startsWith('AIzaSy') && rawKey.length > 20;
 
-      if (!apiKey || apiKey === 'your-gemini-api-key' || apiKey.trim() === '') {
-        // Safe Fallback: Verify if question matches common knowledge base
-        const normalized = messageContent.toLowerCase();
-        let matchedResponse: string | null = null;
-
-        for (const [key, answer] of Object.entries(FALLBACK_KNOWLEDGE)) {
-          if (normalized.includes(key) || key.includes(normalized)) {
-            matchedResponse = answer;
-            break;
+    // If key is not set or not a valid Google AI Studio key, answer immediately with the smart knowledge base
+    if (!isValidGeminiKey) {
+      const answer = getSmartFallbackAnswer(messageContent);
+      setTimeout(() => {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            sender: 'assistant',
+            text: answer,
+            timestamp: new Date(),
           }
-        }
+        ]);
+        setLoading(false);
+      }, 400);
+      return;
+    }
 
-        if (!matchedResponse) {
-          // General friendly fallback response
-          matchedResponse = `Olá! Sou o assistente Doutortec. Para habilitar respostas de IA generativa em tempo real com toda a flexibilidade, configure a variável **VITE_GEMINI_API_KEY** no arquivo \`.env\`.\n\nEnquanto isso, você pode consultar dúvidas comuns utilizando as sugestões rápidas abaixo ou o menu de Ajuda (ícone de interrogação no topo da página).`;
-        }
-
-        setTimeout(() => {
-          setMessages(prev => [
-            ...prev,
-            {
-              id: `assistant-${Date.now()}`,
-              sender: 'assistant',
-              text: matchedResponse!,
-              timestamp: new Date(),
-            }
-          ]);
-          setLoading(false);
-        }, 500);
-        return;
-      }
-
-      // Live Google Gemini API Integration with Fail-safe try/catch
-      const genAI = new GoogleGenerativeAI(apiKey);
+    try {
+      // Live Google Gemini API Integration
+      const genAI = new GoogleGenerativeAI(rawKey);
       const model = genAI.getGenerativeModel({ 
         model: 'gemini-1.5-flash',
         systemInstruction: SYSTEM_INSTRUCTION
       });
 
-      // Prepare conversation history (last 8 messages for context)
       const recentHistory = messages
         .filter(m => !m.isError)
         .slice(-8)
@@ -202,22 +228,23 @@ export const SuporteIAWidget: React.FC = () => {
         {
           id: `assistant-${Date.now()}`,
           sender: 'assistant',
-          text: responseText || 'Entendido. Há mais alguma dúvida em que eu possa ajudar?',
+          text: responseText || getSmartFallbackAnswer(messageContent),
           timestamp: new Date(),
         }
       ]);
     } catch (err: any) {
-      console.warn('Suporte IA Doutortec: Erro silencioso ao chamar Gemini API:', err?.message || err);
+      console.warn('Suporte IA Doutortec: Falha na API Gemini, usando base interna:', err?.message || err);
 
-      // Friendly in-chat fail-safe notification (never crashes application)
+      // Intelligent fail-safe: reply with the direct answer so the user is never left without guidance!
+      const fallbackAnswer = getSmartFallbackAnswer(messageContent);
+
       setMessages(prev => [
         ...prev,
         {
-          id: `assistant-err-${Date.now()}`,
+          id: `assistant-fb-${Date.now()}`,
           sender: 'assistant',
-          text: '⚠️ Não foi possível obter a resposta dos servidores do Gemini no momento (verifique a cota ou a chave VITE_GEMINI_API_KEY no arquivo .env). Você também pode consultar o Guia no menu de Ajuda no topo da tela.',
+          text: fallbackAnswer,
           timestamp: new Date(),
-          isError: true,
         }
       ]);
     } finally {
