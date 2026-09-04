@@ -123,6 +123,10 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       // Role adaptive filters
       if (perfil.role === 'solicitante') {
         query = query.eq('solicitante_id', user.id);
+      } else if (perfil.role === 'gestor_municipal') {
+        if (perfil.municipio) {
+          query = query.eq('solicitante.municipio', perfil.municipio);
+        }
       } else if (perfil.role === 'especialista') {
         if (statusFilter === 'novo') {
           query = query.is('especialista_id', null);
@@ -148,7 +152,12 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
 
       if (queryError) throw queryError;
 
-      const newCasos = (data as CasoClinico[]) || [];
+      let newCasos = (data as CasoClinico[]) || [];
+      if (perfil.role === 'gestor_municipal' && perfil.municipio) {
+        newCasos = newCasos.filter((c: any) => 
+          c.solicitante?.municipio?.toLowerCase() === perfil.municipio.toLowerCase()
+        );
+      }
       
       if (isLoadMore) {
         setCasos(prev => [...prev, ...newCasos]);
@@ -250,7 +259,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
     <div className="space-y-6">
       {/* Filters bar */}
       {showFilters && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5 bg-white p-4 rounded-xl border border-gray-150 shadow-xs">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 bg-white p-4 rounded-xl border border-gray-150 shadow-xs">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input

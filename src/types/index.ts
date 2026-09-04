@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'especialista' | 'solicitante' | 'telerregulador' | 'teleconsultor' | 'visualizador';
+export type UserRole = 'admin' | 'especialista' | 'solicitante' | 'telerregulador' | 'teleconsultor' | 'visualizador' | 'gestor_municipal';
 
 export type CadastroStatus = 'pendente' | 'aprovado' | 'rejeitado' | 'bloqueado';
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { getPricingForCaso } from '../../lib/financeUtils';
 import { 
   FileBarChart2, 
@@ -64,6 +65,7 @@ interface PerfilOption {
 }
 
 export const Relatorios: React.FC = () => {
+  const { perfil } = useAuth();
   const [loading, setLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
@@ -185,13 +187,21 @@ export const Relatorios: React.FC = () => {
         };
       });
 
-      setCasosRaw(enriched);
+      let finalEnriched = enriched;
+      if (perfil?.role === 'gestor_municipal' && perfil?.municipio) {
+        const targetMun = perfil.municipio.toLowerCase();
+        finalEnriched = enriched.filter(item => 
+          item.municipio_nome?.toLowerCase().includes(targetMun)
+        );
+      }
+
+      setCasosRaw(finalEnriched);
     } catch (err) {
       console.error('Erro ao gerar relatório gerencial:', err);
     } finally {
       setLoading(false);
     }
-  }, [dataInicio, dataFim, especialistas, especialidades]);
+  }, [dataInicio, dataFim, especialistas, especialidades, perfil]);
 
   // Atualiza os dados sempre que o período mudar
   useEffect(() => {

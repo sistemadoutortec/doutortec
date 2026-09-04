@@ -129,7 +129,7 @@ const PAGE_SIZE = 20;
 // Component
 // ─────────────────────────────────────────────────────────
 export const Pacientes: React.FC = () => {
-  const { user } = useAuth();
+  const { user, perfil } = useAuth();
 
   // ── Reference data ──────────────────────────────────────
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
@@ -207,10 +207,18 @@ export const Pacientes: React.FC = () => {
       const list = (data as Paciente[]) || [];
 
       // Attach municipality label
-      const enriched = list.map((p) => ({
+      let enriched = list.map((p) => ({
         ...p,
         municipioLabel: p.municipio_id ? municipioMap[p.municipio_id] ?? '—' : '—',
       }));
+
+      // Filter by municipality if Gestor Municipal
+      if (perfil?.role === 'gestor_municipal' && perfil?.municipio) {
+        const targetMun = perfil.municipio.toLowerCase();
+        enriched = enriched.filter(p => 
+          p.municipioLabel.toLowerCase().includes(targetMun)
+        );
+      }
 
       setPacientes((prev) => (append ? [...prev, ...enriched] : enriched));
       setPage(pageIndex);
@@ -223,7 +231,7 @@ export const Pacientes: React.FC = () => {
       setListLoading(false);
       setLoadingMore(false);
     }
-  }, [municipioMap]);
+  }, [municipioMap, perfil]);
 
   // Load municipalities first, then patients
   useEffect(() => {

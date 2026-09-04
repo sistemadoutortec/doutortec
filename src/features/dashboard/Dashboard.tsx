@@ -139,6 +139,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
       ];
     }
 
+    if (role === 'gestor_municipal') {
+      return [
+        {
+          label: 'Casos no Município',
+          sublabel: `Total em ${perfil?.municipio || 'sua cidade'}`,
+          value: null,
+          icon: <FileText className="h-4 w-4 text-indigo-600" />,
+          colorClass: 'text-indigo-600',
+          bgClass: 'bg-indigo-50',
+        },
+        {
+          label: 'Pacientes Cadastrados',
+          sublabel: `Moradores de ${perfil?.municipio || 'sua cidade'}`,
+          value: null,
+          icon: <Users className="h-4 w-4 text-emerald-600" />,
+          colorClass: 'text-emerald-600',
+          bgClass: 'bg-emerald-50',
+        },
+        {
+          label: 'Em Progresso',
+          sublabel: 'Interconsultas em andamento',
+          value: null,
+          icon: <Clock className="h-4 w-4 text-amber-600" />,
+          colorClass: 'text-amber-600',
+          bgClass: 'bg-amber-50',
+        },
+        {
+          label: 'Pareceres Respondidos',
+          sublabel: 'Respostas concluídas',
+          value: null,
+          icon: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+          colorClass: 'text-green-600',
+          bgClass: 'bg-green-50',
+        },
+      ];
+    }
+
     if (role === 'especialista') {
       return [
         {
@@ -264,6 +301,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCaso, onNavigate }
             ? (casosRes.value.count ?? 0)
             : -1,
         ];
+
+      } else if (role === 'gestor_municipal') {
+        const munName = perfil?.municipio || '';
+        const [casosRes, pacientesRes, progressoRes, respondidosRes] = await Promise.allSettled([
+          // Card 1 – total de casos no município
+          supabase
+            .from('casos')
+            .select('id, solicitante:perfis!solicitante_id(municipio)'),
+          // Card 2 – pacientes no município
+          supabase
+            .from('pacientes')
+            .select('id, municipio_id, fluxos_municipios!municipio_id(municipio)'),
+          // Card 3 – em progresso no município
+          supabase
+            .from('casos')
+            .select('id, status, solicitante:perfis!solicitante_id(municipio)')
+            .eq('status', 'em_progresso'),
+          // Card 4 – respondidos no município
+          supabase
+            .from('casos')
+            .select('id, status, solicitante:perfis!solicitante_id(municipio)')
+            .in('status', ['respondido', 'fechado']),
+        ]);
+
+        const totalCasosMun = casosRes.status === 'fulfilled' && casosRes.value.data
+          ? casosRes.value.data.filter((c: any) => c.solicitante?.municipio?.toLowerCase() === munName.toLowerCase()).length
+          : 0;
+
+        const totalPacientesMun = pacientesRes.status === 'fulfilled' && pacientesRes.value.data
+          ? pacientesRes.value.data.filter((p: any) => p.fluxos_municipios?.municipio?.toLowerCase() === munName.toLowerCase() || !munName).length
+          : 0;
+
+        const totalProgressoMun = progressoRes.status === 'fulfilled' && progressoRes.value.data
+          ? progressoRes.value.data.filter((c: any) => c.solicitante?.municipio?.toLowerCase() === munName.toLowerCase()).length
+          : 0;
+
+        const totalRespondidosMun = respondidosRes.status === 'fulfilled' && respondidosRes.value.data
+          ? respondidosRes.value.data.filter((c: any) => c.solicitante?.municipio?.toLowerCase() === munName.toLowerCase()).length
+          : 0;
+
+        counts = [totalCasosMun, totalPacientesMun, totalProgressoMun, totalRespondidosMun];
 
       } else if (role === 'especialista') {
         const [totalRes, progressoRes, respondidoRes, novosRes] = await Promise.allSettled([

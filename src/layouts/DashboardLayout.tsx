@@ -22,6 +22,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { ModalAjuda } from '../components/ModalAjuda';
+import { SuporteIAWidget } from '../components/SuporteIAWidget';
 
 interface SidebarItem {
   label: string;
@@ -69,6 +70,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         { label: 'Especialidades', icon: Activity, id: 'especialidades' },
         { label: 'Ranking', icon: Trophy, id: 'ranking' },
         { label: 'Financeiro', icon: DollarSign, id: 'financeiro' },
+        { label: 'Notificações', icon: Bell, id: 'notificacoes' }
+      ];
+    }
+
+    if (role === 'gestor_municipal') {
+      return [
+        { label: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
+        { label: 'Casos', icon: FileText, id: 'casos' },
+        { label: 'Pacientes', icon: Users, id: 'pacientes' },
+        { label: 'Relatórios', icon: BarChart3, id: 'relatorios' },
         { label: 'Notificações', icon: Bell, id: 'notificacoes' }
       ];
     }
@@ -299,6 +310,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             : 'solicitante'
         } 
       />
+
+      {/* Floating AI Support Widget (Fail-safe, Zero-risk) */}
+      <SuporteIAWidget />
     </div>
   );
 };
