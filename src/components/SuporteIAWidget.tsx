@@ -515,11 +515,11 @@ Seja sempre acolhedor, objetivo, humanizado e prestativo.`;
   const primeiroNome = perfil?.nome ? perfil.nome.split(' ')[0] : '';
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end print:hidden">
+    <div className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-30 flex flex-col items-end print:hidden">
       {/* Janela de Chat Profissional */}
       {isOpen && (
         <div 
-          className="mb-3 w-88 sm:w-104 rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-200 animate-in fade-in slide-in-from-bottom-5"
+          className="mb-3 w-[calc(100vw-2rem)] sm:w-104 max-w-sm rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-200 animate-in fade-in slide-in-from-bottom-5"
           style={{ height: '560px', maxHeight: 'calc(100vh - 90px)' }}
         >
           {/* Cabeçalho */}
@@ -658,7 +658,7 @@ Seja sempre acolhedor, objetivo, humanizado e prestativo.`;
       {/* Botão Flutuante (FAB) */}
       <button
         onClick={() => setIsOpen(prev => !prev)}
-        className="group relative flex items-center gap-2 rounded-full px-4 py-3 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 text-white cursor-pointer"
+        className="group relative flex items-center gap-2 rounded-full p-3.5 sm:px-4 sm:py-3 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 text-white cursor-pointer"
         style={{
           background: 'linear-gradient(135deg, #091151 0%, #0ea5e9 100%)',
         }}
@@ -672,10 +672,10 @@ Seja sempre acolhedor, objetivo, humanizado e prestativo.`;
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[#28ffb2]" />
           </span>
         </div>
-        <span className="text-xs font-bold tracking-wide pr-1">
+        <span className="hidden sm:inline text-xs font-bold tracking-wide pr-1">
           {isOpen ? 'Fechar IA' : 'Suporte IA'}
         </span>
-        <Sparkles className="h-3.5 w-3.5 text-[#28ffb2]" />
+        <Sparkles className="hidden sm:inline-block h-3.5 w-3.5 text-[#28ffb2]" />
       </button>
     </div>
   );
