@@ -374,12 +374,15 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                     </label>
                     <select
                       id="uf"
-                      disabled={loading || role === 'gestor_municipal'}
-                      value={role === 'gestor_municipal' ? '' : uf}
-                      onChange={(e) => setUf(e.target.value)}
+                      disabled={loading}
+                      value={uf}
+                      onChange={(e) => {
+                        setUf(e.target.value);
+                        setMunicipio('');
+                      }}
                       className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
                     >
-                      <option value="" className="bg-white text-slate-450">UF</option>
+                      <option value="" className="bg-white text-slate-450">Todas</option>
                       {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(state => (
                         <option key={state} value={state} className="bg-white text-slate-900">{state}</option>
                       ))}
@@ -458,18 +461,16 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                 >
                   <option value="" className="bg-white text-slate-450">Selecione seu município...</option>
                   {(() => {
-                    const filtered = uf ? municipiosList.filter(m => m.uf.toUpperCase() === uf.toUpperCase()) : municipiosList;
-                    const listToDisplay = filtered.length > 0 ? filtered : municipiosList;
-                    return listToDisplay.map(m => (
+                    const filtered = uf.trim() 
+                      ? municipiosList.filter(m => m.uf?.trim().toUpperCase() === uf.trim().toUpperCase()) 
+                      : municipiosList;
+                    return filtered.map(m => (
                       <option key={m.id} value={m.municipio} className="bg-white text-slate-900">
                         {m.municipio} ({m.uf})
                       </option>
                     ));
                   })()}
                 </select>
-                <p className="text-[11px] text-slate-500 mt-1.5 leading-normal">
-                  ℹ️ O Doutortec atende apenas municípios credenciados à rede. Se sua cidade não estiver na lista, entre em contato com a gestão.
-                </p>
               </div>
 
              <div className="sm:col-span-2">
