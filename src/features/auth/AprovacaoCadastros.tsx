@@ -158,9 +158,11 @@ export const AprovacaoCadastros: React.FC = () => {
                         <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold border ${
                           item.role === 'especialista' 
                             ? 'bg-purple-50 border-purple-200 text-purple-700' 
+                            : item.role === 'gestor_municipal'
+                            ? 'bg-amber-50 border-amber-200 text-amber-700'
                             : 'bg-blue-50 border-blue-200 text-blue-700'
                         }`}>
-                          {item.role === 'especialista' ? 'Especialista' : 'Solicitante'}
+                          {item.role === 'especialista' ? 'Especialista' : item.role === 'gestor_municipal' ? 'Gestor Municipal' : 'Solicitante'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">

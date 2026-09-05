@@ -129,8 +129,8 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       return false;
     }
 
-    // Validate UF selection if registration number is filled
-    if (registroNumero.trim() && !uf) {
+    // Validate UF selection if registration number is filled and role is not gestor_municipal
+    if (role !== 'gestor_municipal' && registroNumero.trim() && !uf) {
       setError('Por favor, selecione a UF do seu registro profissional.');
       return false;
     }
@@ -159,17 +159,19 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
 
     setLoading(true);
     try {
-      // Find specialty name if specialist
+      // Find specialty or set category name according to role
       let categoriaProfissional: string | undefined = undefined;
       if (role === 'especialista' && selectedEspecialidade) {
         const found = especialidades.find(esp => esp.id === selectedEspecialidade);
         if (found) {
           categoriaProfissional = found.nome;
         }
+      } else if (role === 'gestor_municipal') {
+        categoriaProfissional = 'Gestor Municipal';
       }
 
-      // Format CRM / COREN with UF if provided
-      const formattedCrmCoren = registroNumero.trim() 
+      // Format CRM / COREN with UF if provided and applicable
+      const formattedCrmCoren = (role !== 'gestor_municipal' && registroNumero.trim())
         ? `${registroNumero.trim()} / ${uf}` 
         : undefined;
 
@@ -326,57 +328,58 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
               />
             </div>
 
-            <div>
-               <label htmlFor="role" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                 Perfil de Acesso *
-               </label>
-               <select
-                 id="role"
-                 disabled={loading}
-                 value={role}
-                 onChange={(e) => setRole(e.target.value as UserRole)}
-                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-               >
-                 <option value="solicitante" className="bg-white text-slate-900">Clínico(a)</option>
-                 <option value="especialista" className="bg-white text-slate-900">Especialista (Médico de Referência)</option>
-               </select>
-             </div>
+             <div>
+                <label htmlFor="role" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Perfil de Acesso *
+                </label>
+                <select
+                  id="role"
+                  disabled={loading}
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as UserRole)}
+                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="solicitante" className="bg-white text-slate-900">Solicitante (Clínico da Unidade)</option>
+                  <option value="especialista" className="bg-white text-slate-900">Especialista (Médico de Referência)</option>
+                  <option value="gestor_municipal" className="bg-white text-slate-900">Gestor Municipal</option>
+                </select>
+              </div>
 
-             <div className="sm:col-span-2">
-               <div className="grid grid-cols-3 gap-4">
-                 <div className="col-span-2">
-                   <label htmlFor="registro_numero" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                     Número do Registro (CRM/COREN)
-                   </label>
-                   <input
-                     id="registro_numero"
-                     type="text"
-                     disabled={loading}
-                     value={registroNumero}
-                     onChange={(e) => setRegistroNumero(e.target.value)}
-                     className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                     placeholder="Ex: 123456"
-                   />
-                 </div>
-                 <div>
-                   <label htmlFor="uf" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                     UF
-                   </label>
-                   <select
-                     id="uf"
-                     disabled={loading}
-                     value={uf}
-                     onChange={(e) => setUf(e.target.value)}
-                     className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                   >
-                     <option value="" className="bg-white text-slate-450">UF</option>
-                     {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(state => (
-                       <option key={state} value={state} className="bg-white text-slate-900">{state}</option>
-                     ))}
-                   </select>
-                 </div>
-               </div>
-             </div>
+              <div className="sm:col-span-2">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <label htmlFor="registro_numero" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Número do Registro (CRM/COREN) {role === 'gestor_municipal' && <span className="font-normal text-slate-400 text-xs">(Opcional / N/A)</span>}
+                    </label>
+                    <input
+                      id="registro_numero"
+                      type="text"
+                      disabled={loading || role === 'gestor_municipal'}
+                      value={role === 'gestor_municipal' ? '' : registroNumero}
+                      onChange={(e) => setRegistroNumero(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                      placeholder={role === 'gestor_municipal' ? 'Não aplicável' : 'Ex: 123456'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="uf" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      UF
+                    </label>
+                    <select
+                      id="uf"
+                      disabled={loading || role === 'gestor_municipal'}
+                      value={role === 'gestor_municipal' ? '' : uf}
+                      onChange={(e) => setUf(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                      <option value="" className="bg-white text-slate-450">UF</option>
+                      {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(state => (
+                        <option key={state} value={state} className="bg-white text-slate-900">{state}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
 
              {role === 'especialista' && (
                <>

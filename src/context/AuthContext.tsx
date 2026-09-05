@@ -190,7 +190,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         instituicao: metadata.instituicao,
         telefone: metadata.telefone || null,
         crm_coren: metadata.crm_coren || null,
-        status_cadastro: (metadata.role === 'solicitante' || metadata.role === 'especialista') ? 'pendente' : 'aprovado',
+        status_cadastro: (metadata.role === 'solicitante' || metadata.role === 'especialista' || metadata.role === 'gestor_municipal') ? 'pendente' : 'aprovado',
         categoria_profissional: metadata.categoria_profissional || null,
         rqe: metadata.rqe || null,
       };

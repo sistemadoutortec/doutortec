@@ -15,13 +15,24 @@ export const GerenciamentoPerfis: React.FC = () => {
 
   // Create Professional Modal States
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [newProf, setNewProf] = useState({
+  const [newProf, setNewProf] = useState<{
+    nome: string;
+    email: string;
+    cpf: string;
+    crm_coren: string;
+    uf: string;
+    role: UserRole;
+    especialidadeId: string;
+    instituicao: string;
+    municipio: string;
+    senhaInicial: string;
+  }>({
     nome: '',
     email: '',
     cpf: '',
     crm_coren: '',
     uf: 'SP',
-    role: 'especialista' as 'especialista' | 'solicitante',
+    role: 'especialista',
     especialidadeId: '',
     instituicao: '',
     municipio: '',
@@ -211,9 +222,10 @@ export const GerenciamentoPerfis: React.FC = () => {
       const selectedEsp = especialidades.find(e => e.id === editProf.especialidadeId);
       const categoryName = editProf.role === 'especialista' && selectedEsp 
         ? selectedEsp.nome 
-        : (editProf.role === 'solicitante' ? 'Clínico Geral' : null);
+        : (editProf.role === 'solicitante' ? 'Clínico Geral' : (editProf.role === 'gestor_municipal' ? 'Gestor Municipal' : null));
 
-      const formattedCrm = editProf.crm_coren_num.trim() 
+      const isMedicalEdit = editProf.role !== 'gestor_municipal' && editProf.role !== 'admin';
+      const formattedCrm = (isMedicalEdit && editProf.crm_coren_num.trim()) 
         ? `${editProf.crm_coren_num.trim()} / ${editProf.uf}` 
         : null;
 
@@ -374,12 +386,15 @@ export const GerenciamentoPerfis: React.FC = () => {
 
       const userId = authData.user.id;
 
-      // Find the name of the selected specialty if it exists
+      // Find the name of the selected specialty if it exists or set category according to role
       const selectedEsp = especialidades.find(e => e.id === newProf.especialidadeId);
-      const categoryName = newProf.role === 'especialista' && selectedEsp ? selectedEsp.nome : (newProf.role === 'solicitante' ? 'Clínico Geral' : null);
+      const categoryName = newProf.role === 'especialista' && selectedEsp 
+        ? selectedEsp.nome 
+        : (newProf.role === 'solicitante' ? 'Clínico Geral' : (newProf.role === 'gestor_municipal' ? 'Gestor Municipal' : null));
 
       // Create the profile in the 'perfis' table
-      const docCrm = newProf.crm_coren.trim() ? `${newProf.crm_coren.trim()} / ${newProf.uf}` : null;
+      const isMedicalCreate = newProf.role !== 'gestor_municipal' && newProf.role !== 'admin';
+      const docCrm = (isMedicalCreate && newProf.crm_coren.trim()) ? `${newProf.crm_coren.trim()} / ${newProf.uf}` : null;
       const { error: profileError } = await supabase
         .from('perfis')
         .insert([{
@@ -434,7 +449,7 @@ export const GerenciamentoPerfis: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setCreateError(err.message || 'Erro inesperado ao cadastrar profissional.');
+      setCreateError(err.message || 'Erro inesperado ao cadastrar usuário.');
     } finally {
       setCreateLoading(false);
     }
@@ -589,7 +604,7 @@ export const GerenciamentoPerfis: React.FC = () => {
             style={{ backgroundColor: '#28ffb2' }}
           >
             <Plus className="h-3.5 w-3.5" />
-            Cadastrar Profissional
+            Cadastrar Usuário / Perfil
           </button>
           <button
             onClick={fetchPerfis}
@@ -837,7 +852,7 @@ export const GerenciamentoPerfis: React.FC = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-150" style={{ backgroundColor: '#091151' }}>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Plus className="h-5 w-5 text-[#28ffb2]" />
-                Cadastrar Novo Profissional
+                Cadastrar Novo Usuário / Perfil
               </h3>
               <button 
                 onClick={() => setCreateModalOpen(false)}
@@ -859,7 +874,7 @@ export const GerenciamentoPerfis: React.FC = () => {
               {createSuccess && (
                 <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3.5 text-xs text-emerald-700 flex items-center gap-2">
                   <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
-                  <span>Profissional cadastrado com sucesso!</span>
+                  <span>Usuário cadastrado com sucesso!</span>
                 </div>
               )}
 
@@ -926,11 +941,13 @@ export const GerenciamentoPerfis: React.FC = () => {
                     required
                     disabled={createLoading}
                     value={newProf.role}
-                    onChange={e => setNewProf(prev => ({ ...prev, role: e.target.value as 'especialista' | 'solicitante' }))}
+                    onChange={e => setNewProf(prev => ({ ...prev, role: e.target.value as UserRole }))}
                     className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
                   >
                     <option value="especialista">Especialista (Médico de Referência)</option>
                     <option value="solicitante">Solicitante (Clínico da Unidade)</option>
+                    <option value="gestor_municipal">Gestor Municipal</option>
+                    <option value="admin">Administrador</option>
                   </select>
                 </div>
 
@@ -939,30 +956,30 @@ export const GerenciamentoPerfis: React.FC = () => {
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <label htmlFor="modal-crm" className="block text-xs font-bold text-gray-700 mb-1">
-                        CRM / COREN *
+                        CRM / COREN {(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '(N/A)' : '*'}
                       </label>
                       <input
                         id="modal-crm"
                         type="text"
-                        required
-                        disabled={createLoading}
-                        placeholder="Número do Registro"
-                        value={newProf.crm_coren}
+                        required={newProf.role !== 'gestor_municipal' && newProf.role !== 'admin'}
+                        disabled={createLoading || newProf.role === 'gestor_municipal' || newProf.role === 'admin'}
+                        placeholder={(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? 'Não aplicável' : 'Número do Registro'}
+                        value={(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '' : newProf.crm_coren}
                         onChange={e => setNewProf(prev => ({ ...prev, crm_coren: e.target.value }))}
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400"
                       />
                     </div>
                     <div className="w-20">
                       <label htmlFor="modal-uf" className="block text-xs font-bold text-gray-700 mb-1">
-                        UF *
+                        UF {(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '' : '*'}
                       </label>
                       <select
                         id="modal-uf"
-                        required
-                        disabled={createLoading}
-                        value={newProf.uf}
+                        required={newProf.role !== 'gestor_municipal' && newProf.role !== 'admin'}
+                        disabled={createLoading || newProf.role === 'gestor_municipal' || newProf.role === 'admin'}
+                        value={(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '' : newProf.uf}
                         onChange={e => setNewProf(prev => ({ ...prev, uf: e.target.value }))}
-                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white disabled:bg-gray-100 disabled:text-gray-400"
                       >
                         {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
                           <option key={uf} value={uf}>{uf}</option>
@@ -1064,7 +1081,7 @@ export const GerenciamentoPerfis: React.FC = () => {
                       Cadastrando...
                     </>
                   ) : (
-                    'Cadastrar Profissional'
+                    'Cadastrar Usuário / Perfil'
                   )}
                 </button>
               </div>
@@ -1201,16 +1218,16 @@ export const GerenciamentoPerfis: React.FC = () => {
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <label htmlFor="edit-crm" className="block text-xs font-bold text-gray-700 mb-1">
-                        CRM / COREN
+                        CRM / COREN {(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? '(N/A)' : ''}
                       </label>
                       <input
                         id="edit-crm"
                         type="text"
-                        disabled={editLoading}
-                        placeholder="Número do Registro"
-                        value={editProf.crm_coren_num}
+                        disabled={editLoading || editProf.role === 'gestor_municipal' || editProf.role === 'admin'}
+                        placeholder={(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? 'Não aplicável' : 'Número do Registro'}
+                        value={(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? '' : editProf.crm_coren_num}
                         onChange={e => setEditProf(prev => prev ? ({ ...prev, crm_coren_num: e.target.value }) : null)}
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400"
                       />
                     </div>
                     <div className="w-20">
@@ -1219,10 +1236,10 @@ export const GerenciamentoPerfis: React.FC = () => {
                       </label>
                       <select
                         id="edit-uf"
-                        disabled={editLoading}
-                        value={editProf.uf}
+                        disabled={editLoading || editProf.role === 'gestor_municipal' || editProf.role === 'admin'}
+                        value={(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? '' : editProf.uf}
                         onChange={e => setEditProf(prev => prev ? ({ ...prev, uf: e.target.value }) : null)}
-                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white disabled:bg-gray-100 disabled:text-gray-400"
                       >
                         <option value="">UF</option>
                         {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
