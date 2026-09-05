@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import type { Perfil, UserRole } from '../../types';
-import { Search, Check, Ban, Loader2, ShieldAlert, RefreshCw, User, Plus, X, CheckCircle2, Edit } from 'lucide-react';
+import { Search, Check, Ban, Loader2, ShieldAlert, RefreshCw, User, Plus, X, CheckCircle2, Edit, Trash2 } from 'lucide-react';
 
 export const GerenciamentoPerfis: React.FC = () => {
   const [perfis, setPerfis] = useState<Perfil[]>([]);
@@ -66,6 +66,74 @@ export const GerenciamentoPerfis: React.FC = () => {
   // Custom municipality text states (when '+ Outro' is selected)
   const [createCustomMunicipio, setCreateCustomMunicipio] = useState('');
   const [editCustomMunicipio, setEditCustomMunicipio] = useState('');
+
+  // Delete Professional Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [profileToDelete, setProfileToDelete] = useState<Perfil | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleOpenDeleteModal = (profile: Perfil) => {
+    setProfileToDelete(profile);
+    setDeleteError(null);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!profileToDelete) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const profileId = profileToDelete.id;
+
+      // 1. If user is specialist, remove any linked flow and specialty municipios
+      const { data: oldFlow } = await supabase
+        .from('fluxos_especialidades')
+        .select('id')
+        .eq('especialista_id', profileId)
+        .maybeSingle();
+
+      if (oldFlow) {
+        await supabase
+          .from('fluxos_especialidades_municipios')
+          .delete()
+          .eq('fluxo_id', oldFlow.id);
+
+        await supabase
+          .from('fluxos_especialidades')
+          .delete()
+          .eq('especialista_id', profileId);
+      }
+
+      // 2. Delete profile from perfis table
+      const { error: deleteProfileError } = await supabase
+        .from('perfis')
+        .delete()
+        .eq('id', profileId);
+
+      if (deleteProfileError) throw deleteProfileError;
+
+      // 3. Try to call RPC delete_user if configured on Supabase DB
+      try {
+        await supabase.rpc('delete_user', { user_id: profileId });
+      } catch (rpcErr) {
+        // Ignore if RPC is not defined in database schema
+      }
+
+      // Local state update & refetch
+      setPerfis(prev => prev.filter(p => p.id !== profileId));
+      setDeleteModalOpen(false);
+      setProfileToDelete(null);
+      fetchPerfis();
+
+    } catch (err: any) {
+      console.error('Erro ao excluir usuário:', err);
+      setDeleteError(err.message || 'Não foi possível excluir o usuário. Tente novamente.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   // Municipios list state
   const [municipiosList, setMunicipiosList] = useState<{ id: string; municipio: string; uf: string }[]>([]);
@@ -858,7 +926,7 @@ export const GerenciamentoPerfis: React.FC = () => {
                           <button
                             onClick={() => handleUpdateStatus(item.id, 'bloqueado')}
                             disabled={isActioning || item.status_cadastro === 'bloqueado'}
-                            className="inline-flex items-center gap-1 rounded-lg bg-rose-50 hover:bg-rose-100 disabled:bg-gray-50 text-rose-700 disabled:text-gray-400 border border-rose-200 disabled:border-gray-200 px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-amber-50 hover:bg-amber-100 disabled:bg-gray-50 text-amber-800 disabled:text-gray-400 border border-amber-200 disabled:border-gray-200 px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed cursor-pointer"
                             title="Bloquear Usuário"
                           >
                             {isActioning ? (
@@ -867,6 +935,15 @@ export const GerenciamentoPerfis: React.FC = () => {
                               <Ban className="h-3.5 w-3.5" />
                             )}
                             Bloquear
+                          </button>
+                          <button
+                            onClick={() => handleOpenDeleteModal(item)}
+                            disabled={isActioning}
+                            className="inline-flex items-center gap-1 rounded-lg bg-rose-50 hover:bg-rose-100 disabled:bg-gray-50 text-rose-700 disabled:text-gray-400 border border-rose-200 disabled:border-gray-200 px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed cursor-pointer"
+                            title="Excluir Usuário"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                            Excluir
                           </button>
                         </div>
                       </td>
@@ -1480,6 +1557,80 @@ export const GerenciamentoPerfis: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && profileToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-250 shadow-2xl w-full max-w-md overflow-hidden my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-150 bg-rose-600">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-white" />
+                Confirmar Exclusão de Usuário
+              </h3>
+              <button 
+                onClick={() => { setDeleteModalOpen(false); setProfileToDelete(null); }}
+                className="text-white/80 hover:text-white transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {deleteError && (
+                <div className="rounded-lg bg-rose-50 border border-rose-200 p-3.5 text-xs text-rose-700 flex items-start gap-2">
+                  <ShieldAlert className="h-4.5 w-4.5 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{deleteError}</span>
+                </div>
+              )}
+
+              <p className="text-sm text-gray-800 leading-relaxed">
+                Tem certeza que deseja excluir o usuário <strong className="text-gray-950 font-bold">{profileToDelete.nome}</strong>?
+              </p>
+
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs text-amber-800 space-y-1">
+                <p className="font-bold text-amber-900 flex items-center gap-1.5">
+                  <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
+                  Atenção: Ação Irreversível
+                </p>
+                <p className="text-[11px] text-amber-700">
+                  Esta ação removerá permanentemente o perfil do usuário (<span className="font-mono text-[10px]">{profileToDelete.email}</span>) e todas as suas permissões no sistema.
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-150 mt-5">
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={() => { setDeleteModalOpen(false); setProfileToDelete(null); }}
+                  className="rounded-lg border border-gray-300 hover:bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-700 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={handleConfirmDelete}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-5 py-2 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Confirmar Exclusão
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
