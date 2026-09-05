@@ -616,6 +616,16 @@ export const GerenciamentoPerfis: React.FC = () => {
 
   const counts = getCounts();
 
+  // Helper to get professional category display text with smart fallback
+  const getCategoriaDisplay = (item: Perfil): string => {
+    if (item.categoria_profissional) return item.categoria_profissional;
+    if (item.role === 'solicitante') return 'Clínico Geral';
+    if (item.role === 'gestor_municipal') return 'Gestor Municipal';
+    if (item.role === 'admin') return 'Administração';
+    if (item.role === 'especialista') return 'Médico Especialista';
+    return 'Não informada';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header and Sync Button */}
@@ -725,16 +735,16 @@ export const GerenciamentoPerfis: React.FC = () => {
       ) : (
         <div className="bg-white rounded-2xl border border-gray-150 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
+            <table className="min-w-full divide-y divide-gray-200 text-left text-xs sm:text-sm">
               <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4.5">Nome Completo</th>
-                  <th className="px-6 py-4.5">E-mail</th>
-                  <th className="px-6 py-4.5">Categoria Profissional</th>
-                  <th className="px-6 py-4.5">Tipo de Perfil</th>
-                  <th className="px-6 py-4.5">Data de Cadastro</th>
-                  <th className="px-6 py-4.5">Status</th>
-                  <th className="px-6 py-4.5 text-right">Ações</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap">Nome Completo</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap">E-mail</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap">Categoria Profissional</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap">Tipo de Perfil</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap">Data de Cadastro</th>
+                  <th className="px-4 py-3.5 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3.5 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-150 bg-white">
@@ -747,15 +757,15 @@ export const GerenciamentoPerfis: React.FC = () => {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/40 transition-colors">
                       {/* Name / Info */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
                             {initials}
                           </div>
                           <div>
                             <div className="font-bold text-gray-955">{item.nome}</div>
                             {item.cpf && (
-                              <div className="text-[10px] text-gray-400 mt-0.5">
+                              <div className="text-[10px] text-gray-400 mt-0.5 whitespace-nowrap">
                                 CPF: {item.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
                               </div>
                             )}
@@ -764,60 +774,56 @@ export const GerenciamentoPerfis: React.FC = () => {
                       </td>
 
                       {/* Email */}
-                      <td className="px-6 py-4 text-gray-700">
+                      <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                         <a 
                           href={`mailto:${item.email}`}
-                          className="hover:text-indigo-600 hover:underline transition"
+                          className="hover:text-indigo-600 hover:underline transition text-xs"
                         >
                           {item.email}
                         </a>
                       </td>
 
                       {/* Categoria Profissional */}
-                      <td className="px-6 py-4 text-gray-950 font-medium">
-                        {item.categoria_profissional ? (
-                          <span>{item.categoria_profissional}</span>
-                        ) : (
-                          <span className="text-gray-400 italic text-xs font-normal">Não informada</span>
-                        )}
+                      <td className="px-4 py-3 text-gray-950 font-medium whitespace-nowrap">
+                        <span>{getCategoriaDisplay(item)}</span>
                       </td>
 
                       {/* Role */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold border ${getRoleStyle(item.role)}`}>
                           {formatRole(item.role)}
                         </span>
                       </td>
 
                       {/* Created At */}
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
                         {item.created_at 
                           ? new Date(item.created_at).toLocaleDateString('pt-BR') 
                           : '--'}
                       </td>
 
                       {/* Status */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {item.status_cadastro === 'aprovado' && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold text-emerald-850">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-semibold text-emerald-850">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
                             Aprovado
                           </span>
                         )}
                         {item.status_cadastro === 'pendente' && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-855">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-855">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
                             Pendente
                           </span>
                         )}
                         {item.status_cadastro === 'bloqueado' && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-xs font-semibold text-rose-850">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-xs font-semibold text-rose-850">
                             <span className="h-1.5 w-1.5 rounded-full bg-rose-600" />
                             Bloqueado
                           </span>
                         )}
                         {item.status_cadastro !== 'aprovado' && item.status_cadastro !== 'pendente' && item.status_cadastro !== 'bloqueado' && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 border border-gray-200 px-2.5 py-0.5 text-xs font-semibold text-gray-800">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 border border-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-800">
                             <span className="h-1.5 w-1.5 rounded-full bg-gray-500" />
                             {item.status_cadastro}
                           </span>
@@ -825,7 +831,7 @@ export const GerenciamentoPerfis: React.FC = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenEditModal(item)}
