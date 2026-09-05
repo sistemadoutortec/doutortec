@@ -63,9 +63,6 @@ export const GerenciamentoPerfis: React.FC = () => {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
 
-  // Custom municipality text states (when '+ Outro' is selected)
-  const [createCustomMunicipio, setCreateCustomMunicipio] = useState('');
-  const [editCustomMunicipio, setEditCustomMunicipio] = useState('');
 
   // Delete Professional Modal States
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -256,17 +253,7 @@ export const GerenciamentoPerfis: React.FC = () => {
     // Check if the profile's municipality is in municipiosList
     const profileMun = profile.municipio && profile.municipio !== 'Não especificado' ? profile.municipio : '';
     const knownMunMatch = municipiosList.find(m => m.municipio.toLowerCase() === profileMun.toLowerCase());
-    let initialMun = profileMun;
-    let customMun = '';
-
-    if (profileMun && !knownMunMatch) {
-      initialMun = '__outro__';
-      customMun = profileMun;
-    } else if (knownMunMatch) {
-      initialMun = knownMunMatch.municipio;
-    }
-
-    setEditCustomMunicipio(customMun);
+    const initialMun = knownMunMatch ? knownMunMatch.municipio : profileMun;
 
     setEditProf({
       id: profile.id,
@@ -333,9 +320,7 @@ export const GerenciamentoPerfis: React.FC = () => {
         ? `${editProf.crm_coren_num.trim()} / ${editProf.uf}` 
         : null;
 
-      const finalMunicipio = editProf.municipio === '__outro__'
-        ? (editCustomMunicipio.trim() || 'Não especificado')
-        : (editProf.municipio.trim() || 'Não especificado');
+      const finalMunicipio = editProf.municipio.trim() || 'Não especificado';
 
       // 1. Update perfis table
       const { error: profileError } = await supabase
@@ -504,9 +489,7 @@ export const GerenciamentoPerfis: React.FC = () => {
       const isMedicalCreate = newProf.role !== 'gestor_municipal' && newProf.role !== 'admin';
       const docCrm = (isMedicalCreate && newProf.crm_coren.trim()) ? `${newProf.crm_coren.trim()} / ${newProf.uf}` : null;
 
-      const finalMunicipio = newProf.municipio === '__outro__'
-        ? (createCustomMunicipio.trim() || 'Não especificado')
-        : (newProf.municipio.trim() || 'Não especificado');
+      const finalMunicipio = newProf.municipio.trim() || 'Não especificado';
 
       const { error: profileError } = await supabase
         .from('perfis')
@@ -545,7 +528,6 @@ export const GerenciamentoPerfis: React.FC = () => {
       setTimeout(() => {
         setCreateModalOpen(false);
         setCreateSuccess(false);
-        setCreateCustomMunicipio('');
         setNewProf({
           nome: '',
           email: '',
@@ -1177,25 +1159,10 @@ export const GerenciamentoPerfis: React.FC = () => {
                         {m.municipio} - {m.uf}
                       </option>
                     ))}
-                    <option value="__outro__">+ Outro (Digitar município...)</option>
                   </select>
 
-                  {newProf.municipio === '__outro__' && (
-                    <div className="mt-2">
-                      <input
-                        type="text"
-                        required
-                        disabled={createLoading}
-                        placeholder="Digite o nome do município..."
-                        value={createCustomMunicipio}
-                        onChange={e => setCreateCustomMunicipio(e.target.value)}
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
-                      />
-                    </div>
-                  )}
-
                   <p className="text-[10px] text-gray-500 mt-1">
-                    Não encontrou a cidade? Cadastre-a na aba <strong>Municípios</strong> ou selecione <em>"+ Outro"</em>.
+                    Não encontrou a cidade? Cadastre-a primeiro na aba <strong>Municípios</strong>.
                   </p>
                 </div>
 
@@ -1525,25 +1492,10 @@ export const GerenciamentoPerfis: React.FC = () => {
                         {m.municipio} - {m.uf}
                       </option>
                     ))}
-                    <option value="__outro__">+ Outro (Digitar município...)</option>
                   </select>
 
-                  {editProf.municipio === '__outro__' && (
-                    <div className="mt-2">
-                      <input
-                        type="text"
-                        required
-                        disabled={editLoading}
-                        placeholder="Digite o nome do município..."
-                        value={editCustomMunicipio}
-                        onChange={e => setEditCustomMunicipio(e.target.value)}
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
-                      />
-                    </div>
-                  )}
-
                   <p className="text-[10px] text-gray-500 mt-1">
-                    Não encontrou a cidade? Cadastre-a na aba <strong>Municípios</strong> ou selecione <em>"+ Outro"</em>.
+                    Não encontrou a cidade? Cadastre-a primeiro na aba <strong>Municípios</strong>.
                   </p>
                 </div>
               </div>

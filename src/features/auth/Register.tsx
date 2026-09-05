@@ -25,7 +25,6 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   const [especialidades, setEspecialidades] = useState<{ id: string; nome: string }[]>([]);
   const [selectedEspecialidade, setSelectedEspecialidade] = useState('');
   const [municipio, setMunicipio] = useState('');
-  const [customMunicipio, setCustomMunicipio] = useState('');
   const [municipiosList, setMunicipiosList] = useState<{ id: string; municipio: string; uf: string }[]>([]);
   const [instituicao, setInstituicao] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -78,8 +77,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    const finalMunicipio = municipio === '__outro__' ? customMunicipio.trim() : municipio.trim();
-    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cpf.trim() || !finalMunicipio || !telefone.trim()) {
+    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cpf.trim() || !municipio.trim() || !telefone.trim()) {
       setError('Por favor, preencha todos os campos obrigatórios (*).');
       return false;
     }
@@ -184,14 +182,12 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
         ? `${registroNumero.trim()} / ${uf}` 
         : undefined;
 
-      const finalMunicipio = municipio === '__outro__' ? customMunicipio.trim() : municipio.trim();
-
       const { error: signUpError } = await signUp(email, senha, {
         nome,
         cpf: cpf.replace(/\D/g, ''),
         role,
         crm_coren: formattedCrmCoren,
-        municipio: finalMunicipio,
+        municipio: municipio.trim(),
         instituicao: instituicao.trim() || 'Não especificado',
         telefone: telefone.trim(),
         rqe: role === 'especialista' ? rqe.trim() : undefined,
@@ -448,39 +444,33 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                />
              </div>
 
-             <div>
-               <label htmlFor="municipio" className="block text-sm font-semibold text-slate-700 mb-1.5">
-                 Município *
-               </label>
-               <select
-                 id="municipio"
-                 required
-                 disabled={loading}
-                 value={municipio}
-                 onChange={(e) => setMunicipio(e.target.value)}
-                 className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-               >
-                 <option value="" className="bg-white text-slate-450">Selecione seu município...</option>
-                 {municipiosList.map(m => (
-                   <option key={m.id} value={m.municipio} className="bg-white text-slate-900">
-                     {m.municipio} ({m.uf})
-                   </option>
-                 ))}
-                 <option value="__outro__" className="bg-white text-indigo-700 font-semibold">+ Outro (Especificar)</option>
-               </select>
-
-               {municipio === '__outro__' && (
-                 <input
-                   type="text"
-                   required
-                   disabled={loading}
-                   value={customMunicipio}
-                   onChange={(e) => setCustomMunicipio(e.target.value)}
-                   className="mt-2 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                   placeholder="Digite o nome do seu município"
-                 />
-               )}
-             </div>
+              <div>
+                <label htmlFor="municipio" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Município *
+                </label>
+                <select
+                  id="municipio"
+                  required
+                  disabled={loading}
+                  value={municipio}
+                  onChange={(e) => setMunicipio(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="" className="bg-white text-slate-450">Selecione seu município...</option>
+                  {(() => {
+                    const filtered = uf ? municipiosList.filter(m => m.uf.toUpperCase() === uf.toUpperCase()) : municipiosList;
+                    const listToDisplay = filtered.length > 0 ? filtered : municipiosList;
+                    return listToDisplay.map(m => (
+                      <option key={m.id} value={m.municipio} className="bg-white text-slate-900">
+                        {m.municipio} ({m.uf})
+                      </option>
+                    ));
+                  })()}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-normal">
+                  ℹ️ O Doutortec atende apenas municípios credenciados à rede. Se sua cidade não estiver na lista, entre em contato com a gestão.
+                </p>
+              </div>
 
              <div className="sm:col-span-2">
                <label htmlFor="telefone" className="block text-sm font-semibold text-slate-700 mb-1.5">
