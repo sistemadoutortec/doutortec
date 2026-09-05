@@ -466,7 +466,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                       : municipiosList;
                     return filtered.map(m => (
                       <option key={m.id} value={m.municipio} className="bg-white text-slate-900">
-                        {m.municipio} ({m.uf})
+                        {uf.trim() ? m.municipio : `${m.municipio} (${m.uf})`}
                       </option>
                     ));
                   })()}
