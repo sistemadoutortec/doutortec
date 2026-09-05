@@ -63,6 +63,10 @@ export const GerenciamentoPerfis: React.FC = () => {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
 
+  // Custom municipality text states (when '+ Outro' is selected)
+  const [createCustomMunicipio, setCreateCustomMunicipio] = useState('');
+  const [editCustomMunicipio, setEditCustomMunicipio] = useState('');
+
   // Municipios list state
   const [municipiosList, setMunicipiosList] = useState<{ id: string; municipio: string; uf: string }[]>([]);
 
@@ -164,6 +168,21 @@ export const GerenciamentoPerfis: React.FC = () => {
       }
     }
 
+    // Check if the profile's municipality is in municipiosList
+    const profileMun = profile.municipio && profile.municipio !== 'Não especificado' ? profile.municipio : '';
+    const knownMunMatch = municipiosList.find(m => m.municipio.toLowerCase() === profileMun.toLowerCase());
+    let initialMun = profileMun;
+    let customMun = '';
+
+    if (profileMun && !knownMunMatch) {
+      initialMun = '__outro__';
+      customMun = profileMun;
+    } else if (knownMunMatch) {
+      initialMun = knownMunMatch.municipio;
+    }
+
+    setEditCustomMunicipio(customMun);
+
     setEditProf({
       id: profile.id,
       nome: profile.nome,
@@ -176,7 +195,7 @@ export const GerenciamentoPerfis: React.FC = () => {
       especialidadeId: espId,
       municipiosIds: selectedMunIds,
       instituicao: profile.instituicao || '',
-      municipio: profile.municipio || '',
+      municipio: initialMun,
       telefone: profile.telefone ? formatTelefone(profile.telefone) : '',
     });
     setEditModalOpen(true);
@@ -229,6 +248,10 @@ export const GerenciamentoPerfis: React.FC = () => {
         ? `${editProf.crm_coren_num.trim()} / ${editProf.uf}` 
         : null;
 
+      const finalMunicipio = editProf.municipio === '__outro__'
+        ? (editCustomMunicipio.trim() || 'Não especificado')
+        : (editProf.municipio.trim() || 'Não especificado');
+
       // 1. Update perfis table
       const { error: profileError } = await supabase
         .from('perfis')
@@ -241,7 +264,7 @@ export const GerenciamentoPerfis: React.FC = () => {
           rqe: editProf.role === 'especialista' ? editProf.rqe.trim() : null,
           categoria_profissional: categoryName,
           instituicao: editProf.instituicao.trim() || 'Não especificado',
-          municipio: editProf.municipio.trim() || 'Não especificado',
+          municipio: finalMunicipio,
           telefone: editProf.telefone.trim() ? editProf.telefone.replace(/\D/g, '') : null,
         })
         .eq('id', editProf.id);
@@ -395,6 +418,11 @@ export const GerenciamentoPerfis: React.FC = () => {
       // Create the profile in the 'perfis' table
       const isMedicalCreate = newProf.role !== 'gestor_municipal' && newProf.role !== 'admin';
       const docCrm = (isMedicalCreate && newProf.crm_coren.trim()) ? `${newProf.crm_coren.trim()} / ${newProf.uf}` : null;
+
+      const finalMunicipio = newProf.municipio === '__outro__'
+        ? (createCustomMunicipio.trim() || 'Não especificado')
+        : (newProf.municipio.trim() || 'Não especificado');
+
       const { error: profileError } = await supabase
         .from('perfis')
         .insert([{
@@ -405,7 +433,7 @@ export const GerenciamentoPerfis: React.FC = () => {
           role: newProf.role,
           crm_coren: docCrm,
           instituicao: newProf.instituicao.trim() || 'Não especificado',
-          municipio: newProf.municipio.trim() || 'Não especificado',
+          municipio: finalMunicipio,
           status_cadastro: 'aprovado', // Auto-approved
           categoria_profissional: categoryName,
         }]);
@@ -432,6 +460,7 @@ export const GerenciamentoPerfis: React.FC = () => {
       setTimeout(() => {
         setCreateModalOpen(false);
         setCreateSuccess(false);
+        setCreateCustomMunicipio('');
         setNewProf({
           nome: '',
           email: '',
@@ -951,43 +980,45 @@ export const GerenciamentoPerfis: React.FC = () => {
                   </select>
                 </div>
 
-                {/* CRM/COREN */}
-                <div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label htmlFor="modal-crm" className="block text-xs font-bold text-gray-700 mb-1">
-                        CRM / COREN {(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '(N/A)' : '*'}
-                      </label>
-                      <input
-                        id="modal-crm"
-                        type="text"
-                        required={newProf.role !== 'gestor_municipal' && newProf.role !== 'admin'}
-                        disabled={createLoading || newProf.role === 'gestor_municipal' || newProf.role === 'admin'}
-                        placeholder={(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? 'Não aplicável' : 'Número do Registro'}
-                        value={(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '' : newProf.crm_coren}
-                        onChange={e => setNewProf(prev => ({ ...prev, crm_coren: e.target.value }))}
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400"
-                      />
-                    </div>
-                    <div className="w-20">
-                      <label htmlFor="modal-uf" className="block text-xs font-bold text-gray-700 mb-1">
-                        UF {(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '' : '*'}
-                      </label>
-                      <select
-                        id="modal-uf"
-                        required={newProf.role !== 'gestor_municipal' && newProf.role !== 'admin'}
-                        disabled={createLoading || newProf.role === 'gestor_municipal' || newProf.role === 'admin'}
-                        value={(newProf.role === 'gestor_municipal' || newProf.role === 'admin') ? '' : newProf.uf}
-                        onChange={e => setNewProf(prev => ({ ...prev, uf: e.target.value }))}
-                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white disabled:bg-gray-100 disabled:text-gray-400"
-                      >
-                        {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
-                          <option key={uf} value={uf}>{uf}</option>
-                        ))}
-                      </select>
+                {/* CRM/COREN e UF (Apenas para perfis médicos: Especialista e Solicitante) */}
+                {(newProf.role === 'especialista' || newProf.role === 'solicitante') && (
+                  <div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label htmlFor="modal-crm" className="block text-xs font-bold text-gray-700 mb-1">
+                          CRM / COREN *
+                        </label>
+                        <input
+                          id="modal-crm"
+                          type="text"
+                          required
+                          disabled={createLoading}
+                          placeholder="Número do Registro"
+                          value={newProf.crm_coren}
+                          onChange={e => setNewProf(prev => ({ ...prev, crm_coren: e.target.value }))}
+                          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="w-20">
+                        <label htmlFor="modal-uf" className="block text-xs font-bold text-gray-700 mb-1">
+                          UF *
+                        </label>
+                        <select
+                          id="modal-uf"
+                          required
+                          disabled={createLoading}
+                          value={newProf.uf}
+                          onChange={e => setNewProf(prev => ({ ...prev, uf: e.target.value }))}
+                          className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                        >
+                          {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
+                            <option key={uf} value={uf}>{uf}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Especialidade Médica (Somente para Especialistas) */}
                 {newProf.role === 'especialista' && (
@@ -1027,20 +1058,45 @@ export const GerenciamentoPerfis: React.FC = () => {
                   />
                 </div>
 
-                {/* Município */}
+                {/* Município de Atuação (Dropdown padronizado) */}
                 <div>
                   <label htmlFor="modal-municipio" className="block text-xs font-bold text-gray-700 mb-1">
-                    Município
+                    Município de Atuação {newProf.role === 'gestor_municipal' ? '*' : ''}
                   </label>
-                  <input
+                  <select
                     id="modal-municipio"
-                    type="text"
+                    required={newProf.role === 'gestor_municipal'}
                     disabled={createLoading}
-                    placeholder="Ex: São Paulo"
                     value={newProf.municipio}
                     onChange={e => setNewProf(prev => ({ ...prev, municipio: e.target.value }))}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
-                  />
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                  >
+                    <option value="">Selecione um município...</option>
+                    {municipiosList.map(m => (
+                      <option key={m.id} value={m.municipio}>
+                        {m.municipio} - {m.uf}
+                      </option>
+                    ))}
+                    <option value="__outro__">+ Outro (Digitar município...)</option>
+                  </select>
+
+                  {newProf.municipio === '__outro__' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        required
+                        disabled={createLoading}
+                        placeholder="Digite o nome do município..."
+                        value={createCustomMunicipio}
+                        onChange={e => setCreateCustomMunicipio(e.target.value)}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Não encontrou a cidade? Cadastre-a na aba <strong>Municípios</strong> ou selecione <em>"+ Outro"</em>.
+                  </p>
                 </div>
 
                 {/* Senha Inicial */}
@@ -1213,42 +1269,44 @@ export const GerenciamentoPerfis: React.FC = () => {
                   </select>
                 </div>
 
-                {/* CRM/COREN e UF */}
-                <div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label htmlFor="edit-crm" className="block text-xs font-bold text-gray-700 mb-1">
-                        CRM / COREN {(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? '(N/A)' : ''}
-                      </label>
-                      <input
-                        id="edit-crm"
-                        type="text"
-                        disabled={editLoading || editProf.role === 'gestor_municipal' || editProf.role === 'admin'}
-                        placeholder={(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? 'Não aplicável' : 'Número do Registro'}
-                        value={(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? '' : editProf.crm_coren_num}
-                        onChange={e => setEditProf(prev => prev ? ({ ...prev, crm_coren_num: e.target.value }) : null)}
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400"
-                      />
-                    </div>
-                    <div className="w-20">
-                      <label htmlFor="edit-uf" className="block text-xs font-bold text-gray-700 mb-1">
-                        UF
-                      </label>
-                      <select
-                        id="edit-uf"
-                        disabled={editLoading || editProf.role === 'gestor_municipal' || editProf.role === 'admin'}
-                        value={(editProf.role === 'gestor_municipal' || editProf.role === 'admin') ? '' : editProf.uf}
-                        onChange={e => setEditProf(prev => prev ? ({ ...prev, uf: e.target.value }) : null)}
-                        className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white disabled:bg-gray-100 disabled:text-gray-400"
-                      >
-                        <option value="">UF</option>
-                        {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
-                          <option key={uf} value={uf}>{uf}</option>
-                        ))}
-                      </select>
+                {/* CRM/COREN e UF (Apenas para perfis médicos: Especialista e Solicitante) */}
+                {(editProf.role === 'especialista' || editProf.role === 'solicitante') && (
+                  <div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label htmlFor="edit-crm" className="block text-xs font-bold text-gray-700 mb-1">
+                          CRM / COREN
+                        </label>
+                        <input
+                          id="edit-crm"
+                          type="text"
+                          disabled={editLoading}
+                          placeholder="Número do Registro"
+                          value={editProf.crm_coren_num}
+                          onChange={e => setEditProf(prev => prev ? ({ ...prev, crm_coren_num: e.target.value }) : null)}
+                          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="w-20">
+                        <label htmlFor="edit-uf" className="block text-xs font-bold text-gray-700 mb-1">
+                          UF
+                        </label>
+                        <select
+                          id="edit-uf"
+                          disabled={editLoading}
+                          value={editProf.uf}
+                          onChange={e => setEditProf(prev => prev ? ({ ...prev, uf: e.target.value }) : null)}
+                          className="block w-full rounded-lg border border-gray-300 px-2 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                        >
+                          <option value="">UF</option>
+                          {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'MS', 'MT', 'GO', 'DF', 'AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'].map(uf => (
+                            <option key={uf} value={uf}>{uf}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* RQE (Somente para Especialistas) */}
                 {editProf.role === 'especialista' && (
@@ -1348,20 +1406,45 @@ export const GerenciamentoPerfis: React.FC = () => {
                   />
                 </div>
 
-                {/* Município */}
+                {/* Município (Dropdown padronizado) */}
                 <div>
                   <label htmlFor="edit-municipio" className="block text-xs font-bold text-gray-700 mb-1">
-                    Município
+                    Município de Atuação {editProf.role === 'gestor_municipal' ? '*' : ''}
                   </label>
-                  <input
+                  <select
                     id="edit-municipio"
-                    type="text"
+                    required={editProf.role === 'gestor_municipal'}
                     disabled={editLoading}
-                    placeholder="Ex: São Paulo"
                     value={editProf.municipio}
                     onChange={e => setEditProf(prev => prev ? ({ ...prev, municipio: e.target.value }) : null)}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
-                  />
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                  >
+                    <option value="">Selecione um município...</option>
+                    {municipiosList.map(m => (
+                      <option key={m.id} value={m.municipio}>
+                        {m.municipio} - {m.uf}
+                      </option>
+                    ))}
+                    <option value="__outro__">+ Outro (Digitar município...)</option>
+                  </select>
+
+                  {editProf.municipio === '__outro__' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        required
+                        disabled={editLoading}
+                        placeholder="Digite o nome do município..."
+                        value={editCustomMunicipio}
+                        onChange={e => setEditCustomMunicipio(e.target.value)}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Não encontrou a cidade? Cadastre-a na aba <strong>Municípios</strong> ou selecione <em>"+ Outro"</em>.
+                  </p>
                 </div>
               </div>
 
