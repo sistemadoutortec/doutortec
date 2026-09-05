@@ -25,6 +25,8 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   const [especialidades, setEspecialidades] = useState<{ id: string; nome: string }[]>([]);
   const [selectedEspecialidade, setSelectedEspecialidade] = useState('');
   const [municipio, setMunicipio] = useState('');
+  const [customMunicipio, setCustomMunicipio] = useState('');
+  const [municipiosList, setMunicipiosList] = useState<{ id: string; municipio: string; uf: string }[]>([]);
   const [instituicao, setInstituicao] = useState('');
   const [telefone, setTelefone] = useState('');
 
@@ -48,21 +50,27 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
     setTelefone(formatTelefone(e.target.value));
   };
 
-  // Fetch specialties for specialist role
+  // Fetch specialties and municipalities list
   useEffect(() => {
-    const fetchEspecialidades = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: espData } = await supabase
           .from('especialidades')
           .select('id, nome')
           .order('nome');
-        if (error) throw error;
-        setEspecialidades(data || []);
+        if (espData) setEspecialidades(espData);
+
+        const { data: munData } = await supabase
+          .from('fluxos_municipios')
+          .select('id, municipio, uf')
+          .order('uf', { ascending: true })
+          .order('municipio', { ascending: true });
+        if (munData) setMunicipiosList(munData);
       } catch (err) {
-        console.error('Erro ao carregar especialidades:', err);
+        console.error('Erro ao carregar dados do formulário:', err);
       }
     };
-    fetchEspecialidades();
+    fetchData();
   }, []);
 
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +78,8 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
   const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cpf.trim() || !municipio.trim() || !telefone.trim()) {
+    const finalMunicipio = municipio === '__outro__' ? customMunicipio.trim() : municipio.trim();
+    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cpf.trim() || !finalMunicipio || !telefone.trim()) {
       setError('Por favor, preencha todos os campos obrigatórios (*).');
       return false;
     }
@@ -175,12 +184,14 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
         ? `${registroNumero.trim()} / ${uf}` 
         : undefined;
 
+      const finalMunicipio = municipio === '__outro__' ? customMunicipio.trim() : municipio.trim();
+
       const { error: signUpError } = await signUp(email, senha, {
         nome,
         cpf: cpf.replace(/\D/g, ''),
         role,
         crm_coren: formattedCrmCoren,
-        municipio,
+        municipio: finalMunicipio,
         instituicao: instituicao.trim() || 'Não especificado',
         telefone: telefone.trim(),
         rqe: role === 'especialista' ? rqe.trim() : undefined,
@@ -423,8 +434,8 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
              )}
 
              <div>
-               <label htmlFor="instituicao" className="block text-sm font-semibold text-slate-700 mb-1.5 whitespace-nowrap">
-                 Instituição / Unidade de Saúde
+               <label htmlFor="instituicao" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                 Instituição (Opcional)
                </label>
                <input
                  id="instituicao"
@@ -433,7 +444,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                  value={instituicao}
                  onChange={(e) => setInstituicao(e.target.value)}
                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                 placeholder="Hospital, UBS ou Clínica (Opcional)"
+                 placeholder="Hospital, UBS ou Clínica"
                />
              </div>
 
@@ -441,16 +452,34 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
                <label htmlFor="municipio" className="block text-sm font-semibold text-slate-700 mb-1.5">
                  Município *
                </label>
-               <input
+               <select
                  id="municipio"
-                 type="text"
                  required
                  disabled={loading}
                  value={municipio}
                  onChange={(e) => setMunicipio(e.target.value)}
                  className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
-                 placeholder="Sua cidade"
-               />
+               >
+                 <option value="" className="bg-white text-slate-450">Selecione seu município...</option>
+                 {municipiosList.map(m => (
+                   <option key={m.id} value={m.municipio} className="bg-white text-slate-900">
+                     {m.municipio} ({m.uf})
+                   </option>
+                 ))}
+                 <option value="__outro__" className="bg-white text-indigo-700 font-semibold">+ Outro (Especificar)</option>
+               </select>
+
+               {municipio === '__outro__' && (
+                 <input
+                   type="text"
+                   required
+                   disabled={loading}
+                   value={customMunicipio}
+                   onChange={(e) => setCustomMunicipio(e.target.value)}
+                   className="mt-2 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 transition disabled:bg-gray-100 disabled:text-gray-400"
+                   placeholder="Digite o nome do seu município"
+                 />
+               )}
              </div>
 
              <div className="sm:col-span-2">
