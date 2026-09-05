@@ -86,39 +86,56 @@ export const GerenciamentoPerfis: React.FC = () => {
 
     try {
       const profileId = profileToDelete.id;
+      let deletedCount = 0;
 
-      // 1. If user is specialist, remove any linked flow and specialty municipios
-      const { data: oldFlow } = await supabase
-        .from('fluxos_especialidades')
-        .select('id')
-        .eq('especialista_id', profileId)
-        .maybeSingle();
-
-      if (oldFlow) {
-        await supabase
-          .from('fluxos_especialidades_municipios')
-          .delete()
-          .eq('fluxo_id', oldFlow.id);
-
-        await supabase
-          .from('fluxos_especialidades')
-          .delete()
-          .eq('especialista_id', profileId);
+      // 1. Try calling RPC functions (delete_user_by_admin or delete_user)
+      try {
+        const { error: rpcErr1 } = await supabase.rpc('delete_user_by_admin', { user_id: profileId });
+        if (!rpcErr1) {
+          deletedCount = 1;
+        } else {
+          const { error: rpcErr2 } = await supabase.rpc('delete_user', { user_id: profileId });
+          if (!rpcErr2) {
+            deletedCount = 1;
+          }
+        }
+      } catch (rpcExc) {
+        console.warn('RPC de exclusão não encontrada ou falhou:', rpcExc);
       }
 
-      // 2. Delete profile from perfis table
-      const { error: deleteProfileError } = await supabase
-        .from('perfis')
-        .delete()
-        .eq('id', profileId);
+      // 2. Fallback: Manually delete from public tables if RPC was not configured
+      if (deletedCount === 0) {
+        // If user is specialist, remove any linked flow and specialty municipios
+        const { data: oldFlow } = await supabase
+          .from('fluxos_especialidades')
+          .select('id')
+          .eq('especialista_id', profileId)
+          .maybeSingle();
 
-      if (deleteProfileError) throw deleteProfileError;
+        if (oldFlow) {
+          await supabase
+            .from('fluxos_especialidades_municipios')
+            .delete()
+            .eq('fluxo_id', oldFlow.id);
 
-      // 3. Try to call RPC delete_user if configured on Supabase DB
-      try {
-        await supabase.rpc('delete_user', { user_id: profileId });
-      } catch (rpcErr) {
-        // Ignore if RPC is not defined in database schema
+          await supabase
+            .from('fluxos_especialidades')
+            .delete()
+            .eq('especialista_id', profileId);
+        }
+
+        // Delete profile from perfis table and check if rows were actually affected
+        const { data: deletedData, error: deleteProfileError } = await supabase
+          .from('perfis')
+          .delete()
+          .eq('id', profileId)
+          .select();
+
+        if (deleteProfileError) throw deleteProfileError;
+
+        if (!deletedData || deletedData.length === 0) {
+          throw new Error('Permissão negada no Supabase: A tabela perfis não possui política de DELETE ativa para administradores. Execute o script SQL no Supabase.');
+        }
       }
 
       // Local state update & refetch

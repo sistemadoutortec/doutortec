@@ -59,3 +59,43 @@ FOR UPDATE
 USING (
   (auth.uid() = id) OR is_admin()
 );
+
+-- 6. Nova política de EXCLUSÃO (DELETE)
+-- Permite que Administradores excluam perfis da tabela public.perfis
+DROP POLICY IF EXISTS "Permitir exclusão de perfis" ON public.perfis;
+CREATE POLICY "Permitir exclusão de perfis"
+ON public.perfis
+FOR DELETE
+USING (
+  (auth.uid() = id) OR is_admin()
+);
+
+-- 7. Função RPC para exclusão completa de usuário (auth.users + public.perfis)
+CREATE OR REPLACE FUNCTION public.delete_user_by_admin(user_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  -- Permite apenas Administradores ou o próprio usuário
+  IF NOT (public.is_admin() OR auth.uid() = user_id) THEN
+    RAISE EXCEPTION 'Acesso negado: apenas administradores podem excluir usuários.';
+  END IF;
+
+  -- Remove relacionamentos de fluxos de especialidades
+  DELETE FROM public.fluxos_especialidades_municipios
+  WHERE fluxo_id IN (SELECT id FROM public.fluxos_especialidades WHERE especialista_id = user_id);
+
+  DELETE FROM public.fluxos_especialidades WHERE especialista_id = user_id;
+
+  -- Remove o registro do perfil em public.perfis
+  DELETE FROM public.perfis WHERE id = user_id;
+
+  -- Remove a conta de autenticação em auth.users
+  DELETE FROM auth.users WHERE id = user_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.delete_user_by_admin(uuid) TO authenticated;
+
