@@ -1912,7 +1912,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
             <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-600">
               <span>Parecer Técnico Especializado para Anexação ao Prontuário Eletrônico do Cidadão (PEC / e-SUS)</span>
-              <span className="text-[#002157] font-bold">Fase 1 - Operação Piloto Homologada</span>
+              <span className="text-[#002157] font-bold">Documento Autêntico e Homologado</span>
             </div>
           </div>
 
@@ -2113,7 +2113,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           {/* RODAPÉ DO DOCUMENTO */}
           <div className="border-t border-slate-200 pt-3 flex items-center justify-between text-[9px] text-slate-400">
             <span>Doutortec Teleinterconsulta • Apoio Clínico Integrado à APS • e-SUS PEC</span>
-            <span>Documento emitido na Fase 1 do Projeto Piloto Homologado</span>
+            <span>Plataforma de Telessaúde Conforme Resolução CFM nº 2.314/2022</span>
           </div>
         </div>
       </div>
