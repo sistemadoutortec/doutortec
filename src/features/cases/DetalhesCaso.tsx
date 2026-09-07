@@ -14,8 +14,12 @@ import {
   MessageSquare, 
   FileCheck,
   ShieldCheck,
+  Printer,
+  Download,
   X
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import { toPng } from 'html-to-image';
 import { VisualizadorDocumentos } from '../documents/VisualizadorDocumentos';
 import { useNotifications } from '../../context/NotificationsContext';
 
@@ -97,6 +101,115 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     };
     checkEvaluation();
   }, [currentCaso?.id]);
+
+  // Fetch Specialist, Solicitante and Paciente extra details for structured Parecer
+  const [especialistaInfo, setEspecialistaInfo] = useState<{
+    nome: string;
+    crm_coren?: string;
+    rqe?: string | null;
+    categoria_profissional?: string | null;
+    instituicao?: string;
+    municipio?: string;
+  } | null>(null);
+
+  const [solicitanteInfo, setSolicitanteInfo] = useState<{
+    nome: string;
+    crm_coren?: string;
+    categoria_profissional?: string | null;
+    instituicao?: string;
+    municipio?: string;
+  } | null>(null);
+
+  const [pacienteInfo, setPacienteInfo] = useState<{
+    nome: string;
+    cpf?: string;
+    cartao_sus?: string | null;
+    data_nascimento?: string;
+    sexo?: string;
+    municipio?: string;
+  } | null>(null);
+
+  const [especialidadeNome, setEspecialidadeNome] = useState<string>('');
+
+  useEffect(() => {
+    const fetchParecerProfiles = async () => {
+      // Especialista
+      if (currentCaso?.especialista_id) {
+        try {
+          const { data } = await supabase
+            .from('perfis')
+            .select('nome, crm_coren, rqe, categoria_profissional, instituicao, municipio')
+            .eq('id', currentCaso.especialista_id)
+            .maybeSingle();
+          if (data) setEspecialistaInfo(data);
+        } catch (e) {
+          console.error('Erro ao carregar perfil do especialista:', e);
+        }
+      } else {
+        setEspecialistaInfo(null);
+      }
+
+      // Solicitante
+      if (currentCaso?.solicitante_id) {
+        try {
+          const { data } = await supabase
+            .from('perfis')
+            .select('nome, crm_coren, categoria_profissional, instituicao, municipio')
+            .eq('id', currentCaso.solicitante_id)
+            .maybeSingle();
+          if (data) setSolicitanteInfo(data);
+        } catch (e) {
+          console.error('Erro ao carregar perfil do solicitante:', e);
+        }
+      } else {
+        setSolicitanteInfo(null);
+      }
+
+      // Especialidade
+      if (currentCaso?.especialidade_id) {
+        try {
+          const { data } = await supabase
+            .from('especialidades')
+            .select('nome')
+            .eq('id', currentCaso.especialidade_id)
+            .maybeSingle();
+          if (data?.nome) setEspecialidadeNome(data.nome);
+        } catch (e) {
+          console.error('Erro ao carregar especialidade:', e);
+        }
+      }
+
+      // Paciente
+      if (currentCaso?.paciente_nome) {
+        try {
+          const { data } = await supabase
+            .from('pacientes')
+            .select('nome, cpf, cartao_sus, data_nascimento, sexo, municipio_id')
+            .ilike('nome', currentCaso.paciente_nome.trim())
+            .limit(1)
+            .maybeSingle();
+          if (data) {
+            let munNome = '';
+            if (data.municipio_id) {
+              const { data: munData } = await supabase
+                .from('fluxos_municipios')
+                .select('municipio')
+                .eq('id', data.municipio_id)
+                .maybeSingle();
+              if (munData?.municipio) munNome = munData.municipio;
+            }
+            setPacienteInfo({ ...data, municipio: munNome });
+          } else {
+            setPacienteInfo(null);
+          }
+        } catch (e) {
+          console.error('Erro ao carregar paciente:', e);
+        }
+      }
+    };
+
+    fetchParecerProfiles();
+  }, [currentCaso?.especialista_id, currentCaso?.solicitante_id, currentCaso?.especialidade_id, currentCaso?.paciente_nome]);
 
   const closeAndEvaluateMutation = useMutation({
     mutationFn: async (evalData: {
@@ -268,6 +381,69 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     const interval = setInterval(updateSla, 60000);
     return () => clearInterval(interval);
   }, [currentCaso.created_at, currentCaso.prioridade, currentCaso.status]);
+  
+  // PDF Export State & Ref for Parecer Clínico
+  const parecerPrintRef = useRef<HTMLDivElement>(null);
+  const [generatingParecerPdf, setGeneratingParecerPdf] = useState(false);
+  const [parecerPdfSuccess, setParecerPdfSuccess] = useState(false);
+
+  const handleExportParecerPDF = async () => {
+    const element = parecerPrintRef.current;
+    if (!element) {
+      setActionError('Template do parecer não encontrado para geração do PDF.');
+      return;
+    }
+
+    setGeneratingParecerPdf(true);
+    setParecerPdfSuccess(false);
+    setActionError(null);
+
+    try {
+      // Pequeno timeout para assegurar renderização dos elementos e imagens
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      const dataUrl = await toPng(element, {
+        quality: 1,
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+      });
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210; // largura A4 mm
+      const pageHeight = 297; // altura A4 mm
+      
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve, reject) => { 
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const imgHeight = (img.height * imgWidth) / img.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const cleanPatientName = (currentCaso.paciente_nome || 'paciente').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      pdf.save(`parecer_teleconsultoria_${cleanPatientName}_${currentCaso.id.substring(0, 8)}.pdf`);
+      setParecerPdfSuccess(true);
+      setTimeout(() => setParecerPdfSuccess(false), 5000);
+    } catch (err: any) {
+      console.error('Erro ao gerar PDF do parecer:', err);
+      setActionError(`Falha ao gerar o PDF do parecer: ${err?.message || 'Erro desconhecido'}.`);
+    } finally {
+      setGeneratingParecerPdf(false);
+    }
+  };
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -783,6 +959,24 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
         {/* Header Actions: Collapsible Chat Trigger & Accept/Close buttons */}
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          {/* PDF Export Action when Case has Parecer */}
+          {(currentCaso.status === 'respondido' || currentCaso.status === 'fechado') && (
+            <button
+              type="button"
+              onClick={handleExportParecerPDF}
+              disabled={generatingParecerPdf}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#002157] hover:bg-[#00173d] text-white px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer shrink-0 disabled:opacity-50"
+              title="Baixar Parecer Clínico Oficial em PDF timbrado para anexar ao Prontuário (PEC)"
+            >
+              {generatingParecerPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              ) : (
+                <Download className="h-4 w-4 text-[#38bdf8]" />
+              )}
+              <span>{generatingParecerPdf ? 'Gerando Parecer...' : 'Baixar Parecer (PDF)'}</span>
+            </button>
+          )}
+
           {/* Quick Messages Trigger */}
           <button
             type="button"
@@ -835,6 +1029,15 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           )}
         </div>
       </div>
+
+      {parecerPdfSuccess && (
+        <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800 animate-fade-in shadow-xs">
+          <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0" />
+          <div>
+            <strong>Parecer Clínico gerado com sucesso!</strong> O download do PDF estruturado e timbrado para o Prontuário Eletrônico (PEC) foi iniciado.
+          </div>
+        </div>
+      )}
 
       {actionError && (
         <div className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 animate-fade-in">
@@ -933,9 +1136,27 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
         {/* CARD 2: DEVOLUTIVA DO ESPECIALISTA (The Central Ticket Element) */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-150 flex items-center gap-2" style={{ backgroundColor: '#0f172a' }}>
-            <FileCheck className="h-5 w-5 text-[#38bdf8]" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Devolutiva do Especialista (Ticket Oficial)</h3>
+          <div className="px-6 py-4 border-b border-gray-150 flex items-center justify-between gap-4" style={{ backgroundColor: '#0f172a' }}>
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-[#38bdf8]" />
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Devolutiva do Especialista (Ticket Oficial)</h3>
+            </div>
+            {(currentCaso.status === 'respondido' || currentCaso.status === 'fechado') && (
+              <button
+                type="button"
+                onClick={handleExportParecerPDF}
+                disabled={generatingParecerPdf}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#0ea5e9] hover:bg-[#0284c7] text-white px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                title="Exportar Parecer Clínico Oficial em PDF timbrado"
+              >
+                {generatingParecerPdf ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Printer className="h-3.5 w-3.5" />
+                )}
+                <span>{generatingParecerPdf ? 'Gerando...' : 'Baixar Parecer (PDF)'}</span>
+              </button>
+            )}
           </div>
 
           <div className="p-6">
@@ -1000,6 +1221,41 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                       </div>
                     </div>
                   )}
+
+                  {/* Identificação Oficial do Profissional Responsável (Carimbo Médico/Enfermagem) */}
+                  <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#002157] text-white flex items-center justify-center font-black text-sm shrink-0">
+                        {especialistaInfo?.nome ? especialistaInfo.nome.substring(0, 2).toUpperCase() : 'DR'}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Teleconsultor / Especialista Responsável</p>
+                        <h6 className="text-sm font-black text-slate-900 leading-tight">
+                          {especialistaInfo?.nome || 'Médico Especialista'}
+                        </h6>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-medium mt-0.5">
+                          {especialistaInfo?.crm_coren && (
+                            <span className="font-semibold text-slate-800">
+                              Registro: {especialistaInfo.crm_coren}
+                            </span>
+                          )}
+                          {especialistaInfo?.rqe && (
+                            <span>• RQE: <strong>{especialistaInfo.rqe}</strong></span>
+                          )}
+                          {especialidadeNome && (
+                            <span>• Especialidade: <strong>{especialidadeNome}</strong></span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200 w-full sm:w-auto">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Data e Horário de Emissão</span>
+                      <span className="text-xs font-mono font-bold text-slate-800">
+                        {currentCaso.respondido_em ? new Date(currentCaso.respondido_em).toLocaleString('pt-BR') : 'Horário registrado'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1576,6 +1832,254 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           onClose={() => setSelectedFile(null)}
         />
       )}
+
+      {/* ========================================================================= */}
+      {/* PARECER TÉCNICO OFICIAL TIMBRADO (Container dedicado para geração do PDF) */}
+      {/* ========================================================================= */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '210mm' }}>
+        <div 
+          ref={parecerPrintRef} 
+          className="bg-white text-slate-900 p-8 space-y-6 font-sans antialiased"
+          style={{ width: '210mm', minHeight: '297mm', boxSizing: 'border-box' }}
+        >
+          {/* CABEÇALHO TIMBRADO OFICIAL */}
+          <div className="border-b-2 border-[#002157] pb-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="/Logo-Doutortec-Original.png" 
+                  alt="Doutortec" 
+                  className="h-16 w-auto object-contain block"
+                  crossOrigin="anonymous"
+                />
+                <div>
+                  <h1 className="text-xl font-black text-[#002157] tracking-tight uppercase">
+                    DOUTORTEC TELESSAÚDE
+                  </h1>
+                  <p className="text-xs font-bold text-slate-600 tracking-wide uppercase">
+                    Sistema de Teleinterconsulta e Apoio Matricial à Atenção Primária
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {pacienteInfo?.municipio || perfil?.municipio || 'Município Conveniado'} • Plataforma Conforme Resoluções CFM e Diretrizes e-SUS APS
+                  </p>
+                </div>
+              </div>
+              <div className="text-right border-l-2 border-slate-200 pl-4 shrink-0">
+                <span className="inline-block bg-[#002157] text-white text-[10px] font-black px-2.5 py-1 rounded tracking-wider uppercase mb-1">
+                  Documento Oficial
+                </span>
+                <p className="text-[11px] font-mono font-bold text-slate-700">
+                  ID: #{currentCaso.id.substring(0, 8).toUpperCase()}
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  Emissão: {currentCaso.respondido_em ? new Date(currentCaso.respondido_em).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-600">
+              <span>Parecer Técnico Especializado para Anexação ao Prontuário Eletrônico do Cidadão (PEC / e-SUS)</span>
+              <span className="text-[#002157] font-bold">Fase 1 - Operação Piloto Homologada</span>
+            </div>
+          </div>
+
+          {/* DADOS DO PACIENTE */}
+          <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <div className="flex items-center justify-between mb-2 border-b border-slate-200 pb-1.5">
+              <h2 className="text-xs font-black uppercase tracking-wider text-[#002157]">
+                1. Identificação do Paciente
+              </h2>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Atenção Primária à Saúde</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Nome do Paciente</span>
+                <span className="font-extrabold text-slate-900 text-sm">{currentCaso.paciente_nome}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">CPF</span>
+                <span className="font-medium text-slate-800">{pacienteInfo?.cpf ? pacienteInfo.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Registrado em Prontuário'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Cartão SUS (CNS)</span>
+                <span className="font-medium text-slate-800">{pacienteInfo?.cartao_sus || 'Conforme PEC Municipal'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Município / Unidade</span>
+                <span className="font-medium text-slate-800">{pacienteInfo?.municipio || solicitanteInfo?.municipio || perfil?.municipio || 'Unidade Básica de Saúde'}</span>
+              </div>
+            </div>
+
+            {(currentCaso.cid_10 || currentCaso.ciap_2) && (
+              <div className="mt-2.5 pt-2 border-t border-slate-200 flex flex-wrap gap-2 text-[11px]">
+                {currentCaso.cid_10 && (
+                  <span className="bg-blue-100 text-blue-900 font-semibold px-2 py-0.5 rounded">
+                    CID-10: <strong>{currentCaso.cid_10}</strong> {cidDesc && `- ${cidDesc}`}
+                  </span>
+                )}
+                {currentCaso.ciap_2 && (
+                  <span className="bg-purple-100 text-purple-900 font-semibold px-2 py-0.5 rounded">
+                    CIAP-2: <strong>{currentCaso.ciap_2}</strong> {ciapDesc && `- ${ciapDesc}`}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* DADOS DA SOLICITAÇÃO CLÍNICA */}
+          <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+              <h2 className="text-xs font-black uppercase tracking-wider text-[#002157]">
+                2. Solicitação Clínica (Profissional Solicitante da APS)
+              </h2>
+              <span className="text-[10px] font-semibold text-slate-500">
+                Abertura: {new Date(currentCaso.created_at).toLocaleString('pt-BR')}
+              </span>
+            </div>
+
+            <div className="text-xs space-y-2.5">
+              <div>
+                <span className="font-bold text-slate-700 block uppercase text-[10px]">Histórico Clínico e Antecedentes:</span>
+                <p className="text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-100 whitespace-pre-wrap">
+                  {currentCaso.historico_clinico}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-700 block uppercase text-[10px]">Conduta Atual Realizada na UBS:</span>
+                <p className="text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-100 whitespace-pre-wrap">
+                  {currentCaso.conduta_atual}
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-700 block uppercase text-[10px]">Dúvida Clínica Diagnóstica / Terapêutica:</span>
+                <p className="text-slate-900 font-semibold leading-relaxed bg-blue-50/70 p-2.5 rounded border border-blue-100 whitespace-pre-wrap">
+                  {currentCaso.duvida_clinica}
+                </p>
+              </div>
+
+              {solicitanteInfo && (
+                <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
+                  <span><strong>Profissional Solicitante:</strong> {solicitanteInfo.nome}</span>
+                  {solicitanteInfo.crm_coren && <span><strong>Registro:</strong> {solicitanteInfo.crm_coren}</span>}
+                  {solicitanteInfo.instituicao && <span><strong>Unidade:</strong> {solicitanteInfo.instituicao}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* DEVOLUTIVA E PARECER DO ESPECIALISTA */}
+          <div className="border-2 border-[#002157] rounded-lg p-4.5 space-y-4 bg-white shadow-2xs">
+            <div className="flex items-center justify-between border-b-2 border-[#002157] pb-2">
+              <div>
+                <h2 className="text-sm font-black uppercase tracking-wider text-[#002157]">
+                  3. Parecer Técnico e Conduta do Especialista
+                </h2>
+                <p className="text-[10px] text-slate-500 font-medium">Devolutiva oficial de interconsulta médica / multiprofissional</p>
+              </div>
+              <span className="bg-emerald-100 text-emerald-900 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">
+                Parecer Concluído
+              </span>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <h3 className="font-black text-slate-900 uppercase text-[11px] mb-1">
+                  3.1 Resposta Direta e Conduta Recomendada
+                </h3>
+                <div className="text-slate-900 leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-200 whitespace-pre-wrap font-normal">
+                  {currentCaso.devolutiva_conduta || 'Nenhuma conduta registrada.'}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-black text-slate-900 uppercase text-[11px] mb-1">
+                  3.2 Recomendações e Linhas de Cuidado para a Atenção Primária (APS)
+                </h3>
+                <div className="text-slate-900 leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-200 whitespace-pre-wrap font-normal">
+                  {currentCaso.devolutiva_aps || 'Nenhuma recomendação registrada.'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Orientação de Encaminhamento</span>
+                  <span className="font-bold text-slate-800">
+                    {currentCaso.encaminhamento_indicado === false 
+                      ? 'Manter manejo na Atenção Primária à Saúde (Evitou Encaminhamento)'
+                      : currentCaso.encaminhamento_indicado === true 
+                        ? `Encaminhamento presencial indicado (Risco: ${currentCaso.classificacao_risco || 'Não classificado'})`
+                        : 'Conduta sob critério do médico assistente'}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Exames Complementares Solicitados</span>
+                  <span className="font-medium text-slate-800">
+                    {currentCaso.exames_solicitados ? (currentCaso.exames_descricao || 'Exames listados em conduta') : 'Nenhum exame adicional requerido'}
+                  </span>
+                </div>
+              </div>
+
+              {currentCaso.referencias_bibliograficas && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block mb-0.5">Referências Científicas Consultadas:</span>
+                  <p className="text-[11px] text-slate-700 italic bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap">
+                    {currentCaso.referencias_bibliograficas}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CARIMBO E IDENTIFICAÇÃO DO PROFISSIONAL EMISSOR */}
+          <div className="border border-slate-300 rounded-lg p-4 bg-slate-50">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="space-y-1 text-center sm:text-left">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block">
+                  Autenticidade e Emissão Eletrônica
+                </span>
+                <p className="text-[11px] text-slate-600 max-w-sm">
+                  Documento emitido digitalmente pela plataforma Doutortec em consonância com as regulamentações vigentes de telessaúde.
+                </p>
+                <p className="text-[10px] font-mono text-slate-500">
+                  Hash de Rastreabilidade: {currentCaso.id}
+                </p>
+              </div>
+
+              {/* Box do Carimbo Médico */}
+              <div className="border-2 border-slate-800 rounded-lg px-6 py-3 bg-white text-center min-w-[240px] shadow-2xs">
+                <p className="text-xs font-black text-slate-900 uppercase">
+                  {especialistaInfo?.nome || 'Médico Teleconsultor'}
+                </p>
+                <p className="text-[11px] font-bold text-slate-700">
+                  {especialistaInfo?.crm_coren ? `Registro: ${especialistaInfo.crm_coren}` : 'CRM / COREN Registrado'}
+                </p>
+                {especialistaInfo?.rqe && (
+                  <p className="text-[10px] font-semibold text-slate-600">
+                    RQE: {especialistaInfo.rqe}
+                  </p>
+                )}
+                {especialidadeNome && (
+                  <p className="text-[10px] text-slate-500">
+                    Especialidade: {especialidadeNome}
+                  </p>
+                )}
+                <div className="mt-2 pt-1 border-t border-slate-200 text-[9px] font-mono font-bold text-slate-700">
+                  Emitido em: {currentCaso.respondido_em ? new Date(currentCaso.respondido_em).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RODAPÉ DO DOCUMENTO */}
+          <div className="border-t border-slate-200 pt-3 flex items-center justify-between text-[9px] text-slate-400">
+            <span>Doutortec Teleinterconsulta • Apoio Clínico Integrado à APS • e-SUS PEC</span>
+            <span>Documento emitido na Fase 1 do Projeto Piloto Homologado</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
