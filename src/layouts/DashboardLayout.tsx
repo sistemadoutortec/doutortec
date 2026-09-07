@@ -15,6 +15,7 @@ import {
   DollarSign,
   Shuffle,
   Bell,
+  Inbox,
   LogOut,
   Menu,
   X,
@@ -66,7 +67,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (role === 'especialista') {
       return [
         { label: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
-        { label: 'Casos', icon: FileText, id: 'casos' },
+        { label: 'Fila de Atendimento', icon: Inbox, id: 'fila-atendimento' },
+        { label: 'Meus Casos', icon: FileText, id: 'casos' },
         { label: 'Especialidades', icon: Activity, id: 'especialidades' },
         { label: 'Ranking', icon: Trophy, id: 'ranking' },
         { label: 'Financeiro', icon: DollarSign, id: 'financeiro' },

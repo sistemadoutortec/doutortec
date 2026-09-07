@@ -5,6 +5,7 @@ import { Register } from './features/auth/Register';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { CriarCaso } from './features/cases/CriarCaso';
 import { ListaCasos } from './features/cases/ListaCasos';
+import { FilaCasosEspecialista } from './features/cases/FilaCasosEspecialista';
 import { DetalhesCaso } from './features/cases/DetalhesCaso';
 import { AprovacaoCadastros } from './features/auth/AprovacaoCadastros';
 import { GerenciamentoPerfis } from './features/auth/GerenciamentoPerfis';
@@ -221,7 +222,19 @@ function App() {
       );
     }
 
-    // 2. Cases list tab (applicable to all approved roles)
+    // 2. Pool / Fila de Atendimento para Especialistas
+    if (activeTab === 'fila-atendimento' && perfil?.role === 'especialista') {
+      return (
+        <FilaCasosEspecialista
+          onSelectCaso={(caso) => setSelectedCaso(caso)}
+          onCasoPuxado={(caso) => {
+            setSelectedCaso(caso);
+          }}
+        />
+      );
+    }
+
+    // 3. Cases list tab (applicable to all approved roles)
     if (activeTab === 'casos' || activeTab === 'meus-casos') {
       return (
         <div className="space-y-5">

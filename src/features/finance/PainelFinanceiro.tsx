@@ -267,7 +267,7 @@ export const PainelFinanceiro: React.FC = () => {
       const quantidadeCasos = espCasos.length;
       let valorBase = 0;
       espCasos.forEach((c: any) => {
-        const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList);
+        const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList, c.especialista_id);
         valorBase += pricing.valorRepasseSpec;
       });
 
@@ -291,7 +291,7 @@ export const PainelFinanceiro: React.FC = () => {
     let platformFaturamento = 0;
 
     casesInMonth.forEach((c: any) => {
-      const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList);
+      const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList, c.especialista_id);
       platformFaturamento += pricing.valorTotal;
       totalBaseRepasses += pricing.valorRepasseSpec;
     });
@@ -314,7 +314,7 @@ export const PainelFinanceiro: React.FC = () => {
     let totalPago = 0;
 
     specialistCases.forEach((c: any) => {
-      const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList);
+      const pricing = getPricingForCaso(c.especialidade_id, c.solicitante?.municipio, configs, municipiosList, c.especialista_id);
       if (c.status === 'respondido') {
         saldoAReceber += pricing.valorRepasseSpec;
       } else if (c.status === 'fechado') {

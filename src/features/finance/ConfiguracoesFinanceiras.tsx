@@ -2,20 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { X, Sliders, Save, Plus, Trash2, Loader2, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
+import type { FinanceRule } from '../../lib/financeUtils';
+
 interface ConfiguracoesFinanceirasProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
 }
 
-interface Rule {
+interface EspecialistaOption {
   id: string;
-  tipo: 'global' | 'especialidade' | 'municipio';
-  especialidade_id: string | null;
-  municipio_id: string | null;
-  valor_total_caso: number;
-  valor_repasse_especialista: number;
-  valor_repasse_clinico: number;
+  nome: string;
+  crm_coren?: string | null;
 }
 
 export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> = ({ isOpen, onClose, onSaved }) => {
@@ -27,18 +25,20 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
   // Reference data
   const [especialidades, setEspecialidades] = useState<{ id: string; nome: string }[]>([]);
   const [municipios, setMunicipios] = useState<{ id: string; municipio: string; uf: string }[]>([]);
+  const [especialistas, setEspecialistas] = useState<EspecialistaOption[]>([]);
 
   // Rules list
-  const [rules, setRules] = useState<Rule[]>([]);
+  const [rules, setRules] = useState<FinanceRule[]>([]);
 
   // Form states
   const [globalTotal, setGlobalTotal] = useState('225.00');
   const [globalEspecialista, setGlobalEspecialista] = useState('150.00');
   const [globalClinico, setGlobalClinico] = useState('0.00');
 
-  const [newTipo, setNewTipo] = useState<'especialidade' | 'municipio'>('especialidade');
+  const [newTipo, setNewTipo] = useState<'especialidade' | 'municipio' | 'municipio_especialidade' | 'municipio_especialista'>('municipio_especialidade');
   const [newEspecialidadeId, setNewEspecialidadeId] = useState('');
   const [newMunicipioId, setNewMunicipioId] = useState('');
+  const [newEspecialistaId, setNewEspecialistaId] = useState('');
   const [newTotal, setNewTotal] = useState('');
   const [newEspecialista, setNewEspecialista] = useState('');
   const [newClinico, setNewClinico] = useState('0.00');
@@ -50,20 +50,23 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
       setError(null);
 
       // Fetch references
-      const [espRes, munRes, rulesRes] = await Promise.all([
+      const [espRes, munRes, specsRes, rulesRes] = await Promise.all([
         supabase.from('especialidades').select('id, nome').order('nome'),
         supabase.from('fluxos_municipios').select('id, municipio, uf').order('uf').order('municipio'),
+        supabase.from('perfis').select('id, nome, crm_coren').eq('role', 'especialista').eq('status_cadastro', 'aprovado').order('nome'),
         supabase.from('configuracoes_financeiras').select('*')
       ]);
 
       if (espRes.error) throw espRes.error;
       if (munRes.error) throw munRes.error;
+      if (specsRes.error) throw specsRes.error;
       if (rulesRes.error) throw rulesRes.error;
 
       setEspecialidades(espRes.data || []);
       setMunicipios(munRes.data || []);
+      setEspecialistas(specsRes.data || []);
 
-      const loadedRules = (rulesRes.data || []) as Rule[];
+      const loadedRules = (rulesRes.data || []) as FinanceRule[];
       setRules(loadedRules);
 
       // Set global form values
@@ -158,7 +161,7 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
         throw new Error('Por favor, informe valores válidos para o caso e os repasses.');
       }
 
-      const payload: Partial<Rule> = {
+      const payload: Partial<FinanceRule> = {
         tipo: newTipo,
         valor_total_caso: valorTotal,
         valor_repasse_especialista: valorEspecialista,
@@ -166,25 +169,29 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
       };
 
       if (newTipo === 'especialidade') {
-        if (!newEspecialidadeId) {
-          throw new Error('Selecione a especialidade alvo.');
-        }
-        // Check for duplicates
+        if (!newEspecialidadeId) throw new Error('Selecione a especialidade alvo.');
         const exists = rules.some(r => r.tipo === 'especialidade' && r.especialidade_id === newEspecialidadeId);
-        if (exists) {
-          throw new Error('Já existe uma regra de exceção para esta especialidade.');
-        }
+        if (exists) throw new Error('Já existe uma regra de exceção para esta especialidade.');
         payload.especialidade_id = newEspecialidadeId;
-      } else {
-        if (!newMunicipioId) {
-          throw new Error('Selecione o município alvo.');
-        }
-        // Check for duplicates
+      } else if (newTipo === 'municipio') {
+        if (!newMunicipioId) throw new Error('Selecione o município alvo.');
         const exists = rules.some(r => r.tipo === 'municipio' && r.municipio_id === newMunicipioId);
-        if (exists) {
-          throw new Error('Já existe uma regra de exceção para este município.');
-        }
+        if (exists) throw new Error('Já existe uma regra de exceção para este município.');
         payload.municipio_id = newMunicipioId;
+      } else if (newTipo === 'municipio_especialidade') {
+        if (!newMunicipioId) throw new Error('Selecione o município alvo.');
+        if (!newEspecialidadeId) throw new Error('Selecione a especialidade alvo.');
+        const exists = rules.some(r => r.tipo === 'municipio_especialidade' && r.municipio_id === newMunicipioId && r.especialidade_id === newEspecialidadeId);
+        if (exists) throw new Error('Já existe uma regra para a combinação deste Município com esta Especialidade.');
+        payload.municipio_id = newMunicipioId;
+        payload.especialidade_id = newEspecialidadeId;
+      } else if (newTipo === 'municipio_especialista') {
+        if (!newMunicipioId) throw new Error('Selecione o município alvo.');
+        if (!newEspecialistaId) throw new Error('Selecione o especialista médico alvo.');
+        const exists = rules.some(r => r.tipo === 'municipio_especialista' && r.municipio_id === newMunicipioId && r.especialista_id === newEspecialistaId);
+        if (exists) throw new Error('Já existe uma regra para a combinação deste Município com este Especialista.');
+        payload.municipio_id = newMunicipioId;
+        payload.especialista_id = newEspecialistaId;
       }
 
       const { error: insertError } = await supabase
@@ -199,6 +206,7 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
       setNewClinico('0.00');
       setNewEspecialidadeId('');
       setNewMunicipioId('');
+      setNewEspecialistaId('');
 
       await loadData();
       if (onSaved) onSaved();
@@ -349,54 +357,78 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Criar Exceção / Regra Customizada</h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tipo de Filtro / Alvo</label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tipo de Regra de Precificação</label>
                     <select
                       value={newTipo}
-                      onChange={e => setNewTipo(e.target.value as 'especialidade' | 'municipio')}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                      onChange={e => setNewTipo(e.target.value as any)}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white font-medium"
                     >
-                      <option value="especialidade">Por Especialidade Médica</option>
-                      <option value="municipio">Por Município de Origem</option>
+                      <option value="municipio_especialidade">📍 Município + Especialidade (Mais Comum no Piloto)</option>
+                      <option value="municipio_especialista">👨‍⚕️ Município + Especialista Específico</option>
+                      <option value="municipio">🏛️ Por Município (Padrão para todas as especialidades da cidade)</option>
+                      <option value="especialidade">🩺 Por Especialidade Geral (Todas as cidades)</option>
                     </select>
                   </div>
 
-                  <div>
-                    {newTipo === 'especialidade' ? (
-                      <>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Especialidade Alvo *</label>
-                        <select
-                          required
-                          value={newEspecialidadeId}
-                          onChange={e => setNewEspecialidadeId(e.target.value)}
-                          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
-                        >
-                          <option value="">Selecione uma especialidade...</option>
-                          {especialidades.map(esp => (
-                            <option key={esp.id} value={esp.id}>{esp.nome}</option>
-                          ))}
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Município Alvo *</label>
-                        <select
-                          required
-                          value={newMunicipioId}
-                          onChange={e => setNewMunicipioId(e.target.value)}
-                          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
-                        >
-                          <option value="">Selecione um município...</option>
-                          {municipios.map(m => (
-                            <option key={m.id} value={m.id}>{m.municipio} - {m.uf}</option>
-                          ))}
-                        </select>
-                      </>
-                    )}
-                  </div>
+                  {/* Município selector if applicable */}
+                  {(newTipo === 'municipio' || newTipo === 'municipio_especialidade' || newTipo === 'municipio_especialista') && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Município Alvo *</label>
+                      <select
+                        required
+                        value={newMunicipioId}
+                        onChange={e => setNewMunicipioId(e.target.value)}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                      >
+                        <option value="">Selecione o município...</option>
+                        {municipios.map(m => (
+                          <option key={m.id} value={m.id}>{m.municipio} - {m.uf}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Especialidade selector if applicable */}
+                  {(newTipo === 'especialidade' || newTipo === 'municipio_especialidade') && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Especialidade Alvo *</label>
+                      <select
+                        required
+                        value={newEspecialidadeId}
+                        onChange={e => setNewEspecialidadeId(e.target.value)}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                      >
+                        <option value="">Selecione uma especialidade...</option>
+                        {especialidades.map(esp => (
+                          <option key={esp.id} value={esp.id}>{esp.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Especialista selector if applicable */}
+                  {newTipo === 'municipio_especialista' && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Especialista Alvo *</label>
+                      <select
+                        required
+                        value={newEspecialistaId}
+                        onChange={e => setNewEspecialistaId(e.target.value)}
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white"
+                      >
+                        <option value="">Selecione o especialista...</option>
+                        {especialistas.map(esp => (
+                          <option key={esp.id} value={esp.id}>
+                            {esp.nome} {esp.crm_coren ? `(${esp.crm_coren})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 whitespace-nowrap">Valor do Caso (Faturamento)</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 whitespace-nowrap">Valor do Caso (Faturamento) *</label>
                     <div className="relative rounded-md shadow-xs">
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">R$</span>
                       <input
@@ -413,7 +445,7 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 whitespace-nowrap">Repasse Especialista</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 whitespace-nowrap">Repasse Especialista *</label>
                       <div className="relative rounded-md shadow-xs">
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">R$</span>
                         <input
@@ -465,8 +497,8 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
                   <table className="min-w-full divide-y divide-gray-200 text-left text-xs bg-white">
                     <thead className="bg-gray-50 font-bold text-gray-500 uppercase text-[10px]">
                       <tr>
-                        <th className="px-5 py-3">Tipo</th>
-                        <th className="px-5 py-3">Alvo</th>
+                        <th className="px-5 py-3">Tipo de Regra</th>
+                        <th className="px-5 py-3">Alvo / Combinação</th>
                         <th className="px-5 py-3 text-right">Valor Caso</th>
                         <th className="px-5 py-3 text-right">Repasse Espec.</th>
                         <th className="px-5 py-3 text-right">Repasse Clín.</th>
@@ -484,24 +516,48 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
                         rules
                           .filter(r => r.tipo !== 'global')
                           .map(rule => {
+                            let tipoLabel = 'Exceção';
                             let targetName = '—';
-                            if (rule.tipo === 'especialidade') {
-                              targetName = especialidades.find(e => e.id === rule.especialidade_id)?.nome || 'Especialidade excluída';
+
+                            const mun = municipios.find(m => m.id === rule.municipio_id);
+                            const munLabel = mun ? `${mun.municipio} - ${mun.uf}` : 'Município';
+                            const esp = especialidades.find(e => e.id === rule.especialidade_id);
+                            const espLabel = esp?.nome || 'Especialidade';
+                            const spec = especialistas.find(s => s.id === rule.especialista_id);
+                            const specLabel = spec ? `${spec.nome}` : 'Especialista';
+
+                            if (rule.tipo === 'municipio_especialidade') {
+                              tipoLabel = 'Município + Especialidade';
+                              targetName = `${munLabel} ➔ ${espLabel}`;
+                            } else if (rule.tipo === 'municipio_especialista') {
+                              tipoLabel = 'Município + Especialista';
+                              targetName = `${munLabel} ➔ Dr(a). ${specLabel}`;
+                            } else if (rule.tipo === 'especialidade') {
+                              tipoLabel = 'Especialidade Geral';
+                              targetName = espLabel;
                             } else if (rule.tipo === 'municipio') {
-                              const mun = municipios.find(m => m.id === rule.municipio_id);
-                              targetName = mun ? `${mun.municipio} - ${mun.uf}` : 'Município excluído';
+                              tipoLabel = 'Município Geral';
+                              targetName = munLabel;
                             }
 
                             return (
                               <tr key={rule.id} className="hover:bg-slate-50/50 transition">
-                                <td className="px-5 py-3 font-semibold capitalize">{rule.tipo === 'especialidade' ? 'Especialidade' : 'Município'}</td>
-                                <td className="px-5 py-3 font-medium text-gray-900">{targetName}</td>
+                                <td className="px-5 py-3">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    rule.tipo.includes('municipio_') 
+                                      ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  }`}>
+                                    {tipoLabel}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 font-semibold text-gray-900">{targetName}</td>
                                 <td className="px-5 py-3 text-right font-mono font-bold">R$ {rule.valor_total_caso.toFixed(2)}</td>
                                 <td className="px-5 py-3 text-right font-mono font-bold text-indigo-650">R$ {rule.valor_repasse_especialista.toFixed(2)}</td>
                                 <td className="px-5 py-3 text-right font-mono text-gray-550">R$ {rule.valor_repasse_clinico.toFixed(2)}</td>
                                 <td className="px-5 py-3 text-center">
                                   <button
-                                    onClick={() => handleDeleteRule(rule.id)}
+                                    onClick={() => rule.id && handleDeleteRule(rule.id)}
                                     className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition"
                                     title="Remover Regra"
                                   >

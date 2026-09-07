@@ -15,6 +15,7 @@ interface PacienteOption {
   id: string;
   nome: string;
   cpf: string;
+  municipio_id?: string | null;
 }
 
 interface CriarCasoProps {
@@ -179,7 +180,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       try {
         const { data, error: fetchError } = await supabase
           .from('pacientes')
-          .select('id, nome, cpf')
+          .select('id, nome, cpf, municipio_id')
           .order('nome', { ascending: true });
 
         if (fetchError) throw fetchError;
@@ -266,9 +267,14 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       return;
     }
 
-    const patientExists = pacientes.some(p => p.nome.toLowerCase() === pacienteNome.toLowerCase());
-    if (!patientExists) {
+    const selectedPatient = pacientes.find(p => p.nome.toLowerCase() === pacienteNome.toLowerCase());
+    if (!selectedPatient) {
       setError('Por favor, selecione um paciente válido cadastrado no sistema.');
+      return;
+    }
+
+    if (!selectedPatient.municipio_id) {
+      setError('O paciente selecionado não possui Município de Origem vinculado. Acesse o menu de Pacientes para editar o cadastro antes de abrir o caso.');
       return;
     }
 

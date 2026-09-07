@@ -14,6 +14,7 @@ import {
   CreditCard,
   MapPin,
   ChevronDown,
+  Pencil,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────
@@ -149,6 +150,7 @@ export const Pacientes: React.FC = () => {
 
   // ── Form state ──────────────────────────────────────────
   const [formOpen, setFormOpen] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Paciente | null>(null);
   const [form, setForm] = useState(FORM_EMPTY);
   const [cpfDisplay, setCpfDisplay] = useState(''); // masked input value
   const [submitting, setSubmitting] = useState(false);
@@ -216,7 +218,7 @@ export const Pacientes: React.FC = () => {
       if (perfil?.role === 'gestor_municipal' && perfil?.municipio) {
         const targetMun = perfil.municipio.toLowerCase();
         enriched = enriched.filter(p => 
-          p.municipioLabel.toLowerCase().includes(targetMun)
+          p.municipioLabel?.toLowerCase().includes(targetMun)
         );
       }
 
@@ -250,6 +252,7 @@ export const Pacientes: React.FC = () => {
   // Form helpers
   // ─────────────────────────────────────────────────────────
   const openForm = () => {
+    setEditingPatient(null);
     setForm(FORM_EMPTY);
     setCpfDisplay('');
     setFormErrors({});
@@ -258,8 +261,26 @@ export const Pacientes: React.FC = () => {
     setFormOpen(true);
   };
 
+  const openEditForm = (pac: Paciente) => {
+    setEditingPatient(pac);
+    setForm({
+      nome: pac.nome,
+      cpf: pac.cpf,
+      dataNascimento: pac.data_nascimento,
+      sexo: pac.sexo,
+      cartaoSus: pac.cartao_sus || '',
+      municipioId: pac.municipio_id || '',
+    });
+    setCpfDisplay(applyCpfMask(pac.cpf));
+    setFormErrors({});
+    setFormSuccess(null);
+    setGlobalFormError(null);
+    setFormOpen(true);
+  };
+
   const closeForm = () => {
     setFormOpen(false);
+    setEditingPatient(null);
   };
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,23 +296,38 @@ export const Pacientes: React.FC = () => {
   };
 
   // ─────────────────────────────────────────────────────────
-  // Validation
+  // Validation: Nome, CPF, Data de Nascimento, Sexo, Município OBRIGATÓRIOS
   // ─────────────────────────────────────────────────────────
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!form.nome.trim()) errors.nome = 'Informe o nome completo.';
+    if (!form.nome.trim()) {
+      errors.nome = 'Informe o nome completo do paciente.';
+    } else if (form.nome.trim().length < 3) {
+      errors.nome = 'Nome deve ter pelo menos 3 caracteres.';
+    }
+
     if (!form.cpf || form.cpf.length !== 11) {
-      errors.cpf = 'CPF deve ter 11 dígitos.';
+      errors.cpf = 'CPF obrigatório com 11 dígitos.';
     } else if (!isValidCpf(form.cpf)) {
       errors.cpf = 'CPF inválido. Verifique os dígitos.';
     }
-    if (!form.dataNascimento) errors.dataNascimento = 'Informe a data de nascimento.';
-    else {
+
+    if (!form.dataNascimento) {
+      errors.dataNascimento = 'Data de nascimento é obrigatória.';
+    } else {
       const birth = new Date(form.dataNascimento);
       if (birth > new Date()) errors.dataNascimento = 'Data de nascimento não pode ser no futuro.';
     }
-    if (!form.sexo) errors.sexo = 'Selecione o sexo.';
+
+    if (!form.sexo) {
+      errors.sexo = 'Selecione o sexo biológico do paciente.';
+    }
+
+    if (!form.municipioId) {
+      errors.municipioId = 'Município de origem é obrigatório para identificação do faturamento.';
+    }
+
     if (form.cartaoSus && form.cartaoSus.length !== 15) {
       errors.cartaoSus = 'Cartão SUS deve ter exatamente 15 dígitos.';
     }
@@ -323,52 +359,94 @@ export const Pacientes: React.FC = () => {
         cartao_sus: form.cartaoSus || null,
       };
 
-      const { data, error } = await supabase
-        .from('pacientes')
-        .insert([payload])
-        .select('id, nome, cpf, data_nascimento, sexo, cartao_sus, municipio_id, created_at')
-        .single();
+      if (editingPatient) {
+        // Update existing patient
+        const { data, error } = await supabase
+          .from('pacientes')
+          .update(payload)
+          .eq('id', editingPatient.id)
+          .select('id, nome, cpf, data_nascimento, sexo, cartao_sus, municipio_id, created_at')
+          .single();
 
-      if (error) {
-        // Postgres unique constraint violation
-        if (error.code === '23505') {
-          const detail = error.message.toLowerCase();
-          if (detail.includes('cpf')) {
-            setFormErrors((prev) => ({ ...prev, cpf: 'Este CPF já está cadastrado no sistema.' }));
-          } else if (detail.includes('cartao_sus') || detail.includes('sus')) {
-            setFormErrors((prev) => ({
-              ...prev,
-              cartaoSus: 'Este Cartão SUS já está vinculado a outro paciente.',
-            }));
-          } else {
-            setGlobalFormError('Registro duplicado. Verifique CPF e Cartão SUS.');
+        if (error) {
+          if (error.code === '23505') {
+            const detail = error.message.toLowerCase();
+            if (detail.includes('cpf')) {
+              setFormErrors((prev) => ({ ...prev, cpf: 'Este CPF já está cadastrado para outro paciente.' }));
+            } else if (detail.includes('cartao_sus') || detail.includes('sus')) {
+              setFormErrors((prev) => ({
+                ...prev,
+                cartaoSus: 'Este Cartão SUS já está vinculado a outro paciente.',
+              }));
+            } else {
+              setGlobalFormError('Registro duplicado. Verifique CPF e Cartão SUS.');
+            }
+            return;
           }
-          return;
+          throw error;
         }
-        throw error;
+
+        if (data) {
+          const atualizado: Paciente = {
+            ...(data as Paciente),
+            municipioLabel: data.municipio_id ? municipioMap[data.municipio_id] ?? '—' : '—',
+          };
+          setPacientes((prev) =>
+            prev.map(p => p.id === atualizado.id ? atualizado : p)
+          );
+        }
+
+        setFormSuccess(`Paciente "${form.nome.trim()}" atualizado com sucesso!`);
+      } else {
+        // Insert new patient
+        const { data, error } = await supabase
+          .from('pacientes')
+          .insert([payload])
+          .select('id, nome, cpf, data_nascimento, sexo, cartao_sus, municipio_id, created_at')
+          .single();
+
+        if (error) {
+          // Postgres unique constraint violation
+          if (error.code === '23505') {
+            const detail = error.message.toLowerCase();
+            if (detail.includes('cpf')) {
+              setFormErrors((prev) => ({ ...prev, cpf: 'Este CPF já está cadastrado no sistema.' }));
+            } else if (detail.includes('cartao_sus') || detail.includes('sus')) {
+              setFormErrors((prev) => ({
+                ...prev,
+                cartaoSus: 'Este Cartão SUS já está vinculado a outro paciente.',
+              }));
+            } else {
+              setGlobalFormError('Registro duplicado. Verifique CPF e Cartão SUS.');
+            }
+            return;
+          }
+          throw error;
+        }
+
+        if (data) {
+          const novo: Paciente = {
+            ...(data as Paciente),
+            municipioLabel: data.municipio_id ? municipioMap[data.municipio_id] ?? '—' : '—',
+          };
+          // Optimistic update — add to top
+          setPacientes((prev) =>
+            [novo, ...prev].sort((a, b) => a.nome.localeCompare(b.nome)),
+          );
+        }
+
+        setFormSuccess(`Paciente "${form.nome.trim()}" cadastrado com sucesso!`);
       }
 
-      if (data) {
-        const novo: Paciente = {
-          ...(data as Paciente),
-          municipioLabel: data.municipio_id ? municipioMap[data.municipio_id] ?? '—' : '—',
-        };
-        // Optimistic update — add to top (maintaining alpha order would require a sort)
-        setPacientes((prev) =>
-          [novo, ...prev].sort((a, b) => a.nome.localeCompare(b.nome)),
-        );
-      }
-
-      setFormSuccess(`Paciente "${form.nome.trim()}" cadastrado com sucesso!`);
       setTimeout(() => {
         setFormSuccess(null);
         closeForm();
-      }, 1800);
+      }, 1500);
     } catch (err: any) {
       const errMsg = err?.message || err?.details || 'Erro de rede ou permissão.';
-      console.error('Erro ao cadastrar paciente:', err);
+      console.error('Erro ao salvar paciente:', err);
       setGlobalFormError(
-        `Não foi possível cadastrar o paciente. Detalhe: ${errMsg}`
+        `Não foi possível salvar os dados do paciente. Detalhe: ${errMsg}`
       );
     } finally {
       setSubmitting(false);
@@ -512,6 +590,7 @@ export const Pacientes: React.FC = () => {
                     <th className="px-6 py-3.5">Sexo</th>
                     <th className="px-6 py-3.5">Cartão SUS</th>
                     <th className="px-6 py-3.5">Município</th>
+                    <th className="px-6 py-3.5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 bg-white">
@@ -565,13 +644,28 @@ export const Pacientes: React.FC = () => {
                       {/* Município */}
                       <td className="px-6 py-4">
                         {p.municipioLabel && p.municipioLabel !== '—' ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-700">
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-700 font-medium">
                             <MapPin className="h-3 w-3 text-indigo-400 shrink-0" />
                             {p.municipioLabel}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-400 italic">—</span>
+                          <span className="inline-flex items-center gap-1 text-xs text-rose-600 font-bold bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                            <AlertCircle className="h-3 w-3" />
+                            Pendente Origem
+                          </span>
                         )}
+                      </td>
+
+                      {/* Ações */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => openEditForm(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition"
+                          title="Editar Cadastro do Paciente"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          <span>Editar</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -607,8 +701,10 @@ export const Pacientes: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between bg-indigo-50/70 border-b border-indigo-100 px-6 py-4 rounded-t-2xl">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-indigo-600" />
-                <h4 className="text-sm font-bold text-indigo-900">Cadastrar Novo Paciente</h4>
+                {editingPatient ? <Pencil className="h-4 w-4 text-indigo-600" /> : <User className="h-4 w-4 text-indigo-600" />}
+                <h4 className="text-sm font-bold text-indigo-900">
+                  {editingPatient ? `Editar Paciente #${editingPatient.id.substring(0, 8)}` : 'Cadastrar Novo Paciente'}
+                </h4>
               </div>
               <button
                 onClick={closeForm}
@@ -779,23 +875,30 @@ export const Pacientes: React.FC = () => {
 
                 <div>
                   <label htmlFor="pac-municipio" className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    Município{' '}
-                    <span className="normal-case font-normal text-gray-400">(opcional)</span>
+                    Município de Origem <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="pac-municipio"
                     value={form.municipioId}
-                    onChange={(e) => setForm((prev) => ({ ...prev, municipioId: e.target.value }))}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, municipioId: e.target.value }));
+                      if (formErrors.municipioId) setFormErrors((prev) => ({ ...prev, municipioId: '' }));
+                    }}
                     disabled={submitting || municipios.length === 0}
-                    className={fieldClass()}
+                    className={fieldClass(formErrors.municipioId)}
                   >
-                    <option value="">— Selecionar município —</option>
+                    <option value="">— Selecionar município de faturamento —</option>
                     {municipios.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.municipio} / {m.uf}
                       </option>
                     ))}
                   </select>
+                  {formErrors.municipioId && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3.5 w-3.5" /> {formErrors.municipioId}
+                    </p>
+                  )}
                   {municipios.length === 0 && (
                     <p className="mt-1 text-[10px] text-amber-600">
                       Nenhum município cadastrado na rede ainda.
@@ -841,7 +944,7 @@ export const Pacientes: React.FC = () => {
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4" />
-                      Cadastrar Paciente
+                      {editingPatient ? 'Salvar Alterações' : 'Cadastrar Paciente'}
                     </>
                   )}
                 </button>

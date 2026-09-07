@@ -625,13 +625,30 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
     }
   };
 
-  // Specialist Action: Accept Case
+  // Specialist Action: Accept Case with atomic concurrency control
   const handleAcceptCase = async () => {
     if (!user || updatingStatus) return;
     setUpdatingStatus(true);
     setActionError(null);
 
     try {
+      // 1. Tentar via RPC com atomic claim
+      const { data: rpcRes, error: rpcError } = await supabase.rpc('puxar_caso_atendimento', {
+        p_caso_id: currentCaso.id,
+      });
+
+      if (!rpcError && rpcRes) {
+        if (rpcRes.success && rpcRes.caso) {
+          setCurrentCaso(rpcRes.caso as CasoClinico);
+          if (onUpdateCaso) onUpdateCaso(rpcRes.caso as CasoClinico);
+          return;
+        } else {
+          setActionError(rpcRes.error || 'Este caso acabou de ser assumido por outro especialista.');
+          return;
+        }
+      }
+
+      // 2. Fallback de update atômico direto
       const { data, error } = await supabase
         .from('casos')
         .update({
@@ -640,14 +657,19 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           aceito_em: new Date().toISOString()
         })
         .eq('id', currentCaso.id)
+        .eq('status', 'novo')
+        .is('especialista_id', null)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      if (data) {
-        setCurrentCaso(data as CasoClinico);
-        if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
+      if (!data) {
+        setActionError('Este caso acabou de ser assumido por outro especialista ou já está em atendimento.');
+        return;
       }
+
+      setCurrentCaso(data as CasoClinico);
+      if (onUpdateCaso) onUpdateCaso(data as CasoClinico);
     } catch (err: any) {
       console.error('Erro ao aceitar caso:', err.message || err);
       setActionError('Não foi possível iniciar o atendimento deste caso.');
