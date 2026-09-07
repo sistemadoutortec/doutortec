@@ -409,7 +409,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       });
 
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // largura A4 mm
+      const pageWidth = 210; // largura A4 mm
       const pageHeight = 297; // altura A4 mm
       
       const img = new Image();
@@ -419,18 +419,43 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         img.onerror = reject;
       });
 
-      const imgHeight = (img.height * imgWidth) / img.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+      const imgHeight = (img.height * pageWidth) / img.width;
 
-      pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Se a altura calculada couber ou estiver ligeiramente maior que 1 página (até 340mm),
+      // faz auto-fit proporcional para caber em 1 página A4 perfeitamente sem cortar carimbos.
+      if (imgHeight <= 340) {
+        const targetMargin = 4; // margem em mm
+        const maxHeight = pageHeight - (targetMargin * 2);
+        
+        let finalWidth = pageWidth;
+        let finalHeight = imgHeight;
+        let xOffset = 0;
+        let yOffset = targetMargin;
 
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
+        if (imgHeight > maxHeight) {
+          const scale = maxHeight / imgHeight;
+          finalWidth = pageWidth * scale;
+          finalHeight = imgHeight * scale;
+          xOffset = (pageWidth - finalWidth) / 2;
+        } else {
+          yOffset = (pageHeight - imgHeight) / 2;
+        }
+
+        pdf.addImage(dataUrl, 'PNG', xOffset, yOffset, finalWidth, finalHeight);
+      } else {
+        // Para pareceres extensos, mantêm a paginação contínua
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(dataUrl, 'PNG', 0, position, pageWidth, imgHeight);
         heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(dataUrl, 'PNG', 0, position, pageWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
       }
 
       const cleanPatientName = (currentCaso.paciente_nome || 'paciente').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
@@ -1839,17 +1864,17 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '210mm' }}>
         <div 
           ref={parecerPrintRef} 
-          className="bg-white text-slate-900 p-8 space-y-6 font-sans antialiased"
-          style={{ width: '210mm', minHeight: '297mm', boxSizing: 'border-box' }}
+          className="bg-white text-slate-900 p-5 space-y-3.5 font-sans antialiased"
+          style={{ width: '210mm', boxSizing: 'border-box' }}
         >
           {/* CABEÇALHO TIMBRADO OFICIAL */}
-          <div className="border-b-2 border-[#002157] pb-4">
+          <div className="border-b-2 border-[#002157] pb-2.5">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <img 
                   src="/Logo-Doutortec-Original.png" 
                   alt="Doutortec" 
-                  className="h-16 w-auto object-contain block"
+                  className="h-12 w-auto object-contain block"
                   crossOrigin="anonymous"
                 />
                 <div>
