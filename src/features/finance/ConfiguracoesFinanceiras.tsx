@@ -364,7 +364,7 @@ export const ConfiguracoesFinanceiras: React.FC<ConfiguracoesFinanceirasProps> =
                       onChange={e => setNewTipo(e.target.value as any)}
                       className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 bg-white font-medium"
                     >
-                      <option value="municipio_especialidade">📍 Município + Especialidade (Mais Comum no Piloto)</option>
+                      <option value="municipio_especialidade">📍 Município + Especialidade (Recomendado)</option>
                       <option value="municipio_especialista">👨‍⚕️ Município + Especialista Específico</option>
                       <option value="municipio">🏛️ Por Município (Padrão para todas as especialidades da cidade)</option>
                       <option value="especialidade">🩺 Por Especialidade Geral (Todas as cidades)</option>
