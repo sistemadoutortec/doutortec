@@ -664,7 +664,20 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
       if (error) throw error;
       if (!data) {
-        setActionError('Este caso acabou de ser assumido por outro especialista ou já está em atendimento.');
+        const { data: realCaso } = await supabase
+          .from('casos')
+          .select('id, especialista_id, status')
+          .eq('id', currentCaso.id)
+          .maybeSingle();
+
+        if (realCaso && realCaso.especialista_id && realCaso.especialista_id !== user.id) {
+          setActionError('Este caso acabou de ser assumido por outro especialista.');
+        } else if (realCaso && realCaso.especialista_id === user.id) {
+          setCurrentCaso(realCaso as CasoClinico);
+          if (onUpdateCaso) onUpdateCaso(realCaso as CasoClinico);
+        } else {
+          setActionError('Não foi possível assumir este chamado. Certifique-se de executar o script SQL supabase/add_puxar_caso_rpc.sql no Supabase.');
+        }
         return;
       }
 

@@ -265,8 +265,25 @@ export const FilaCasosEspecialista: React.FC<FilaCasosEspecialistaProps> = ({
       if (fallbackError) throw fallbackError;
 
       if (!fallbackData) {
-        setError('Atenção: Este caso acabou de ser assumido por outro especialista online.');
-        setCasosPool((prev) => prev.filter((c) => c.id !== caso.id));
+        // Verificar status real no banco de dados para diferenciar se outro médico pegou ou se houve bloqueio RLS/RPC
+        const { data: realCaso } = await supabase
+          .from('casos')
+          .select('id, especialista_id, status')
+          .eq('id', caso.id)
+          .maybeSingle();
+
+        if (realCaso && realCaso.especialista_id && realCaso.especialista_id !== user.id) {
+          setError('Atenção: Este caso acabou de ser assumido por outro especialista online.');
+          setCasosPool((prev) => prev.filter((c) => c.id !== caso.id));
+        } else if (realCaso && realCaso.especialista_id === user.id) {
+          setActionSuccess(`Caso de ${caso.paciente_nome} assumido com sucesso!`);
+          setCasosPool((prev) => prev.filter((c) => c.id !== caso.id));
+          if (onCasoPuxado) {
+            onCasoPuxado(realCaso as any);
+          }
+        } else {
+          setError('Não foi possível assumir este chamado no banco de dados. Certifique-se de executar o script SQL supabase/add_puxar_caso_rpc.sql no Supabase.');
+        }
       } else {
         setActionSuccess(`Caso de ${caso.paciente_nome} assumido com sucesso!`);
         setCasosPool((prev) => prev.filter((c) => c.id !== caso.id));
