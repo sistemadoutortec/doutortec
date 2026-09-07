@@ -29,11 +29,12 @@ ESTRUTURA DE NAVEGAÇÃO (MENUS LATERAIS POR PERFIL):
 
 - MÉDICO ESPECIALISTA (TELECONSULTOR):
   1. Dashboard
-  2. Casos
-  3. Especialidades
-  4. Ranking
-  5. Financeiro
-  6. Notificações
+  2. Fila de Atendimento (para puxar casos novos disponíveis nos seus municípios e especialidades)
+  3. Meus Casos (casos assumidos pelo médico para atendimento ou já respondidos)
+  4. Especialidades
+  5. Ranking
+  6. Financeiro
+  7. Notificações
 
 - GESTOR MUNICIPAL:
   1. Dashboard
@@ -53,7 +54,7 @@ ESTRUTURA DE NAVEGAÇÃO (MENUS LATERAIS POR PERFIL):
   8. Relatórios
   9. Aprovar Clínicos
   10. Gerenciar Perfis
-  11. Financeiro
+  11. Financeiro (Controle Financeiro e Faturamento, Configurar Tarifas, Lançar Bônus Extra)
   12. Distribuição
   13. Notificações
 
@@ -61,18 +62,24 @@ ESTRUTURA DE NAVEGAÇÃO (MENUS LATERAIS POR PERFIL):
 MAPEAMENTO DETALHADO DAS TELAS, BOTÕES E AÇÕES:
 ================================================================================
 
-1. TELA: CASOS CLÍNICOS (Menu 'Casos')
-   - Botão no topo direito: '+ Novo Caso Clínico' (botão azul, visível para perfil Solicitante).
-   - Filtros de status no topo: 'Todos', 'Novos', 'Em Progresso', 'Respondido', 'Fechado'.
-   - Campo de busca: pesquisa por nome do paciente, especialidade ou protocolo.
-   - Na listagem de casos (tabela desktop ou cards mobile): exibe Paciente, Especialidade, Prioridade, SLA e botão 'Visualizar Caso' que abre a tela de Detalhes.
+1. TELA: FILA DE ATENDIMENTO (Menu 'Fila de Atendimento' - Especialista)
+   - Título: 'Fila de Casos Disponíveis para Puxar'.
+   - Mostra os casos novos com status 'novo' e sem especialista atribuído nas especialidades e municípios conveniados do médico.
+   - Botão em cada card: 'Puxar Atendimento' (botão azul com ícone de raio).
+   - Ao clicar em 'Puxar Atendimento': o caso é atribuído com concorrência atômica ao médico especialista e vai imediatamente para o menu 'Meus Casos'.
+
+2. TELA: CASOS CLÍNICOS / MEUS CASOS (Menu 'Casos' ou 'Meus Casos')
+   - Para Solicitante: Botão no topo direito '+ Novo Caso Clínico' (botão azul).
+   - Para Especialista: Lista os casos assumidos pelo médico em andamento ou respondidos.
+   - Filtros no topo: 'Buscar paciente...', 'Todos os Status', 'Todas as Prioridades', 'Todas as Especialidades' e 'Limpar Filtros'.
+   - Na listagem de casos (cards): exibe Paciente, Especialidade, Município, Prioridade, SLA e botão para abrir a tela de Detalhes do Caso.
    - Prazos de SLA:
      * Alta Prioridade: até 12 horas.
      * Média Prioridade: até 48 horas.
      * Baixa Prioridade: até 72 horas.
      * Badges de SLA: Verde (dentro do prazo), Laranja/Âmbar (próximo do limite) e Vermelho (atrasado).
 
-2. TELA: CRIAR CASO CLÍNICO (Acesso: Botão '+ Novo Caso Clínico')
+3. TELA: CRIAR CASO CLÍNICO (Acesso: Botão '+ Novo Caso Clínico')
    - Formulário passo a passo:
      1. Seleção do Paciente cadastrado (dropdown de pacientes; há atalho para cadastrar novo caso não esteja na lista).
      2. Escolha da Especialidade Médica desejada.
@@ -84,31 +91,34 @@ MAPEAMENTO DETALHADO DAS TELAS, BOTÕES E AÇÕES:
      8. Termo de Responsabilidade: caixa de seleção (checkbox) obrigatória aceitando as diretrizes legais da teleinterconsulta.
      9. Botões de ação no rodapé: 'Cancelar' e 'Enviar Caso Clínico'.
 
-3. TELA: DETALHES DO CASO CLÍNICO (Ao clicar em 'Visualizar Caso')
-   - Cabeçalho: Nome do paciente, CPF, CNS, idade, município, prioridade, status e cronômetro de SLA.
-   - Ações do Médico Especialista:
-     * Botão 'Aceitar Atendimento' (quando o caso está com status 'Novo'): assume a responsabilidade e inicia a contagem oficial do atendimento.
-     * Botão 'Devolver (Falta de Dados)': caso o histórico ou exames sejam insuficientes, permite devolver com justificativa escrita para o solicitante complementar.
-     * Botão 'Emitir Devolutiva Oficial' (quando em atendimento): abre modal com:
-       - Resposta Direta / Conduta Imediata (medicamentos, posologia e manejo).
-       - Contribuições para a APS (orientações de acompanhamento continuado na UBS).
-       - Encaminhamento e Classificação de Risco (indicação de necessidade presencial e gravidade: Vermelha, Amarela, Verde ou Azul).
-       - Exames Complementares sugeridos.
-       - Referências Bibliográficas (campo 100% OPCIONAL).
-       - Checkbox para indicar se o caso tem potencial para Segunda Opinião Formativa (SOF).
-       - Botão 'Emitir Devolutiva Oficial'.
-   - Chat Integrado em Tempo Real: Solicitante e Especialista trocam mensagens e anexam exames complementares diretamente dentro do caso.
-   - Visualizador de Exames Integrado: permite Zoom (50% a 200%), rotação de 90° e navegação de páginas de PDF em tela cheia.
+4. TELA: DETALHES DO CASO CLÍNICO (Ao clicar no caso)
+   - Cabeçalho: Botão '← Voltar', ID do caso, Prioridade, Status ('Em Progresso', 'Respondido', etc.), Cronômetro de SLA e botão 'Mensagens Rápidas' (chat drawer lateral).
+   - Card 1 (Superior): SOLICITAÇÃO DE TELECONSULTORIA: Nome do paciente, CPF, CNS, data de abertura, Histórico Clínico, Conduta Atual e Dúvida Clínica.
+   - Card 2 (Inferior): DEVOLUTIVA DO ESPECIALISTA (TICKET OFICIAL):
+     * IMPORTANTE: Não é uma 'aba' separada, é um card na mesma página, acessível rolando a tela para baixo.
+     * Ações e Campos quando o caso está assumido 'Em Progresso' pelo especialista:
+       - Campo obrigatório: 'Resposta Direta / Conduta Recomendada *' (área de texto ampla).
+       - Campo obrigatório: 'Contribuições e Recomendações para a Atenção Primária (APS) *'.
+       - Campo obrigatório: 'Qual a sua orientação específica? *' (Radio buttons: 'Manejo na APS' ou 'Encaminhamento ao especialista' com Classificação de Risco: Vermelha, Amarela, Verde ou Azul).
+       - Exames Complementares Prévios (Sim/Não e descrição).
+       - Referências Bibliográficas (Padrão Vancouver - 100% OPCIONAL).
+       - Checkbox: Marcar como potencial Segunda Opinião Formativa (SOF).
+       - Botões de Ação no rodapé do formulário:
+         * 'Devolver (Falta de Dados)' - abre modal com justificativa.
+         * 'Devolver p/ Regulação'.
+         * 'Salvar Rascunho'.
+         * 'Enviar Parecer' (botão verde de emissão oficial que conclui a resposta e muda o status para 'Respondido').
+   - Drawer Lateral de Chat: botão 'Mensagens Rápidas' no topo abre o painel lateral para alinhamentos breves entre solicitante e especialista sem sair da tela.
    - Ações do Solicitante após receber a Devolutiva:
      * Botão 'Avaliar e Encerrar': obrigatório para fechar o caso; nota de 1 a 5 estrelas e resposta se a teleconsultoria evitou encaminhamento presencial desnecessário.
      * Botão 'Baixar Parecer (PDF)': gera o documento oficial com carimbo, CRM/RQE do especialista e dados clínicos completos.
 
-4. TELA: PACIENTES (Menu 'Pacientes')
+5. TELA: PACIENTES (Menu 'Pacientes')
    - Botão no topo direito: '+ Novo Paciente'.
    - Modal de Cadastro: Nome Completo, CPF (com validação e máscara), Cartão Nacional de Saúde (CNS/SUS), Data de Nascimento, Sexo e Município. Botão 'Salvar Paciente'.
    - Listagem: busca por nome ou CPF com dados e histórico de casos vinculados.
 
-5. TELA: GESTÃO DE PERFIS / USUÁRIOS (Menu 'Gerenciar Perfis' - Admin)
+6. TELA: GESTÃO DE PERFIS / USUÁRIOS (Menu 'Gerenciar Perfis' - Admin)
    - Botão no topo direito: '+ Cadastrar Profissional' (Modal com: Nome, Email, CPF, CRM/COREN com número e UF separados, Papel [Solicitante/Especialista], Especialidade, Município e senha padrão 'Mudar@123').
    - Filtros de status: 'Todos', 'Pendentes', 'Aprovados', 'Bloqueados' e campo de busca por nome/categoria.
    - Coluna de Ações na tabela (botões diretos, SEM três pontinhos):
@@ -116,36 +126,46 @@ MAPEAMENTO DETALHADO DAS TELAS, BOTÕES E AÇÕES:
      * Botão 'Aprovar': aprova o cadastro pendente do profissional.
      * Botão 'Bloquear': inativa e suspende imediatamente o login do usuário, preservando o histórico clínico intacto.
 
-6. TELA: APROVAR CLÍNICOS (Menu 'Aprovar Clínicos' - Admin)
+7. TELA: APROVAR CLÍNICOS (Menu 'Aprovar Clínicos' - Admin)
    - Fila de conferência de novos médicos e enfermeiros cadastrados pelo formulário de auto-cadastro.
    - Permite conferir número de CRM/COREN, UF e RQE, com botões para 'Aprovar' ou 'Rejeitar'.
 
-7. TELA: MUNICÍPIOS (Menu 'Municípios' - Admin)
+8. TELA: MUNICÍPIOS (Menu 'Municípios' - Admin)
    - Tabela de municípios conveniados ao Doutortec.
    - Botão '+ Novo Município': cadastra nome da cidade, UF e ativa o convênio.
    - Ações: botão para Editar dados ou Ativar/Inativar município.
 
-8. TELA: ESPECIALIDADES (Menu 'Especialidades')
+9. TELA: ESPECIALIDADES (Menu 'Especialidades')
    - Lista todas as áreas médicas atendidas (Cardiologia, Dermatologia, Neurologia, Pediatria, Ortopedia, Ginecologia, Psiquiatria, etc.) e os fluxos de encaminhamento.
 
-9. TELA: RANKING DE ESPECIALISTAS (Menu 'Ranking')
-   - Classificação dos especialistas baseada em score (0 a 100), satisfação das avaliações da APS, resolutividade e cumprimento dos prazos de SLA.
+10. TELA: RANKING DE ESPECIALISTAS (Menu 'Ranking')
+    - Classificação dos especialistas baseada em score (0 a 100), satisfação das avaliações da APS, resolutividade e cumprimento dos prazos de SLA.
 
-10. TELA: RELATÓRIOS (Menu 'Relatórios')
+11. TELA: RELATÓRIOS (Menu 'Relatórios')
     - Gráficos de volume de atendimentos, resolutividade na atenção básica (% de casos resolvidos sem encaminhamento presencial), tempo médio de resposta e distribuição por especialidade.
     - Botão 'Exportar Relatório PDF' para impressão e prestação de contas.
     - Gestor Municipal: visualiza única e exclusivamente os indicadores da sua cidade.
 
-11. TELA: FINANCEIRO (Menu 'Financeiro')
-    - Visão Especialista: extrato de pareceres concluídos no mês, valor acumulado a receber e eventuais bônus manuais lançados pela gestão.
-    - Visão Administrador: configuração de valor pago por parecer concluído, lançamento de bônus manuais para especialistas com justificativa e extrato consolidado de repasses.
+12. TELA: FINANCEIRO (Menu 'Financeiro')
+    - Visão Especialista: extrato de produção, demonstrativo detalhado por especialista com chamados respondidos, valor base, bônus adicionais e valor total acumulado no mês.
+    - Visão Administrador ('Controle Financeiro e Faturamento'):
+      * Botão 'Configurar Tarifas': abre o modal de parametrização onde se define:
+        - Tarifa Padrão Global (Valor Total do Caso, Repasse Especialista, Repasse Clínico).
+        - Criar Exceção / Regra Customizada: tipos de regra: '📍 Município + Especialidade (Recomendado)', '👨‍⚕️ Município + Especialista Específico', '🏛️ Por Município' ou '🩺 Por Especialidade Geral'.
+        - Campo 'Valor do Caso (Faturamento) *': representa o valor da consulta/caso faturado.
+        - Campo 'Repasse Especialista *': valor pago ao teleconsultor.
+        - Campo 'Repasse Clínico': repasse à unidade/solicitante se aplicável.
+        - Botão '+ Adicionar Regra de Exceção' para salvar a regra.
+      * Botão '+ Lançar Bônus Extra': abre modal para atribuir bônus com valor (R$) e justificativa administrativa obrigatória.
+      * Demonstração de Produção por Especialista com botão 'Retificar Produção' (lápis) para correções de auditoria.
 
-12. TELA: DISTRIBUIÇÃO (Menu 'Distribuição' - Admin e Telerregulador)
+13. TELA: DISTRIBUIÇÃO (Menu 'Distribuição' - Admin e Telerregulador)
     - Painel para distribuir ou reatribuir casos clínicos manualmente entre especialistas em caso de sobrecarga de fila ou ausência de profissional.
 
-13. RECURSOS GLOBAIS DE SEGURANÇA E CONTA:
+14. RECURSOS GLOBAIS DE SEGURANÇA E CONTA:
     - Central de Notificações: ícone de sino no topo direito com contador de avisos não lidos.
-    - Central de Ajuda: ícone de interrogação '?' no topo abre o manual ilustrado.
+    - Central de Ajuda: ícone de interrogação '?' no topo abre o manual ilustrado organizado por perfil.
+    - Suporte IA: widget interativo flutuante no canto inferior direito para tirar dúvidas em tempo real.
     - Alerta de Senha Provisória: banner de aviso persistente no topo da tela orientando a troca de senha caso o usuário ainda esteja com 'Mudar@123'.
     - Botão de Perfil: permite alterar senha a qualquer momento ou efetuar logout no botão 'Sair'.
 `;

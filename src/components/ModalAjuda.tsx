@@ -213,58 +213,60 @@ export const ModalAjuda: React.FC<ModalAjudaProps> = ({
   const especialistaTopics = useMemo<TopicoAjuda[]>(() => [
     {
       id: 'esp-recebimento',
-      titulo: '1. Recebimento e Aceite de Casos',
+      titulo: '1. Fila de Atendimento e Puxar Casos',
       icon: Stethoscope,
-      tags: ['aceitar', 'dashboard', 'fila', 'histórico', 'em progresso'],
+      tags: ['puxar atendimento', 'fila de atendimento', 'meus casos', 'aceitar', 'em progresso'],
       conteudo: (
         <div className="space-y-3">
           <p className="text-xs text-gray-600 leading-relaxed">
-            Especialistas visualizam os casos abertos em suas respectivas especialidades e decidem por realizar o atendimento.
+            Especialistas visualizam os casos abertos em suas respectivas especialidades e municípios conveniados através da Fila de Atendimento.
           </p>
           <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-xs space-y-2 text-sky-900">
             <ul className="list-disc pl-4 space-y-1.5 text-[11px] leading-relaxed">
-              <li><strong>Dashboard de Especialista:</strong> Apresenta os casos pendentes de sua especialidade divididos por prioridade e tempo de SLA.</li>
-              <li><strong>Análise Prévia:</strong> Clique em qualquer caso na fila para ler a dúvida, histórico clínico, conduta atual e visualizar todos os documentos e exames médicos anexados através do visualizador seguro do sistema.</li>
-              <li><strong>Ação de Aceite:</strong> Se decidir assumir o caso, clique em <strong>"Aceitar Caso"</strong>. O status mudará imediatamente para <strong>'Em Progresso'</strong> e o caso ficará sob sua responsabilidade exclusiva.</li>
+              <li><strong>Fila de Atendimento (Menu Lateral):</strong> Apresenta os casos novos disponíveis nos seus municípios de atuação e especialidades.</li>
+              <li><strong>Puxar Atendimento:</strong> Clique no botão azul <strong>"Puxar Atendimento"</strong> no card do paciente desejado. O caso é assumido instantaneamente por você com controle atômico de concorrência.</li>
+              <li><strong>Meus Casos:</strong> Assim que puxado, o chamado é movido para o seu menu <strong>"Meus Casos"</strong> com o status <strong>'Em Progresso'</strong> para você responder.</li>
             </ul>
           </div>
         </div>
       ),
       detalhes: [
-        'Apenas especialistas credenciados na especialidade do caso podem aceitá-lo',
-        'O status muda de "Aguardando Especialista" para "Em Progresso" pós-aceite',
-        'Notificação em tempo real é enviada ao clínico solicitante assim que o caso é aceito'
+        'Apenas especialistas credenciados na especialidade e município do caso podem puxá-lo',
+        'O status muda de "Novo" para "Em Progresso" imediatamente após o clique',
+        'Garante concorrência atômica segura para que dois médicos não assumam o mesmo caso'
       ]
     },
     {
       id: 'esp-parecer',
-      titulo: '2. Elaboração e Envio do Parecer',
+      titulo: '2. Devolutiva do Especialista (Parecer Oficial)',
       icon: FileText,
-      tags: ['parecer', 'conduta', 'referência', 'concluir', 'respondido'],
+      tags: ['parecer', 'devolutiva', 'orientações', 'conduta', 'referência', 'concluir', 'respondido'],
       conteudo: (
         <div className="space-y-3">
           <p className="text-xs text-gray-600 leading-relaxed">
-            A resposta formal do especialista deve ser estruturada e baseada em evidências científicas e boas práticas clínicas.
+            A resposta formal do especialista é estruturada e fica fixada no prontuário do paciente.
           </p>
           <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-xs space-y-2 text-gray-700">
-            <h5 className="font-bold text-gray-900">Formulário de Resposta do Especialista</h5>
+            <h5 className="font-bold text-gray-900">Como Emitir o Parecer Clínico Oficial</h5>
             <p className="text-[11px] leading-relaxed">
-              No painel de detalhes do caso aceito, utilize os campos dedicados para redigir o parecer:
+              Abra o caso assumido em <strong>"Meus Casos"</strong> e role a página para baixo até o cartão <strong>"Devolutiva do Especialista (Ticket Oficial)"</strong>:
             </p>
             <ul className="list-disc pl-4 space-y-1 text-[11px] text-gray-600">
-              <li><strong>Análise Clínica:</strong> Sua avaliação técnica com base nos dados do paciente e exames.</li>
-              <li><strong>Conduta Recomendada:</strong> Orientações clínicas práticas para guiar o médico solicitante na ponta.</li>
-              <li><strong>Referências Bibliográficas:</strong> Diretrizes médicas e estudos que fundamentam sua conduta.</li>
+              <li><strong>Resposta Direta / Conduta Recomendada *:</strong> Orientações clínicas práticas e conduta imediata para a equipe solicitante.</li>
+              <li><strong>Contribuições para a APS *:</strong> Recomendações preventivas e linhas de cuidado na Atenção Primária à Saúde.</li>
+              <li><strong>Orientação Específica *:</strong> Marque se o caso é para <em>Manejo na APS</em> ou <em>Encaminhamento</em> (com classificação de risco).</li>
+              <li><strong>Exames e Referências:</strong> Indique se há necessidade de exames prévios. Referências bibliográficas são 100% opcionais.</li>
             </ul>
             <p className="text-[11px] leading-relaxed pt-1 border-t border-gray-150">
-              Ao preencher, clique em <strong>"Enviar Parecer"</strong>. O status atualizará automaticamente para <strong>'Respondido'</strong>, o clínico será notificado e o caso contabilizará no seu faturamento de produção.
+              Ao concluir, clique no botão verde <strong>"Enviar Parecer"</strong> no final do formulário. O status mudará para <strong>'Respondido'</strong>, o clínico será notificado e a produção será contabilizada no seu financeiro.
             </p>
           </div>
         </div>
       ),
       detalhes: [
-        'O chat integrado continua aberto até o solicitante finalizar o caso, permitindo esclarecimentos adicionais',
-        'O parecer enviado fica registrado de forma imutável no prontuário do caso'
+        'O formulário fica no mesmo painel de detalhes, rolando a página para baixo',
+        'Botão "Mensagens Rápidas" no cabeçalho permite alinhamentos pontuais em tempo real',
+        'O parecer emitido gera laudo PDF timbrado oficial'
       ]
     },
     {
@@ -374,32 +376,30 @@ export const ModalAjuda: React.FC<ModalAjudaProps> = ({
     },
     {
       id: 'adm-financeiro',
-      titulo: '3. Painel Financeiro e Bônus',
+      titulo: '3. Painel Financeiro e Tarifas',
       icon: Coins,
-      tags: ['bônus', 'financeiro', 'pagamento', 'faturamento', 'município'],
+      tags: ['bônus', 'financeiro', 'tarifas', 'precificação', 'pagamento', 'faturamento', 'município'],
       conteudo: (
         <div className="space-y-3">
           <p className="text-xs text-gray-600 leading-relaxed">
-            Gerencie o custo total operacional e configure incentivos adicionais aos médicos com base em desempenho ou dedicação.
+            Monitore faturamento, custos de repasses, configure tarifas operacionais e lance bônus aos especialistas.
           </p>
           <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs text-emerald-950 space-y-2">
             <h5 className="font-bold flex items-center gap-1 text-emerald-800">
-              <Coins className="h-4 w-4" /> Controle de Produção e Bônus
+              <Coins className="h-4 w-4" /> Gestão Financeira Completa
             </h5>
-            <p className="text-[11px] leading-relaxed">
-              O módulo financeiro do gestor consolida a produção total em reais (R$) de todo o sistema. Suas principais ferramentas são:
-            </p>
             <ul className="list-disc pl-4 space-y-1.5 text-[11px] text-emerald-900">
-              <li><strong>Filtros por Período e Município:</strong> Permite cruzar dados de faturamento entre cidades e datas específicas.</li>
-              <li><strong>Tabela de Bônus Registrados:</strong> Lista os bônus ativos de cada especialista na plataforma.</li>
-              <li><strong>Adicionar Bônus Manual:</strong> Clique para abrir o modal de bônus, insira o nome do especialista, o valor em R$ e digite a justificativa (ex: atendimento em plantão especial ou SLA crítico atendido).</li>
+              <li><strong>Configurar Tarifas:</strong> Permite definir a Tarifa Padrão Global (Valor Total do Caso e Repasses) ou cadastrar Exceções/Regras Customizadas (por Município + Especialidade [Recomendado], por Especialista, ou geral).</li>
+              <li><strong>Lançar Bônus Extra:</strong> Permite creditar valores extraordinários aos especialistas com justificativa administrativa obrigatória.</li>
+              <li><strong>Demonstrativo de Produção:</strong> Tabela com quantidade de chamados atendidos, valores de produção e botão de retificação para ajustes de auditoria.</li>
             </ul>
           </div>
         </div>
       ),
       detalhes: [
+        'Configuração de tarifas personalizadas por convênio e município',
         'Justificativa detalhada é obrigatória para lançamento de qualquer bônus financeiro',
-        'Possibilidade de editar ou excluir bônus lançados incorretamente antes do fechamento da fatura'
+        'Demonstrativo consolidado atualizado em tempo real'
       ]
     },
     {
