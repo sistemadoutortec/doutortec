@@ -34,6 +34,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const currentUserRef = React.useRef<string | null>(null);
+  const currentPerfilRef = React.useRef<Perfil | null>(null);
+
   // Helper to fetch the profile of a given user ID
   const fetchPerfil = async (userId: string) => {
     try {
@@ -68,6 +71,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (result.error) {
         console.error('Falha ao buscar perfil com fallback:', result.error.message);
+        currentPerfilRef.current = null;
         setPerfil(null);
       } else if (result.data) {
         const profileData = result.data as any;
@@ -76,12 +80,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status_cadastro: profileData.status_cadastro || profileData.status || 'aprovado',
           instituicao: profileData.instituicao || 'Não especificado',
         };
+        currentPerfilRef.current = mappedPerfil as Perfil;
         setPerfil(mappedPerfil as Perfil);
       } else {
+        currentPerfilRef.current = null;
         setPerfil(null);
       }
     } catch (err) {
       console.error('Erro inesperado ao buscar perfil:', err);
+      currentPerfilRef.current = null;
       setPerfil(null);
     }
   };
@@ -94,9 +101,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (error) throw error;
 
         if (session?.user) {
+          currentUserRef.current = session.user.id;
           setUser(session.user);
           await fetchPerfil(session.user.id);
         } else {
+          currentUserRef.current = null;
+          currentPerfilRef.current = null;
           setUser(null);
           setPerfil(null);
         }
@@ -112,17 +122,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Only show loading screen for actual login or logout events to prevent app unmounting on background token refresh
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-          setLoading(true);
-        }
-        if (session?.user) {
-          setUser(session.user);
-          await fetchPerfil(session.user.id);
-        } else {
+        const sessionUserId = session?.user?.id || null;
+
+        // User signed out or session ended
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          currentUserRef.current = null;
+          currentPerfilRef.current = null;
           setUser(null);
           setPerfil(null);
+          setLoading(false);
+          return;
         }
+
+        const isSameUser = currentUserRef.current === sessionUserId;
+
+        // If the same user is already active and profile is loaded, do NOT reset loading or unmount the app!
+        // Supabase fires SIGNED_IN or TOKEN_REFRESHED on window focus / tab switch.
+        if (isSameUser && currentPerfilRef.current) {
+          setUser(session.user);
+          return;
+        }
+
+        // Only show full loading screen if transitioning from unauthenticated state to authenticated
+        if (!currentUserRef.current) {
+          setLoading(true);
+        }
+
+        currentUserRef.current = sessionUserId;
+        setUser(session.user);
+        await fetchPerfil(session.user.id);
         setLoading(false);
       }
     );
@@ -248,6 +276,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
+      currentUserRef.current = null;
+      currentPerfilRef.current = null;
       if (error) throw error;
       return { error: null };
     } catch (error: any) {
