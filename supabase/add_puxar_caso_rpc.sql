@@ -1,7 +1,14 @@
--- =====================================================================
--- DOUTORTEC - RPC: Puxar Atendimento com Concorrencia Atomica
--- =====================================================================
+-- 1. Permissão RLS para Specialists assumirem casos novos sem médico
+DROP POLICY IF EXISTS "Permitir especialista assumir caso novo" ON public.casos;
 
+CREATE POLICY "Permitir especialista assumir caso novo"
+ON public.casos
+FOR UPDATE
+TO authenticated
+USING (especialista_id IS NULL OR especialista_id = auth.uid())
+WITH CHECK (especialista_id = auth.uid());
+
+-- 2. Função RPC atômica com SECURITY DEFINER
 CREATE OR REPLACE FUNCTION public.puxar_caso_atendimento(p_caso_id uuid)
 RETURNS json
 LANGUAGE plpgsql
@@ -9,7 +16,6 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_user_id uuid;
-    v_user_role text;
     v_updated_row public.casos%ROWTYPE;
 BEGIN
     v_user_id := auth.uid();
@@ -26,7 +32,7 @@ BEGIN
         updated_at = now()
     WHERE id = p_caso_id 
       AND (status = 'novo' OR status IS NULL)
-      AND especialista_id IS NULL
+      AND (especialista_id IS NULL OR especialista_id = v_user_id)
     RETURNING * INTO v_updated_row;
 
     IF v_updated_row.id IS NULL THEN
