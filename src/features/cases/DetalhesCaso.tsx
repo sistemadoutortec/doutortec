@@ -1085,9 +1085,17 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             <p className="text-[9px] font-bold uppercase tracking-widest text-[#56657c] mb-0.5">Solicitação de Teleconsultoria</p>
             <h3 className="text-xl font-black" style={{ color: '#002157' }}>{currentCaso.paciente_nome}</h3>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1">
-              <p className="text-xs text-gray-500 font-medium">
-                Data de Abertura: <span className="text-gray-700">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
-              </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 font-medium">
+                <p>
+                  Data de Abertura: <span className="text-gray-700">{new Date(currentCaso.created_at).toLocaleString('pt-BR')}</span>
+                </p>
+                <p>
+                  CPF: <span className="font-semibold text-gray-800">{pacienteInfo?.cpf ? pacienteInfo.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}</span>
+                </p>
+                <p>
+                  CNS: <span className="font-semibold text-gray-800">{pacienteInfo?.cartao_sus || 'Não informado'}</span>
+                </p>
+              </div>
               {(currentCaso.cid_10 || currentCaso.ciap_2) && (
                 <div className="flex flex-wrap gap-2">
                   {currentCaso.cid_10 && (
@@ -1923,11 +1931,15 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase text-slate-500 block">CPF</span>
-                <span className="font-medium text-slate-800">{pacienteInfo?.cpf ? pacienteInfo.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Registrado em Prontuário'}</span>
+                <span className="font-medium text-slate-800">
+                  {pacienteInfo?.cpf ? pacienteInfo.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'}
+                </span>
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase text-slate-500 block">Cartão SUS (CNS)</span>
-                <span className="font-medium text-slate-800">{pacienteInfo?.cartao_sus || 'Conforme PEC Municipal'}</span>
+                <span className="font-medium text-slate-800">
+                  {pacienteInfo?.cartao_sus || 'Não informado'}
+                </span>
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase text-slate-500 block">Município / Unidade</span>
