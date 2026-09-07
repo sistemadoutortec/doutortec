@@ -25,7 +25,7 @@ BEGIN
         aceito_em = now(),
         updated_at = now()
     WHERE id = p_caso_id 
-      AND status = 'novo' 
+      AND (status = 'novo' OR status IS NULL)
       AND especialista_id IS NULL
     RETURNING * INTO v_updated_row;
 
