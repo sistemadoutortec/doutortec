@@ -111,7 +111,12 @@ MAPEAMENTO DETALHADO DAS TELAS, BOTÕES E AÇÕES:
    - Drawer Lateral de Chat: botão 'Mensagens Rápidas' no topo abre o painel lateral para alinhamentos breves entre solicitante e especialista sem sair da tela.
    - Ações do Solicitante após receber a Devolutiva:
      * Botão 'Avaliar e Encerrar': obrigatório para fechar o caso; nota de 1 a 5 estrelas e resposta se a teleconsultoria evitou encaminhamento presencial desnecessário.
-     * Botão 'Baixar Parecer (PDF)': gera o documento oficial com carimbo, CRM/RQE do especialista e dados clínicos completos.
+     * Botão 'Baixar Parecer (PDF)': gera o laudo oficial timbrado em formato A4 estruturado com autoajuste milimétrico (sem quebras de página indevidas). Contém:
+       - Cabeçalho institucional oficial com identificação do paciente, CPF, CNS/SUS e Município de Origem;
+       - Registro profissional de Solicitante e Especialista com CRM/COREN, UF e RQE;
+       - Histórico clínico, conduta prévia e dúvida formulada;
+       - Parecer estruturado completo com conduta recomendada, recomendações para APS e classificação de risco;
+       - Hash criptográfico de autenticação eletrônica com carimbo de data e hora para anexação direta ao e-SUS PEC ou prontuário físico.
 
 5. TELA: PACIENTES (Menu 'Pacientes')
    - Botão no topo direito: '+ Novo Paciente'.
