@@ -48,6 +48,7 @@ interface Especialista {
   crm_coren: string | null;
   municipio: string;
   instituicao: string;
+  categoria_profissional?: string | null;
   activeCaseCount: number; // current load
   match: 'recommended' | 'available' | 'none'; // computed per selected case
   matchFluxoNome?: string; // name of matching flow, if any
@@ -242,7 +243,7 @@ export const Distribucao: React.FC = () => {
       const enriched: CasoNaFila[] = (casosData as any[]).map((c) => {
         // Fallback seguro caso o banco de dados não possua a coluna sla_limite ou precise recalcular
         const getSlaHours = (prio: string) => {
-          if (prio === 'alta') return 12;
+          if (prio === 'alta') return 24;
           if (prio === 'media') return 48;
           return 72;
         };
@@ -289,7 +290,7 @@ export const Distribucao: React.FC = () => {
           // Approved specialists and teleconsultors
           supabase
             .from('perfis')
-            .select('id, nome, email, crm_coren, municipio, instituicao')
+            .select('id, nome, email, crm_coren, municipio, instituicao, categoria_profissional')
             .eq('status_cadastro', 'aprovado')
             .in('role', ['especialista', 'teleconsultor'])
             .order('nome', { ascending: true }),
@@ -314,8 +315,29 @@ export const Distribucao: React.FC = () => {
         // Fluxo IDs that cover the patient's municipality
         const coveringFluxoIds = municipioFluxoMap[patientMun] ?? [];
 
-        // For each specialist, compute match level
+        // Especialidade requerida pelo caso (normalizada em minúsculas)
+        const casoEspecialidadeNome = (caso.especialidadeNome || specialtiesMap[caso.especialidade_id] || '')
+          .toLowerCase()
+          .trim();
+
+        // For each specialist, compute match level and filter strictly by specialty
         const enriched: Especialista[] = (specsRes.data || [])
+          .filter((p) => {
+            // Especialista só deve ser incluído se pertencer à especialidade do caso
+            const espCategoria = (p.categoria_profissional ?? '').toLowerCase().trim();
+            
+            // Verifica se o especialista tem fluxo ativo nesta especialidade
+            const hasMatchingFluxoSpecialty = Object.values(fluxoEspMap).some(
+              (f) => f.especialistaId === p.id && f.nomeFluxo?.toLowerCase().trim() === casoEspecialidadeNome
+            );
+
+            // Validação estrita por especialidade (via categoria_profissional ou fluxo registrado)
+            const matchesSpecialty = 
+              (casoEspecialidadeNome && espCategoria && (espCategoria.includes(casoEspecialidadeNome) || casoEspecialidadeNome.includes(espCategoria))) ||
+              hasMatchingFluxoSpecialty;
+
+            return matchesSpecialty;
+          })
           .map((p) => {
             const espId = p.id as string;
 
@@ -339,12 +361,12 @@ export const Distribucao: React.FC = () => {
               crm_coren: p.crm_coren as string | null,
               municipio: p.municipio as string,
               instituicao: p.instituicao as string,
+              categoria_profissional: p.categoria_profissional as string | null,
               activeCaseCount: caseCountMap[espId] ?? 0,
               match,
               matchFluxoNome,
             };
-          })
-          .filter((e) => e.match === 'recommended');
+          });
 
         // Sort: recommended first, then by active case count ascending
         enriched.sort((a, b) => {
@@ -361,7 +383,7 @@ export const Distribucao: React.FC = () => {
         setSpecsLoading(false);
       }
     },
-    [municipioFluxoMap, fluxoEspMap],
+    [municipioFluxoMap, fluxoEspMap, specialtiesMap],
   );
 
   // ─────────────────────────────────────────────────────────
@@ -821,6 +843,12 @@ export const Distribucao: React.FC = () => {
                                   <span className="text-sm font-bold text-gray-900">
                                     {esp.nome}
                                   </span>
+
+                                  {esp.categoria_profissional && (
+                                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-700 border border-slate-200">
+                                      {esp.categoria_profissional}
+                                    </span>
+                                  )}
 
                                   {/* Match badges */}
                                   {esp.match === 'recommended' && (

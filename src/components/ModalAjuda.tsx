@@ -196,7 +196,7 @@ export const ModalAjuda: React.FC<ModalAjudaProps> = ({
               <li>Revise a conduta clínica, o parecer técnico e as referências sugeridas pelo especialista.</li>
               <li>Clique no botão destacado <strong>"Avaliar e Encerrar"</strong> para registrar a nota de resolutividade.</li>
               <li>Utilize o botão <strong>"Baixar Parecer (PDF)"</strong> para gerar o documento timbrado oficial em folha A4 com autoajuste milimétrico (sem quebras indevidas), CRM/COREN e RQE, histórico clínico e código de autenticação eletrônica para anexação direta ao e-SUS PEC ou prontuário físico.</li>
-              <li>Confirme para finalizar. O caso será arquivado no histórico de interconsultas com o status <strong>"Finalizado"</strong>.</li>
+              <li>Confirme para finalizar. O caso será arquivado no histórico de interconsultas com o status <strong>"Encerrado"</strong>.</li>
             </ol>
           </div>
         </div>
@@ -204,7 +204,7 @@ export const ModalAjuda: React.FC<ModalAjudaProps> = ({
       detalhes: [
         'Exportação de Parecer Oficial em PDF A4 estruturado com cabeçalho timbrado e autenticação eletrônica',
         'Avaliação de satisfação é obrigatória para encerramento do caso',
-        'Casos fechados não podem mais receber mensagens no chat por questões de auditoria médica',
+        'Casos encerrados não podem mais receber mensagens no chat por questões de auditoria médica',
         'Condutas e históricos permanecem salvos em conformidade com a LGPD'
       ]
     }

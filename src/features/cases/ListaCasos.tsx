@@ -251,7 +251,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
       case 'respondido':
         return <span className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 border border-green-200">Respondido</span>;
       case 'fechado':
-        return <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 border border-gray-200">Fechado</span>;
+        return <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 border border-gray-200">Encerrado</span>;
     }
   };
 
@@ -281,7 +281,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
               <option value="novo">Novo</option>
               <option value="em_progresso">Em Progresso</option>
               <option value="respondido">Respondido</option>
-              <option value="fechado">Fechado</option>
+              <option value="fechado">Encerrado</option>
             </select>
           </div>
 
@@ -359,7 +359,7 @@ export const ListaCasos: React.FC<ListaCasosProps> = ({ limit = 20, showFilters 
         <div className="grid grid-cols-1 gap-4">
           {filteredCasos.map((caso, idx) => {
             const getSlaHours = (prio: string) => {
-              if (prio === 'alta') return 12;
+              if (prio === 'alta') return 24;
               if (prio === 'media') return 48;
               return 72;
             };

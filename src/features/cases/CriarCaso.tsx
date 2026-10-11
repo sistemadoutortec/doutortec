@@ -16,6 +16,7 @@ interface PacienteOption {
   nome: string;
   cpf: string;
   municipio_id?: string | null;
+  municipioNome?: string;
 }
 
 interface CriarCasoProps {
@@ -174,17 +175,33 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
     }
   }, [pacienteNome, searchPatient, especialidadeId, prioridade, historicoClinico, condutaAtual, duvidaClinica, enfoque, formato, aceitouTermos, anexos, cid10Selected, ciap2Selected]);
 
-  // Fetch patients
+  // Fetch patients and municipalities
   useEffect(() => {
     const fetchPacientes = async () => {
       try {
-        const { data, error: fetchError } = await supabase
-          .from('pacientes')
-          .select('id, nome, cpf, municipio_id')
-          .order('nome', { ascending: true });
+        const [pacientesRes, municipiosRes] = await Promise.all([
+          supabase
+            .from('pacientes')
+            .select('id, nome, cpf, municipio_id')
+            .order('nome', { ascending: true }),
+          supabase
+            .from('fluxos_municipios')
+            .select('id, municipio, uf'),
+        ]);
 
-        if (fetchError) throw fetchError;
-        setPacientes(data || []);
+        if (pacientesRes.error) throw pacientesRes.error;
+
+        const munMap: Record<string, string> = {};
+        (municipiosRes.data || []).forEach(m => {
+          munMap[m.id] = `${m.municipio} (${m.uf})`;
+        });
+
+        const list = (pacientesRes.data || []).map(p => ({
+          ...p,
+          municipioNome: p.municipio_id ? munMap[p.municipio_id] : undefined
+        }));
+
+        setPacientes(list);
       } catch (err: any) {
         console.error('Erro ao buscar pacientes:', err.message || err);
         setError('Não foi possível carregar os pacientes.');
@@ -514,12 +531,36 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
                           className="flex w-full flex-col px-4 py-2 text-left hover:bg-indigo-50 transition-colors"
                         >
                           <span className="font-semibold text-gray-900">{pac.nome}</span>
-                          {pac.cpf && <span className="text-[10px] text-gray-500">CPF: {pac.cpf}</span>}
+                          <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                            {pac.cpf && <span>CPF: {pac.cpf}</span>}
+                            {pac.municipioNome && (
+                              <span className="text-indigo-600 font-medium bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-150">
+                                Município: {pac.municipioNome}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       ))
                     )}
                   </div>
                 )}
+
+                {/* Exibição travada do Município de Origem Oficial do Paciente */}
+                {(() => {
+                  const selectedPac = pacientes.find(p => p.nome.toLowerCase() === pacienteNome.toLowerCase());
+                  if (!selectedPac) return null;
+                  return (
+                    <div className="mt-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-slate-700">
+                        <span className="font-bold text-slate-900">Município de Origem (Vinculado):</span>
+                        <span className="font-semibold text-indigo-700">{selectedPac.municipioNome || 'Não informado'}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 italic bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                        🔒 Travado ao cadastro do paciente
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -562,9 +603,9 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               onChange={(e) => setPrioridade(e.target.value as CasoPrioridade)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
             >
-              <option value="alta">Alta (Até 12h)</option>
-              <option value="media">Média (Até 48h)</option>
-              <option value="baixa">Baixa (Até 72h)</option>
+              <option value="alta">Alta (24 Horas)</option>
+              <option value="media">Média (48 horas)</option>
+              <option value="baixa">Baixa (72 horas)</option>
             </select>
           </div>
 
@@ -746,7 +787,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
         <div>
           <label htmlFor="conduta" className="block text-sm font-semibold text-gray-700 mb-1">
-            Conduta Atual *
+            Hipótese Diagnóstica e Conduta Atual *
           </label>
           <textarea
             id="conduta"
@@ -755,14 +796,14 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             disabled={submitting}
             value={condutaAtual}
             onChange={(e) => setCondutaAtual(e.target.value)}
-            placeholder="Descreva as condutas, prescrições e tratamentos atualmente adotados..."
+            placeholder="Descreva a hipótese diagnóstica, condutas, prescrições e tratamentos atualmente adotados..."
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
           />
         </div>
 
         <div>
           <label htmlFor="duvida" className="block text-sm font-semibold text-gray-700 mb-1">
-            Dúvida Clínicâ *
+            Hipótese / Dúvida Clínica *
           </label>
           <textarea
             id="duvida"
@@ -771,7 +812,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             disabled={submitting}
             value={duvidaClinica}
             onChange={(e) => setDuvidaClinica(e.target.value)}
-            placeholder="Formule a pergunta ou o questionamento específico para o especialista médico..."
+            placeholder="Formule a pergunta, hipótese ou o questionamento específico para o especialista médico..."
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
           />
         </div>

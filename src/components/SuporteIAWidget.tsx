@@ -204,7 +204,7 @@ function getSmartFallbackAnswer(query: string, perfil: Perfil | null): string {
     q.includes('caso') && (q.includes('criar') || q.includes('abrir') || q.includes('novo') || q.includes('solicita') || q.includes('iniciar') || q.includes('fazer')) ||
     q.includes('como abrir') || q.includes('como criar') || q.includes('abrir caso') || q.includes('criar caso')
   ) {
-    return `Para abrir uma nova solicitação de caso clínico (Perfil Solicitante):\n\n1. Acesse o menu **Casos** no painel lateral esquerdo.\n2. Clique no botão azul **+ Novo Caso Clínico** no topo da página.\n3. Selecione o **Paciente** previamente cadastrado no menu *Pacientes*.\n4. Escolha a **Especialidade Médica** desejada e defina a **Prioridade**:\n   • *Alta:* resposta em até 12 horas\n   • *Média:* resposta em até 48 horas\n   • *Baixa:* resposta em até 72 horas\n5. Preencha o histórico clínico, conduta atual e a sua **dúvida clínica diagnóstica/terapêutica**.\n6. Anexe exames, laudos ou fotos em PDF/imagens (até 15MB por arquivo).\n7. Aceite o termo de responsabilidade e clique em **Enviar Caso Clínico**.\n\nO caso entrará imediatamente na fila de teleconsultoria do especialista!`;
+    return `Para abrir uma nova solicitação de caso clínico (Perfil Solicitante):\n\n1. Acesse o menu **Casos** no painel lateral esquerdo.\n2. Clique no botão azul **+ Novo Caso Clínico** no topo da página.\n3. Selecione o **Paciente** previamente cadastrado no menu *Pacientes*.\n4. Escolha a **Especialidade Médica** desejada e defina a **Prioridade**:\n   • *Alta:* resposta em até 24 horas\n   • *Média:* resposta em até 48 horas\n   • *Baixa:* resposta em até 72 horas\n5. Preencha o histórico clínico, a **Hipótese Diagnóstica e Conduta Atual** e a sua **Hipótese / Dúvida Clínica** (o município de origem permanece travado ao cadastro do paciente).\n6. Anexe exames, laudos ou fotos em PDF/imagens (até 15MB por arquivo).\n7. Aceite o termo de responsabilidade e clique em **Enviar Caso Clínico**.\n\nO caso entrará imediatamente na fila de teleconsultoria do especialista!`;
   }
 
   if (q.includes('paciente') || q.includes('cadastr')) {
@@ -225,7 +225,7 @@ function getSmartFallbackAnswer(query: string, perfil: Perfil | null): string {
   }
 
   if (q.includes('sla') || q.includes('prazo') || q.includes('tempo') || q.includes('urgente') || q.includes('prioridade')) {
-    return `Os prazos de atendimento (SLA) são calculados conforme a prioridade do caso:\n\n• 🔴 **Alta Prioridade:** Prazo limite de **até 12 horas**.\n• 🟡 **Média Prioridade:** Prazo limite de **até 48 horas**.\n• 🔵 **Baixa Prioridade:** Prazo limite de **até 72 horas**.\n\nOs cards possuem badges visuais: Verde (no prazo), Âmbar (próximo do vencimento) e Vermelho (atrasado).`;
+    return `Os prazos de atendimento (SLA) são calculados conforme a prioridade do caso:\n\n• 🔴 **Alta Prioridade:** Prazo limite de **até 24 horas**.\n• 🟡 **Média Prioridade:** Prazo limite de **até 48 horas**.\n• 🔵 **Baixa Prioridade:** Prazo limite de **até 72 horas**.\n\nOs cards possuem badges visuais: Verde (no prazo), Âmbar (próximo do vencimento) e Vermelho (atrasado).`;
   }
 
   if (q.includes('financeiro') || q.includes('bonus') || q.includes('bônus') || q.includes('repasses') || q.includes('faturamento')) {
@@ -236,7 +236,7 @@ function getSmartFallbackAnswer(query: string, perfil: Perfil | null): string {
   }
 
   if (q.includes('pdf') || q.includes('imprim') || q.includes('baixar') || q.includes('documento')) {
-    return `Para exportar o parecer em PDF:\n\n1. Acesse o caso clínico que esteja com status **Respondido** ou **Fechado**.\n2. Clique no botão **Baixar Parecer (PDF)** no topo dos detalhes do caso.\n3. O sistema gera o documento oficial estruturado com identificação do paciente, dados clínicos, conduta do especialista e carimbo profissional (CRM/RQE).`;
+    return `Para exportar o parecer em PDF:\n\n1. Acesse o caso clínico que esteja com status **Respondido** ou **Encerrado**.\n2. Clique no botão **Baixar Parecer (PDF)** no topo dos detalhes do caso.\n3. O sistema gera o documento oficial estruturado com identificação do paciente, dados clínicos, conduta do especialista e carimbo profissional (CRM/RQE).`;
   }
 
   if (q.includes('excluir') || q.includes('bloquear') || q.includes('inativar') || q.includes('deletar') || (q.includes('remover') && q.includes('usuário'))) {

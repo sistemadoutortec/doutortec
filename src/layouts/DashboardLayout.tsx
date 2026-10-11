@@ -69,7 +69,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         { label: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
         { label: 'Fila de Atendimento', icon: Inbox, id: 'fila-atendimento' },
         { label: 'Meus Casos', icon: FileText, id: 'casos' },
-        { label: 'Especialidades', icon: Activity, id: 'especialidades' },
         { label: 'Ranking', icon: Trophy, id: 'ranking' },
         { label: 'Financeiro', icon: DollarSign, id: 'financeiro' },
         { label: 'Notificações', icon: Bell, id: 'notificacoes' }

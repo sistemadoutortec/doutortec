@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { Trophy, Search, MapPin, FilterX, Loader2, AlertCircle } from 'lucide-react';
 
 interface SpecialistMetric {
@@ -14,6 +15,8 @@ interface SpecialistMetric {
 }
 
 export const RankingEspecialistas: React.FC = () => {
+  const { perfil } = useAuth();
+  const isAdmin = perfil?.role === 'admin';
   const [municipioFilter, setMunicipioFilter] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
@@ -166,8 +169,13 @@ export const RankingEspecialistas: React.FC = () => {
     }
   };
 
-  // Client-side filter on specialist name
-  const filteredRanking = rankingList.filter(item =>
+  // Client-side filter: if specialist, only show themselves with their true rank preserved
+  const displayRanking = rankingList.map((item, idx) => ({ ...item, rankPos: idx + 1 }));
+  const visibleList = isAdmin 
+    ? displayRanking 
+    : displayRanking.filter(item => item.id === perfil?.id);
+
+  const filteredRanking = visibleList.filter(item =>
     item.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -178,9 +186,13 @@ export const RankingEspecialistas: React.FC = () => {
         <div>
           <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Trophy className="h-5 w-5 text-indigo-600" />
-            Ranking e Desempenho de Especialistas
+            {isAdmin ? 'Ranking e Desempenho de Especialistas' : 'Meu Desempenho e Produtividade'}
           </h3>
-          <p className="text-xs text-gray-500 mt-1">Acompanhe métricas de produtividade, SLA e pontuações médicas gerais em tempo real</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {isAdmin 
+              ? 'Acompanhe métricas de produtividade, SLA e pontuações médicas gerais em tempo real'
+              : 'Acompanhe seus indicadores individuais de resolução, SLA e notas de avaliação clínica'}
+          </p>
         </div>
       </div>
 
@@ -271,10 +283,10 @@ export const RankingEspecialistas: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-150 bg-white">
-                {filteredRanking.map((item, index) => (
+                {filteredRanking.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-55/30 transition">
                     <td className="px-6 py-4 text-center font-semibold">
-                      {getMedal(index)}
+                      {getMedal(item.rankPos - 1)}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-900">
                       {item.nome}

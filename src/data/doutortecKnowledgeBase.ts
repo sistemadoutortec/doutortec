@@ -74,26 +74,26 @@ MAPEAMENTO DETALHADO DAS TELAS, BOTÕES E AÇÕES:
    - Filtros no topo: 'Buscar paciente...', 'Todos os Status', 'Todas as Prioridades', 'Todas as Especialidades' e 'Limpar Filtros'.
    - Na listagem de casos (cards): exibe Paciente, Especialidade, Município, Prioridade, SLA e botão para abrir a tela de Detalhes do Caso.
    - Prazos de SLA:
-     * Alta Prioridade: até 12 horas.
+     * Alta Prioridade: até 24 horas.
      * Média Prioridade: até 48 horas.
      * Baixa Prioridade: até 72 horas.
      * Badges de SLA: Verde (dentro do prazo), Laranja/Âmbar (próximo do limite) e Vermelho (atrasado).
 
 3. TELA: CRIAR CASO CLÍNICO (Acesso: Botão '+ Novo Caso Clínico')
    - Formulário passo a passo:
-     1. Seleção do Paciente cadastrado (dropdown de pacientes; há atalho para cadastrar novo caso não esteja na lista).
+     1. Seleção do Paciente cadastrado (dropdown de pacientes com busca por nome ou CPF; exibe o Município de Origem travado conforme o cadastro).
      2. Escolha da Especialidade Médica desejada.
-     3. Seleção da Prioridade (Alta - 12h, Média - 48h, Baixa - 72h).
+     3. Seleção da Prioridade (Alta - 24h, Média - 48h, Baixa - 72h).
      4. Campo de texto: Histórico Clínico e Antecedentes do Paciente.
-     5. Campo de texto: Conduta Atual e Medicamentos em uso.
-     6. Campo de texto: Dúvida Clínica Objetiva (diagnóstica ou terapêutica).
+     5. Campo de texto: 'Hipótese Diagnóstica e Conduta Atual' (medicamentos e condutas adotadas).
+     6. Campo de texto: 'Hipótese / Dúvida Clínica' (pergunta diagnóstica ou terapêutica formulada para o especialista).
      7. Upload de Exames/Laudos: botão para anexar arquivos (PDF, PNG, JPG de até 15MB cada).
      8. Termo de Responsabilidade: caixa de seleção (checkbox) obrigatória aceitando as diretrizes legais da teleinterconsulta.
      9. Botões de ação no rodapé: 'Cancelar' e 'Enviar Caso Clínico'.
 
 4. TELA: DETALHES DO CASO CLÍNICO (Ao clicar no caso)
    - Cabeçalho: Botão '← Voltar', ID do caso, Prioridade, Status ('Em Progresso', 'Respondido', etc.), Cronômetro de SLA e botão 'Mensagens Rápidas' (chat drawer lateral).
-   - Card 1 (Superior): SOLICITAÇÃO DE TELECONSULTORIA: Nome do paciente, CPF, CNS, data de abertura, Histórico Clínico, Conduta Atual e Dúvida Clínica.
+   - Card 1 (Superior): SOLICITAÇÃO DE TELECONSULTORIA: Nome do paciente, CPF, CNS, data de abertura, Município travado ao paciente, Histórico Clínico, Hipótese Diagnóstica e Conduta Atual e Hipótese / Dúvida Clínica.
    - Card 2 (Inferior): DEVOLUTIVA DO ESPECIALISTA (TICKET OFICIAL):
      * IMPORTANTE: Não é uma 'aba' separada, é um card na mesma página, acessível rolando a tela para baixo.
      * Ações e Campos quando o caso está assumido 'Em Progresso' pelo especialista:

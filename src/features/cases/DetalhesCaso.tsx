@@ -358,7 +358,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
         return;
       }
 
-      const hoursLimit = currentCaso.prioridade === 'alta' ? 12 : currentCaso.prioridade === 'media' ? 48 : 72;
+      const hoursLimit = currentCaso.prioridade === 'alta' ? 24 : currentCaso.prioridade === 'media' ? 48 : 72;
       const limitTime = new Date(new Date(currentCaso.created_at).getTime() + hoursLimit * 60 * 60 * 1000);
       const remainingMs = limitTime.getTime() - Date.now();
 
@@ -922,7 +922,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
       case 'novo': return 'Aberto';
       case 'em_progresso': return 'Em Progresso';
       case 'respondido': return 'Resolvido';
-      case 'fechado': return 'Encerrado / Arquivado';
+      case 'fechado': return 'Encerrado';
       default: return status;
     }
   };
@@ -1084,7 +1084,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               ) : (
                 <Ban className="h-3.5 w-3.5" />
               )}
-              {currentCaso.status === 'respondido' && !hasEvaluation ? 'Avaliar e Encerrar' : 'Encerrar Ticket'}
+              {currentCaso.status === 'respondido' && !hasEvaluation ? 'Avaliar e Encerrar' : 'Encerrar Caso'}
             </button>
           )}
         </div>
@@ -1161,7 +1161,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               </div>
 
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Conduta Atual</h4>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Hipótese Diagnóstica e Conduta Atual</h4>
                 <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
                   {currentCaso.conduta_atual}
                 </div>
@@ -1169,7 +1169,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             </div>
 
             <div className="border-t border-gray-100 pt-5">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Dúvida Clínica</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Hipótese / Dúvida Clínica</h4>
               <div className="text-sm leading-relaxed font-bold whitespace-pre-wrap p-4 rounded-lg border" style={{ backgroundColor: '#e8f3fc', borderColor: '#b2c4d6', color: '#002157' }}>
                 {currentCaso.duvida_clinica}
               </div>
@@ -1819,7 +1819,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
                       Processando...
                     </>
                   ) : (
-                    'Confirmar e Fechar'
+                    'Confirmar e Encerrar'
                   )}
                 </button>
               </div>
@@ -2018,14 +2018,14 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               </div>
 
               <div>
-                <span className="font-bold text-slate-700 block uppercase text-[10px]">Conduta Atual Realizada na UBS:</span>
+                <span className="font-bold text-slate-700 block uppercase text-[10px]">Hipótese Diagnóstica e Conduta Atual:</span>
                 <p className="text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-100 whitespace-pre-wrap">
                   {currentCaso.conduta_atual}
                 </p>
               </div>
 
               <div>
-                <span className="font-bold text-slate-700 block uppercase text-[10px]">Dúvida Clínica Diagnóstica / Terapêutica:</span>
+                <span className="font-bold text-slate-700 block uppercase text-[10px]">Hipótese / Dúvida Clínica:</span>
                 <p className="text-slate-900 font-semibold leading-relaxed bg-blue-50/70 p-2.5 rounded border border-blue-100 whitespace-pre-wrap">
                   {currentCaso.duvida_clinica}
                 </p>

@@ -246,8 +246,8 @@ export const PainelFinanceiro: React.FC = () => {
     });
 
     // Build lists
-    // 1. Bonuses history
-    const bonusesList: FinanceLaunch[] = bonusesInMonth.map(b => {
+    // 1. Bonuses history (filtered for specialist to only see their own)
+    const rawBonusesList: FinanceLaunch[] = bonusesInMonth.map(b => {
       const spec = specMap.get(b.especialista_id);
       return {
         id: b.id,
@@ -258,6 +258,9 @@ export const PainelFinanceiro: React.FC = () => {
         created_at: b.created_at
       };
     });
+    const bonusesList = isAdmin 
+      ? rawBonusesList 
+      : rawBonusesList.filter(b => b.especialistaId === perfil?.id);
 
     // 2. Production per specialist
     const productionList: SpecialistProduction[] = specialists.map(esp => {
@@ -540,9 +543,11 @@ export const PainelFinanceiro: React.FC = () => {
                 <span className="text-[10px] text-green-550 mt-1">Transferências autorizadas pós-avaliação</span>
               </div>
               <div className="bg-white p-5 rounded-xl border border-gray-150 shadow-xs flex flex-col justify-between">
-                <span className="text-xs font-semibold text-gray-450 uppercase">Valor por Chamado</span>
-                <span className="text-2xl font-bold text-gray-800 mt-2">R$ 150,00</span>
-                <span className="text-[10px] text-gray-400 mt-1">Taxa de produção padrão contratual</span>
+                <span className="text-xs font-semibold text-gray-450 uppercase">Média por Parecer</span>
+                <span className="text-2xl font-bold text-gray-800 mt-2">
+                  R$ {specKpis.totalRespondido > 0 ? (myBaseValue / specKpis.totalRespondido).toFixed(2) : '0,00'}
+                </span>
+                <span className="text-[10px] text-gray-400 mt-1">Valor médio de repasse por caso</span>
               </div>
               <div className="bg-white p-5 rounded-xl border border-gray-150 shadow-xs flex flex-col justify-between">
                 <span className="text-xs font-semibold text-gray-450 uppercase">Casos Atendidos</span>
