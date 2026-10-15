@@ -37,6 +37,7 @@ interface SolicitanteInfo {
 interface CasoNaFila extends CasoClinico {
   especialidadeNome?: string;
   solicitanteInfo?: SolicitanteInfo;
+  pacienteMunicipio?: string;
   slaStatus: 'ok' | 'warning' | 'overdue';
   slaLabel: string;
 }
@@ -223,21 +224,37 @@ export const Distribucao: React.FC = () => {
         return;
       }
 
-      // Fetch solicitante profiles for municipality info
+      // Fetch solicitante profiles for backup municipality / display info
       const solIds = Array.from(new Set(casosData.map((c) => c.solicitante_id as string)));
-      const { data: perfisData } = await supabase
-        .from('perfis')
-        .select('id, nome, municipio, instituicao')
-        .in('id', solIds);
+      const patientNames = Array.from(new Set(casosData.map((c) => (c.paciente_nome || '').trim()).filter(Boolean)));
+
+      const [perfisRes, pacientesRes] = await Promise.all([
+        supabase.from('perfis').select('id, nome, municipio, instituicao').in('id', solIds),
+        patientNames.length > 0
+          ? supabase
+              .from('pacientes')
+              .select('nome, municipio_id, fluxos_municipios(municipio)')
+              .in('nome', patientNames)
+          : Promise.resolve({ data: [] as any[], error: null }),
+      ]);
 
       const solMap: Record<string, SolicitanteInfo> = {};
-      (perfisData || []).forEach((p) => {
+      (perfisRes.data || []).forEach((p) => {
         solMap[p.id as string] = {
           id: p.id as string,
           nome: p.nome as string,
           municipio: p.municipio as string,
           instituicao: p.instituicao as string,
         };
+      });
+
+      // Mapeia nome do paciente -> município do paciente
+      const pacMunMap: Record<string, string> = {};
+      (pacientesRes.data || []).forEach((pac: any) => {
+        const munNome = pac?.fluxos_municipios?.municipio;
+        if (munNome && pac.nome) {
+          pacMunMap[pac.nome.trim().toLowerCase()] = munNome;
+        }
       });
 
       const enriched: CasoNaFila[] = (casosData as any[]).map((c) => {
@@ -250,10 +267,14 @@ export const Distribucao: React.FC = () => {
         const hoursToAdd = getSlaHours(c.prioridade);
         const limite = new Date(new Date(c.created_at).getTime() + hoursToAdd * 60 * 60 * 1000).toISOString();
         const slaStatus = computeSla(limite);
+        const pacKey = (c.paciente_nome || '').trim().toLowerCase();
+        const pacienteMunicipio = pacMunMap[pacKey] || undefined;
+
         return {
           ...c,
           especialidadeNome: specialtiesMap[c.especialidade_id] ?? '—',
           solicitanteInfo: solMap[c.solicitante_id],
+          pacienteMunicipio,
           slaStatus,
           slaLabel: formatSlaLabel(limite, slaStatus),
           sla_horas: c.sla_horas ?? hoursToAdd,
@@ -309,8 +330,8 @@ export const Distribucao: React.FC = () => {
           caseCountMap[espId] = (caseCountMap[espId] ?? 0) + 1;
         });
 
-        // Determine patient municipality from the solicitante's profile
-        const patientMun = (caso.solicitanteInfo?.municipio ?? '').toLowerCase().trim();
+        // Determine patient municipality (prioritizes patient's registered municipality, falls back to solicitante)
+        const patientMun = (caso.pacienteMunicipio || caso.solicitanteInfo?.municipio || '').toLowerCase().trim();
 
         // Fluxo IDs that cover the patient's municipality
         const coveringFluxoIds = municipioFluxoMap[patientMun] ?? [];
@@ -506,6 +527,7 @@ export const Distribucao: React.FC = () => {
     return (
       c.paciente_nome.toLowerCase().includes(term) ||
       (c.especialidadeNome ?? '').toLowerCase().includes(term) ||
+      (c.pacienteMunicipio ?? '').toLowerCase().includes(term) ||
       (c.solicitanteInfo?.municipio ?? '').toLowerCase().includes(term)
     );
   });
@@ -654,11 +676,11 @@ export const Distribucao: React.FC = () => {
                             {caso.especialidadeNome ?? '—'}
                           </span>
                         </div>
-                        {caso.solicitanteInfo?.municipio && (
+                        {(caso.pacienteMunicipio || caso.solicitanteInfo?.municipio) && (
                           <div className="flex items-center gap-1 text-[10px] text-gray-500">
                             <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
                             <span className="truncate">
-                              {caso.solicitanteInfo.municipio}
+                              {caso.pacienteMunicipio || caso.solicitanteInfo?.municipio}
                             </span>
                           </div>
                         )}
@@ -731,10 +753,10 @@ export const Distribucao: React.FC = () => {
                     <Activity className="h-3.5 w-3.5" />
                     {selectedCaso.especialidadeNome ?? '—'}
                   </span>
-                  {selectedCaso.solicitanteInfo?.municipio && (
+                  {(selectedCaso.pacienteMunicipio || selectedCaso.solicitanteInfo?.municipio) && (
                     <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700">
                       <MapPin className="h-3.5 w-3.5" />
-                      {selectedCaso.solicitanteInfo.municipio}
+                      {selectedCaso.pacienteMunicipio || selectedCaso.solicitanteInfo?.municipio}
                     </span>
                   )}
                   <span

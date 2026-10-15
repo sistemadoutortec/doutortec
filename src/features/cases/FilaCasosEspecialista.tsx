@@ -23,6 +23,7 @@ interface FilaCasosEspecialistaProps {
 
 interface CasoPool extends CasoClinico {
   especialidadeNome?: string;
+  pacienteMunicipio?: string;
   solicitanteMunicipio?: string;
   solicitanteNome?: string;
   slaStatus: 'ok' | 'warning' | 'overdue';
@@ -130,11 +131,32 @@ export const FilaCasosEspecialista: React.FC<FilaCasosEspecialistaProps> = ({
 
       let list = (casosData as any[]) || [];
 
-      // Filtrar estritamente pelos municípios do especialista (se houver restrição configurada)
+      // Buscar município cadastrado do paciente
+      const patientNames = Array.from(new Set(list.map((c) => (c.paciente_nome || '').trim()).filter(Boolean)));
+      const pacMunMap: Record<string, string> = {};
+
+      if (patientNames.length > 0) {
+        const { data: pacientesData } = await supabase
+          .from('pacientes')
+          .select('nome, fluxos_municipios(municipio)')
+          .in('nome', patientNames);
+
+        (pacientesData || []).forEach((pac: any) => {
+          const munNome = pac?.fluxos_municipios?.municipio;
+          if (munNome && pac.nome) {
+            pacMunMap[pac.nome.trim().toLowerCase()] = munNome;
+          }
+        });
+      }
+
+      // Filtrar estritamente pelos municípios do especialista (priorizando município do paciente, fallback para solicitante)
       if (allowedMunicipios.length > 0) {
         list = list.filter((c) => {
+          const pacKey = (c.paciente_nome || '').trim().toLowerCase();
+          const munPaciente = pacMunMap[pacKey]?.toLowerCase().trim();
           const munSolicitante = (c.solicitante?.municipio || '').toLowerCase().trim();
-          return allowedMunicipios.includes(munSolicitante);
+          const munEfetivo = munPaciente || munSolicitante;
+          return allowedMunicipios.includes(munEfetivo);
         });
       }
 
@@ -167,9 +189,13 @@ export const FilaCasosEspecialista: React.FC<FilaCasosEspecialistaProps> = ({
           slaLabel = `${h}h ${m}m restantes`;
         }
 
+        const pacKey = (c.paciente_nome || '').trim().toLowerCase();
+        const pacienteMunicipio = pacMunMap[pacKey];
+
         return {
           ...c,
           especialidadeNome: specialtiesMap[c.especialidade_id] || 'Especialidade',
+          pacienteMunicipio,
           solicitanteMunicipio: c.solicitante?.municipio || 'Não informado',
           solicitanteNome: c.solicitante?.nome || 'Clínico Solicitante',
           slaStatus,
@@ -305,6 +331,7 @@ export const FilaCasosEspecialista: React.FC<FilaCasosEspecialistaProps> = ({
     return (
       c.paciente_nome.toLowerCase().includes(term) ||
       (c.especialidadeNome || '').toLowerCase().includes(term) ||
+      (c.pacienteMunicipio || '').toLowerCase().includes(term) ||
       (c.solicitanteMunicipio || '').toLowerCase().includes(term) ||
       c.id.toLowerCase().includes(term)
     );
@@ -432,7 +459,7 @@ export const FilaCasosEspecialista: React.FC<FilaCasosEspecialistaProps> = ({
                   </span>
                   <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
                     <MapPin className="h-3 w-3" />
-                    {caso.solicitanteMunicipio}
+                    {caso.pacienteMunicipio || caso.solicitanteMunicipio}
                   </span>
                 </div>
 
