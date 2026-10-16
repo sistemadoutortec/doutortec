@@ -625,7 +625,7 @@ export const PainelFinanceiro: React.FC = () => {
                     <strong className="text-lg text-indigo-600">R$ {myBonusValue.toFixed(2)}</strong>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-400 block">Total Líquido Estimado:</span>
+                    <span className="text-xs text-gray-400 block">Total Estimado:</span>
                     <strong className="text-lg text-green-600">R$ {specKpis.valorTotal.toFixed(2)}</strong>
                   </div>
                 </div>

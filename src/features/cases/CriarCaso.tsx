@@ -89,18 +89,52 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
     };
   }, []);
 
-  // Fetch specialties
+  // Flows and Municipality mapping for available specialties per municipality
+  const [municipioEspecialidadesMap, setMunicipioEspecialidadesMap] = useState<Record<string, string[]>>({});
+
+  // Fetch specialties and flow mappings
   useEffect(() => {
     const fetchEspecialidades = async () => {
       try {
-        const { data, error: fetchError } = await supabase
-          .from('especialidades')
-          .select('id, nome')
-          .order('nome', { ascending: true });
+        const [espRes, fluxosRes, vinculosRes] = await Promise.all([
+          supabase.from('especialidades').select('id, nome').order('nome', { ascending: true }),
+          supabase.from('fluxos_especialidades').select('id, nome_fluxo'),
+          supabase.from('fluxos_especialidades_municipios').select('fluxo_id, municipio_id'),
+        ]);
 
-        if (fetchError) throw fetchError;
-        setEspecialidades(data || []);
-        if (data && data.length > 0) {
+        if (espRes.error) throw espRes.error;
+        const allSpecs = espRes.data || [];
+        setEspecialidades(allSpecs);
+
+        // Mapear fluxo_id -> nome_fluxo
+        const fluxoMap: Record<string, string> = {};
+        (fluxosRes.data || []).forEach(f => {
+          fluxoMap[f.id] = (f.nome_fluxo || '').toLowerCase().trim();
+        });
+
+        // Mapear municipio_id -> Set de especialidade IDs vinculadas
+        const munSpecMap: Record<string, string[]> = {};
+        (vinculosRes.data || []).forEach(v => {
+          const nomeFluxo = fluxoMap[v.fluxo_id];
+          if (!nomeFluxo) return;
+
+          // Encontrar especialidades cujo nome casa com o nome_fluxo
+          const matchedSpecs = allSpecs.filter(e => 
+            nomeFluxo.includes(e.nome.toLowerCase().trim()) || 
+            e.nome.toLowerCase().trim().includes(nomeFluxo)
+          );
+
+          if (!munSpecMap[v.municipio_id]) munSpecMap[v.municipio_id] = [];
+          matchedSpecs.forEach(ms => {
+            if (!munSpecMap[v.municipio_id].includes(ms.id)) {
+              munSpecMap[v.municipio_id].push(ms.id);
+            }
+          });
+        });
+
+        setMunicipioEspecialidadesMap(munSpecMap);
+
+        if (allSpecs.length > 0) {
           const savedDraft = localStorage.getItem('criar_caso_draft');
           let draftSpecId = '';
           if (savedDraft) {
@@ -109,7 +143,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               draftSpecId = draft.especialidadeId || '';
             } catch {}
           }
-          setEspecialidadeId(draftSpecId || data[0].id);
+          setEspecialidadeId(draftSpecId || allSpecs[0].id);
         }
       } catch (err: any) {
         console.error('Erro ao buscar especialidades:', err.message || err);
@@ -527,6 +561,18 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
                             setPacienteNome(pac.nome);
                             setSearchPatient(pac.nome);
                             setIsDropdownOpen(false);
+
+                            // Ajusta especialidade selecionada conforme fluxos do município
+                            const munId = pac.municipio_id;
+                            const allowed = munId && municipioEspecialidadesMap[munId]?.length
+                              ? municipioEspecialidadesMap[munId]
+                              : null;
+
+                            if (allowed && allowed.length > 0) {
+                              if (!allowed.includes(especialidadeId)) {
+                                setEspecialidadeId(allowed[0]);
+                              }
+                            }
                           }}
                           className="flex w-full flex-col px-4 py-2 text-left hover:bg-indigo-50 transition-colors"
                         >
@@ -573,22 +619,52 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               <div className="block w-full py-2 px-3 text-sm text-gray-500 bg-gray-50 rounded-lg border border-gray-300">
                 Carregando especialidades...
               </div>
-            ) : (
-              <select
-                id="especialidade"
-                required
-                disabled={submitting}
-                value={especialidadeId}
-                onChange={(e) => setEspecialidadeId(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
-              >
-                {especialidades.map((esp) => (
-                  <option key={esp.id} value={esp.id}>
-                    {esp.nome}
-                  </option>
-                ))}
-              </select>
-            )}
+            ) : (() => {
+              const selectedPac = pacientes.find(p => p.nome.toLowerCase() === pacienteNome.toLowerCase());
+              const munId = selectedPac?.municipio_id;
+              
+              // Se o paciente tem município e temos fluxos mapeados para este município, filtra estritamente
+              const allowedSpecIds = munId && municipioEspecialidadesMap[munId]?.length
+                ? municipioEspecialidadesMap[munId]
+                : null;
+
+              const visibleSpecs = allowedSpecIds
+                ? especialidades.filter(e => allowedSpecIds.includes(e.id))
+                : especialidades;
+
+              return (
+                <div className="space-y-1.5">
+                  <select
+                    id="especialidade"
+                    required
+                    disabled={submitting || visibleSpecs.length === 0}
+                    value={especialidadeId}
+                    onChange={(e) => setEspecialidadeId(e.target.value)}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    {visibleSpecs.length === 0 ? (
+                      <option value="">Nenhuma especialidade contratada para este município</option>
+                    ) : (
+                      visibleSpecs.map((esp) => (
+                        <option key={esp.id} value={esp.id}>
+                          {esp.nome}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {selectedPac && allowedSpecIds && (
+                    <p className="text-[10px] text-gray-500 font-medium">
+                      Exibindo especialidades com fluxo ativo para {selectedPac.municipioNome || 'o município do paciente'}.
+                    </p>
+                  )}
+                  {selectedPac && allowedSpecIds && visibleSpecs.length === 0 && (
+                    <p className="text-[11px] text-rose-600 font-medium">
+                      Atenção: Não há especialistas credenciados para este município na rede.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div>
@@ -611,7 +687,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
 
           <div>
             <label htmlFor="enfoque" className="block text-sm font-semibold text-gray-700 mb-1">
-              Enfoque da Solicitação *
+              Motivo da Solicitação *
             </label>
             <select
               id="enfoque"
@@ -621,12 +697,10 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
               onChange={(e) => setEnfoque(e.target.value)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-hidden focus:ring-indigo-500"
             >
-              <option value="" disabled>Selecione um enfoque...</option>
+              <option value="" disabled>Selecione o motivo...</option>
               <option value="Diagnóstico">Diagnóstico</option>
               <option value="Tratamento">Tratamento</option>
               <option value="Prognóstico">Prognóstico</option>
-              <option value="Processo de Trabalho">Processo de Trabalho</option>
-              <option value="Promoção e Prevenção">Promoção e Prevenção</option>
             </select>
           </div>
 
