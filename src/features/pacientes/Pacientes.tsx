@@ -252,6 +252,7 @@ export const Pacientes: React.FC = () => {
   // Form helpers
   // ─────────────────────────────────────────────────────────
   const openForm = () => {
+    if (perfil?.role === 'gestor_municipal') return;
     setEditingPatient(null);
     setForm(FORM_EMPTY);
     setCpfDisplay('');
@@ -262,6 +263,7 @@ export const Pacientes: React.FC = () => {
   };
 
   const openEditForm = (pac: Paciente) => {
+    if (perfil?.role === 'gestor_municipal') return;
     setEditingPatient(pac);
     setForm({
       nome: pac.nome,
@@ -490,16 +492,20 @@ export const Pacientes: React.FC = () => {
             Gestão de Pacientes
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Cadastre e gerencie os pacientes vinculados às interconsultas da rede de Telessaúde.
+            {perfil?.role === 'gestor_municipal'
+              ? 'Consulta nominal de pacientes cadastrados no município para acompanhamento gerencial.'
+              : 'Cadastre e gerencie os pacientes vinculados às interconsultas da rede de Telessaúde.'}
           </p>
         </div>
-        <button
-          onClick={openForm}
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition whitespace-nowrap"
-        >
-          <Plus className="h-4 w-4" />
-          Novo Paciente
-        </button>
+        {perfil?.role !== 'gestor_municipal' && (
+          <button
+            onClick={openForm}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4" />
+            Novo Paciente
+          </button>
+        )}
       </div>
 
       {/* ── Search + Table ────────────────────────────────── */}
@@ -590,7 +596,9 @@ export const Pacientes: React.FC = () => {
                     <th className="px-6 py-3.5">Sexo</th>
                     <th className="px-6 py-3.5">Cartão SUS</th>
                     <th className="px-6 py-3.5">Município</th>
-                    <th className="px-6 py-3.5 text-center">Ações</th>
+                    {perfil?.role !== 'gestor_municipal' && (
+                      <th className="px-6 py-3.5 text-center">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 bg-white">
@@ -657,16 +665,18 @@ export const Pacientes: React.FC = () => {
                       </td>
 
                       {/* Ações */}
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => openEditForm(p)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition"
-                          title="Editar Cadastro do Paciente"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          <span>Editar</span>
-                        </button>
-                      </td>
+                      {perfil?.role !== 'gestor_municipal' && (
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => openEditForm(p)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition"
+                            title="Editar Cadastro do Paciente"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span>Editar</span>
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

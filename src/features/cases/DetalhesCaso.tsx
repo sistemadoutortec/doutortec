@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   Printer,
   Download,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
@@ -1019,8 +1020,8 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
         {/* Header Actions: Collapsible Chat Trigger & Accept/Close buttons */}
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-          {/* PDF Export Action when Case has Parecer */}
-          {(currentCaso.status === 'respondido' || currentCaso.status === 'fechado') && (
+          {/* PDF Export Action when Case has Parecer - Não visível para Gestor Municipal por sigilo clínico */}
+          {perfil?.role !== 'gestor_municipal' && (currentCaso.status === 'respondido' || currentCaso.status === 'fechado') && (
             <button
               type="button"
               onClick={handleExportParecerPDF}
@@ -1037,20 +1038,22 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
             </button>
           )}
 
-          {/* Quick Messages Trigger */}
-          <button
-            type="button"
-            onClick={() => setIsChatOpen(true)}
-            className="relative inline-flex items-center gap-2 rounded-lg border border-[#0ea5e9] bg-[#e0f2fe] text-[#0369a1] hover:bg-[#bae6fd] px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span>Mensagens Rápidas</span>
-            {unreadMessagesCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-600 text-[9px] font-black text-white shadow-xs animate-bounce">
-                {unreadMessagesCount}
-              </span>
-            )}
-          </button>
+          {/* Quick Messages Trigger - apenas para os profissionais envolvidos / admin */}
+          {perfil?.role !== 'gestor_municipal' && (
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              className="relative inline-flex items-center gap-2 rounded-lg border border-[#0ea5e9] bg-[#e0f2fe] text-[#0369a1] hover:bg-[#bae6fd] px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+            >
+              <MessageSquare className="h-4 w-4" />
+              <span>Mensagens Rápidas</span>
+              {unreadMessagesCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-600 text-[9px] font-black text-white shadow-xs animate-bounce">
+                  {unreadMessagesCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Accept case for specialists */}
           {perfil?.role === 'especialista' && currentCaso.status === 'novo' && (
@@ -1152,52 +1155,71 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
 
           {/* Details sections */}
           <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Histórico Clínico</h4>
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
-                  {currentCaso.historico_clinico}
+            {perfil?.role === 'gestor_municipal' ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-5 flex items-start gap-3.5">
+                <div className="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900">Acesso Restrito ao Histórico Clínico</h4>
+                  <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                    Em conformidade com a legislação de proteção de dados de saúde (LGPD) e as resoluções de sigilo médico do CFM/SUS, informações clínicas, anamnese, condutas e anexos médicos são de visualização exclusiva dos profissionais de saúde responsáveis pelo atendimento (médico solicitante e especialista).
+                  </p>
+                  <p className="text-[11px] text-amber-700 font-semibold mt-2">
+                    O perfil de Gestão Municipal possui acesso às informações gerenciais, prazos (SLA), status de tramitação e estatísticas do município.
+                  </p>
                 </div>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Histórico Clínico</h4>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
+                      {currentCaso.historico_clinico}
+                    </div>
+                  </div>
 
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Hipótese Diagnóstica e Conduta Atual</h4>
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
-                  {currentCaso.conduta_atual}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Hipótese Diagnóstica e Conduta Atual</h4>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap pl-4 py-3" style={{ borderLeft: '3px solid #002157', backgroundColor: '#f4f6f8', borderRadius: '0 6px 6px 0' }}>
+                      {currentCaso.conduta_atual}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="border-t border-gray-100 pt-5">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Hipótese / Dúvida Clínica</h4>
-              <div className="text-sm leading-relaxed font-bold whitespace-pre-wrap p-4 rounded-lg border" style={{ backgroundColor: '#e8f3fc', borderColor: '#b2c4d6', color: '#002157' }}>
-                {currentCaso.duvida_clinica}
-              </div>
-            </div>
-
-            {/* Official Attachments Room */}
-            {caseAnexos && caseAnexos.length > 0 && (
-              <div className="border-t border-gray-100 pt-5">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-700 mb-3">Documentos e Exames Anexados (Solicitação Oficial)</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {caseAnexos.map((anexo: any, idx: number) => (
-                    <button
-                      key={anexo.id || idx}
-                      type="button"
-                      onClick={() => setSelectedFile({ nome: anexo.nome, path: anexo.path, tipo: anexo.tipo })}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-400 hover:bg-gray-50 text-left transition w-full shadow-2xs"
-                    >
-                      <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                         <FileText className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-gray-900 truncate" title={anexo.nome}>{anexo.nome}</p>
-                        <p className="text-[10px] text-indigo-600 font-medium">Clique para visualizar</p>
-                      </div>
-                    </button>
-                  ))}
+                <div className="border-t border-gray-100 pt-5">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-[#002157] mb-2">Hipótese / Dúvida Clínica</h4>
+                  <div className="text-sm leading-relaxed font-bold whitespace-pre-wrap p-4 rounded-lg border" style={{ backgroundColor: '#e8f3fc', borderColor: '#b2c4d6', color: '#002157' }}>
+                    {currentCaso.duvida_clinica}
+                  </div>
                 </div>
-              </div>
+
+                {/* Official Attachments Room */}
+                {caseAnexos && caseAnexos.length > 0 && (
+                  <div className="border-t border-gray-100 pt-5">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-700 mb-3">Documentos e Exames Anexados (Solicitação Oficial)</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {caseAnexos.map((anexo: any, idx: number) => (
+                        <button
+                          key={anexo.id || idx}
+                          type="button"
+                          onClick={() => setSelectedFile({ nome: anexo.nome, path: anexo.path, tipo: anexo.tipo })}
+                          className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-400 hover:bg-gray-50 text-left transition w-full shadow-2xs"
+                        >
+                          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
+                             <FileText className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-gray-900 truncate" title={anexo.nome}>{anexo.nome}</p>
+                            <p className="text-[10px] text-indigo-600 font-medium">Clique para visualizar</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1209,7 +1231,7 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
               <FileCheck className="h-5 w-5 text-[#38bdf8]" />
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Devolutiva do Especialista (Ticket Oficial)</h3>
             </div>
-            {(currentCaso.status === 'respondido' || currentCaso.status === 'fechado') && (
+            {perfil?.role !== 'gestor_municipal' && (currentCaso.status === 'respondido' || currentCaso.status === 'fechado') && (
               <button
                 type="button"
                 onClick={handleExportParecerPDF}
@@ -1228,8 +1250,59 @@ export const DetalhesCaso: React.FC<DetalhesCasoProps> = ({ caso, onBack, onUpda
           </div>
 
           <div className="p-6">
-            {/* 1. Case already answered (Resolved State) */}
-            {(currentCaso.status === 'respondido' || currentCaso.status === 'fechado') ? (
+            {/* Se for gestor municipal, oculta o conteúdo clínico da devolutiva */}
+            {perfil?.role === 'gestor_municipal' ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4.5 flex items-start gap-3.5">
+                  <div className="p-2 bg-slate-200 text-slate-700 rounded-lg shrink-0 mt-0.5">
+                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">
+                      {currentCaso.status === 'respondido' || currentCaso.status === 'fechado'
+                        ? 'Parecer Especializado Emitido'
+                        : 'Devolutiva em Andamento'}
+                    </h4>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      {currentCaso.status === 'respondido' || currentCaso.status === 'fechado'
+                        ? 'O parecer técnico e as recomendações clínicas foram emitidos e enviados ao médico assistente da Unidade de Saúde.'
+                        : 'O chamado está em fase de atendimento pelo corpo clínico.'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-medium mt-1">
+                      O teor das prescrições, hipóteses e condutas médicas é confidencial entre os profissionais assistentes e o paciente (LGPD / CFM).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Mostra identificação do especialista caso já tenha atendido */}
+                {especialistaInfo && (
+                  <div className="border border-slate-200 rounded-xl p-4 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#002157] text-white flex items-center justify-center font-black text-sm shrink-0">
+                        {especialistaInfo?.nome ? especialistaInfo.nome.substring(0, 2).toUpperCase() : 'DR'}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Teleconsultor Responsável</p>
+                        <h6 className="text-sm font-black text-slate-900 leading-tight">
+                          {especialistaInfo?.nome || 'Médico Especialista'}
+                        </h6>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-medium mt-0.5">
+                          {especialidadeNome && (
+                            <span>Especialidade: <strong>{especialidadeNome}</strong></span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {currentCaso.respondido_em && (
+                      <div className="text-left sm:text-right text-xs text-slate-500">
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">Respondido em</span>
+                        <span className="font-semibold text-slate-700">{new Date(currentCaso.respondido_em).toLocaleString('pt-BR')}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (currentCaso.status === 'respondido' || currentCaso.status === 'fechado') ? (
               <div className="space-y-6">
                 <div className="rounded-xl border border-emerald-250 bg-emerald-50/50 p-4.5 flex gap-3.5">
                   <ShieldCheck className="h-6 w-6 text-emerald-600 shrink-0" />
