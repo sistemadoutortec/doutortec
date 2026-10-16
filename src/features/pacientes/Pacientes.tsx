@@ -214,9 +214,9 @@ export const Pacientes: React.FC = () => {
         municipioLabel: p.municipio_id ? municipioMap[p.municipio_id] ?? '—' : '—',
       }));
 
-      // Filter by municipality if Gestor Municipal
-      if (perfil?.role === 'gestor_municipal' && perfil?.municipio) {
-        const targetMun = perfil.municipio.toLowerCase();
+      // Filter by municipality if Gestor Municipal or Solicitante (Clínico da APS)
+      if ((perfil?.role === 'gestor_municipal' || perfil?.role === 'solicitante') && perfil?.municipio) {
+        const targetMun = perfil.municipio.toLowerCase().trim();
         enriched = enriched.filter(p => 
           p.municipioLabel?.toLowerCase().includes(targetMun)
         );

@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import type { CasoPrioridade } from '../../types';
 import { UploadArquivos } from '../documents/UploadArquivos';
 import type { UploadedFileMetadata } from '../documents/UploadArquivos';
-import { AlertCircle, ChevronDown, UserPlus } from 'lucide-react';
+import { AlertCircle, ChevronDown, UserPlus, MapPin, Building2 } from 'lucide-react';
 
 interface EspecialidadeOption {
   id: string;
@@ -26,9 +26,13 @@ interface CriarCasoProps {
 }
 
 export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNavigateToPacientes }) => {
-  const { user } = useAuth();
+  const { user, perfil } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ignoreAutoSaveRef = useRef(false);
+
+  // LGPD: Município Ativo de Atendimento do Clínico
+  const [municipioAtivo, setMunicipioAtivo] = useState<string>('');
+  const [municipiosDisponiveis, setMunicipiosDisponiveis] = useState<string[]>([]);
   
   // Form fields
   const [pacienteNome, setPacienteNome] = useState('');
@@ -220,15 +224,29 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
             .order('nome', { ascending: true }),
           supabase
             .from('fluxos_municipios')
-            .select('id, municipio, uf'),
+            .select('id, municipio, uf')
+            .order('municipio', { ascending: true }),
         ]);
 
         if (pacientesRes.error) throw pacientesRes.error;
 
+        const allMunNames = (municipiosRes.data || []).map(m => m.municipio).filter(Boolean);
         const munMap: Record<string, string> = {};
         (municipiosRes.data || []).forEach(m => {
           munMap[m.id] = `${m.municipio} (${m.uf})`;
         });
+
+        // Municípios aos quais o clínico tem acesso
+        // Se o perfil do médico tiver um município definido, ele é a base principal.
+        const doctorMun = perfil?.municipio?.trim();
+        const available = doctorMun && allMunNames.includes(doctorMun)
+          ? [doctorMun, ...allMunNames.filter(m => m !== doctorMun)]
+          : allMunNames;
+
+        setMunicipiosDisponiveis(available);
+        if (!municipioAtivo && available.length > 0) {
+          setMunicipioAtivo(doctorMun || available[0]);
+        }
 
         const list = (pacientesRes.data || []).map(p => ({
           ...p,
@@ -245,7 +263,7 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
     };
 
     fetchPacientes();
-  }, []);
+  }, [perfil]);
 
   // Fetch CID-10 on search change
   useEffect(() => {
@@ -438,10 +456,20 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
     }
   };
 
-  const filteredPacientes = pacientes.filter(p =>
-    p.nome.toLowerCase().includes(searchPatient.toLowerCase()) ||
-    (p.cpf && p.cpf.replace(/\D/g, '').includes(searchPatient.replace(/\D/g, '')))
-  );
+  const filteredPacientes = pacientes.filter(p => {
+    // LGPD: Se houver município ativo selecionado, só permite pacientes daquele município
+    if (municipioAtivo && p.municipioNome) {
+      const pMun = p.municipioNome.toLowerCase();
+      const activeMun = municipioAtivo.toLowerCase().trim();
+      if (!pMun.includes(activeMun)) {
+        return false;
+      }
+    }
+    return (
+      p.nome.toLowerCase().includes(searchPatient.toLowerCase()) ||
+      (p.cpf && p.cpf.replace(/\D/g, '').includes(searchPatient.replace(/\D/g, '')))
+    );
+  });
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-gray-150 p-6 md:p-8 shadow-xs">
@@ -473,6 +501,47 @@ export const CriarCaso: React.FC<CriarCasoProps> = ({ onSuccess, onCancel, onNav
       {error && (
         <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {/* LGPD: Seletor de Município de Atendimento do Médico */}
+      {municipiosDisponiveis.length > 0 && (
+        <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
+              <Building2 className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                Município do Atendimento (Plantão Atual)
+              </span>
+              <span className="block text-[11px] text-slate-500">
+                🔒 Conformidade LGPD: apenas pacientes desta cidade serão exibidos.
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <MapPin className="h-4 w-4 text-indigo-600 shrink-0" />
+            <select
+              value={municipioAtivo}
+              disabled={submitting}
+              onChange={(e) => {
+                const newMun = e.target.value;
+                setMunicipioAtivo(newMun);
+                // Limpa paciente selecionado se pertencer a outro município
+                setPacienteNome('');
+                setSearchPatient('');
+              }}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+            >
+              {municipiosDisponiveis.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 
