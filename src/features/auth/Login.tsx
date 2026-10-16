@@ -109,7 +109,14 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess
       setRecoveryEmail('');
     } catch (err: any) {
       console.error(err);
-      setRecoveryError(err.message || 'Erro ao enviar e-mail de recuperação. Verifique o endereço digitado.');
+      const raw = err?.message || '';
+      if (raw.includes('rate limit') || raw.includes('Email rate limit exceeded')) {
+        setRecoveryError('Muitas solicitações seguidas. Aguarde alguns minutos antes de tentar novamente.');
+      } else if (raw.includes('User not found') || raw.includes('user not found')) {
+        setRecoveryError('E-mail não encontrado no sistema.');
+      } else {
+        setRecoveryError('Erro ao enviar e-mail de recuperação. Verifique o endereço digitado.');
+      }
     } finally {
       setRecoveryLoading(false);
     }

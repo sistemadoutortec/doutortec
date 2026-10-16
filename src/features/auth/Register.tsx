@@ -195,7 +195,18 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       });
 
       if (signUpError) {
-        setError(signUpError.message || 'Falha ao realizar cadastro. Tente novamente.');
+        const rawMsg = signUpError.message || '';
+        if (rawMsg.includes('User already registered') || rawMsg.includes('already registered')) {
+          setError('Este e-mail já está cadastrado no sistema. Por favor, utilize a tela de login ou recupere sua senha.');
+        } else if (rawMsg.includes('Password should be at least')) {
+          setError('A senha deve conter no mínimo 6 caracteres.');
+        } else if (rawMsg.includes('Invalid email') || rawMsg.includes('invalid email')) {
+          setError('O formato do e-mail informado é inválido.');
+        } else if (rawMsg.includes('Email rate limit exceeded')) {
+          setError('Muitas tentativas em pouco tempo. Por favor, aguarde alguns minutos e tente novamente.');
+        } else {
+          setError(rawMsg || 'Falha ao realizar cadastro. Tente novamente.');
+        }
       } else {
         setSuccess(true);
         if (onRegisterSuccess) {
